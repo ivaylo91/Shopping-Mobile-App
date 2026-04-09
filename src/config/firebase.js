@@ -4,12 +4,13 @@ import { getFirestore } from 'firebase/firestore';
 
 // Replace with your Firebase project config
 const firebaseConfig = {
-  apiKey: 'YOUR_API_KEY',
-  authDomain: 'YOUR_AUTH_DOMAIN',
-  projectId: 'YOUR_PROJECT_ID',
-  storageBucket: 'YOUR_STORAGE_BUCKET',
-  messagingSenderId: 'YOUR_MESSAGING_SENDER_ID',
-  appId: 'YOUR_APP_ID',
+  apiKey: "AIzaSyC4_qUPhiEPFmBYWoL6g_zjASpJSPJQrIM",
+  authDomain: "shopping-mobile-app-dab8c.firebaseapp.com",
+  projectId: "shopping-mobile-app-dab8c",
+  storageBucket: "shopping-mobile-app-dab8c.firebasestorage.app",
+  messagingSenderId: "384501943393",
+  appId: "1:384501943393:web:9ee10939a61a653151ee20",
+  measurementId: "G-EJ3YXSE3PN"
 };
 
 const app = initializeApp(firebaseConfig);
