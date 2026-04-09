@@ -37,12 +37,14 @@ export function useOrders() {
     return unsubscribe;
   }, [user]);
 
-  const placeOrder = async (cart, total) => {
+  const placeOrder = async (cart, total, goal = null, store = null) => {
     if (!user) throw new Error('Must be logged in to place an order');
     await addDoc(collection(db, 'orders'), {
       userId: user.uid,
       items: cart,
       total,
+      goal,
+      store,
       status: 'pending',
       createdAt: serverTimestamp(),
     });

@@ -15,13 +15,13 @@ import { useProducts } from '../hooks/useProducts';
 import { generateList } from '../utils/generateList';
 
 const GOALS = [
-  { id: 'cheapest', label: 'Cheapest', icon: '💰', desc: 'Max value for money' },
-  { id: 'healthy', label: 'Healthy', icon: '🥗', desc: 'Balanced nutrition' },
-  { id: 'high_protein', label: 'High Protein', icon: '💪', desc: 'Protein-rich picks' },
+  { id: 'cheapest', label: 'Най-евтино', icon: '💰', desc: 'Максимална стойност' },
+  { id: 'healthy', label: 'Здравословно', icon: '🥗', desc: 'Балансирано хранене' },
+  { id: 'high_protein', label: 'Протеин', icon: '💪', desc: 'Богато на протеин' },
 ];
 
 const STORES = [
-  { id: 'any', label: 'Any' },
+  { id: 'any', label: 'Всички' },
   { id: 'Lidl', label: 'Lidl' },
   { id: 'Kaufland', label: 'Kaufland' },
   { id: 'Billa', label: 'Billa' },
@@ -38,11 +38,11 @@ export default function HomeScreen({ navigation }) {
 
   const handleGenerate = async () => {
     if (!budget || isNaN(parseFloat(budget)) || parseFloat(budget) <= 0) {
-      Alert.alert('Invalid Budget', 'Please enter a valid budget amount.');
+      Alert.alert('Невалиден бюджет', 'Моля въведете валидна сума.');
       return;
     }
     if (!selectedGoal) {
-      Alert.alert('Select a Goal', 'Please select a shopping goal.');
+      Alert.alert('Изберете цел', 'Моля изберете цел за пазаруване.');
       return;
     }
 
@@ -57,8 +57,8 @@ export default function HomeScreen({ navigation }) {
 
       if (list.length === 0) {
         Alert.alert(
-          'No Results',
-          'No products found matching your criteria. Try a different store or higher budget.'
+          'Няма резултати',
+          'Не са намерени продукти. Опитайте с друг магазин или по-висок бюджет.'
         );
         return;
       }
@@ -85,19 +85,19 @@ export default function HomeScreen({ navigation }) {
       {/* Header */}
       <View style={styles.header}>
         <View>
-          <Text style={styles.greeting}>Hello, {user?.email?.split('@')[0]} 👋</Text>
-          <Text style={styles.title}>Smart Budget{'\n'}Shopping</Text>
+          <Text style={styles.greeting}>Здравей, {user?.email?.split('@')[0]} 👋</Text>
+          <Text style={styles.title}>Умно{'\n'}Пазаруване</Text>
         </View>
         <TouchableOpacity style={styles.logoutBtn} onPress={logout}>
-          <Text style={styles.logoutText}>Logout</Text>
+          <Text style={styles.logoutText}>Изход</Text>
         </TouchableOpacity>
       </View>
 
       {/* Budget Input */}
       <View style={styles.section}>
-        <Text style={styles.sectionLabel}>Your Budget</Text>
+        <Text style={styles.sectionLabel}>Вашият бюджет</Text>
         <View style={styles.budgetRow}>
-          <Text style={styles.currency}>BGN</Text>
+          <Text style={styles.currency}>лв.</Text>
           <TextInput
             style={styles.budgetInput}
             placeholder="0.00"
@@ -112,7 +112,7 @@ export default function HomeScreen({ navigation }) {
 
       {/* Goal Selection */}
       <View style={styles.section}>
-        <Text style={styles.sectionLabel}>Shopping Goal</Text>
+        <Text style={styles.sectionLabel}>Цел на пазаруването</Text>
         <View style={styles.goalsRow}>
           {GOALS.map((goal) => (
             <TouchableOpacity
@@ -145,7 +145,7 @@ export default function HomeScreen({ navigation }) {
 
       {/* Store Selection */}
       <View style={styles.section}>
-        <Text style={styles.sectionLabel}>Select Store</Text>
+        <Text style={styles.sectionLabel}>Избери магазин</Text>
         <View style={styles.storesRow}>
           {STORES.map((store) => (
             <TouchableOpacity
@@ -184,7 +184,7 @@ export default function HomeScreen({ navigation }) {
           <ActivityIndicator color="#fff" />
         ) : (
           <>
-            <Text style={styles.generateBtnText}>Generate List</Text>
+            <Text style={styles.generateBtnText}>Генерирай списък</Text>
             <Text style={styles.generateBtnArrow}>→</Text>
           </>
         )}
@@ -193,9 +193,9 @@ export default function HomeScreen({ navigation }) {
       {/* My Orders shortcut */}
       <TouchableOpacity
         style={styles.ordersLink}
-        onPress={() => navigation.navigate('Orders')}
+        onPress={() => navigation.navigate('SavedLists')}
       >
-        <Text style={styles.ordersLinkText}>View My Past Orders</Text>
+        <Text style={styles.ordersLinkText}>📋 Запазени списъци</Text>
       </TouchableOpacity>
     </ScrollView>
   );

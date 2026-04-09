@@ -8,6 +8,8 @@ import LoginScreen from '../screens/LoginScreen';
 import RegisterScreen from '../screens/RegisterScreen';
 import HomeScreen from '../screens/HomeScreen';
 import ShoppingListScreen from '../screens/ShoppingListScreen';
+import MealsScreen from '../screens/MealsScreen';
+import SavedListsScreen from '../screens/SavedListsScreen';
 import OrdersScreen from '../screens/OrdersScreen';
 
 const Stack = createStackNavigator();
@@ -38,9 +40,19 @@ function AppStack() {
         options={{ title: 'Your List' }}
       />
       <Stack.Screen
+        name="Meals"
+        component={MealsScreen}
+        options={{ title: 'Идеи за ястия' }}
+      />
+      <Stack.Screen
+        name="SavedLists"
+        component={SavedListsScreen}
+        options={{ title: 'Запазени списъци' }}
+      />
+      <Stack.Screen
         name="Orders"
         component={OrdersScreen}
-        options={{ title: 'My Orders' }}
+        options={{ title: 'Моите поръчки' }}
       />
     </Stack.Navigator>
   );
