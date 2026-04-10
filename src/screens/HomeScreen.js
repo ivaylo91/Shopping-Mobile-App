@@ -97,7 +97,7 @@ export default function HomeScreen({ navigation }) {
       <View style={styles.section}>
         <Text style={styles.sectionLabel}>Вашият бюджет</Text>
         <View style={styles.budgetRow}>
-          <Text style={styles.currency}>лв.</Text>
+          <Text style={styles.currency}>€</Text>
           <TextInput
             style={styles.budgetInput}
             placeholder="0.00"

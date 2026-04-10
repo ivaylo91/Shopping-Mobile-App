@@ -74,17 +74,17 @@ export default function ShoppingListScreen({ route, navigation }) {
 
   const handleShare = async () => {
     const lines = list.map(
-      (i) => `• ${i.name} x${i.quantity} — ${i.subtotal.toFixed(2)} лв.`
+      (i) => `• ${i.name} x${i.quantity} — ${i.subtotal.toFixed(2)} €`
     );
     const text = [
       'Списък за пазаруване — Smart Budget Shopping',
       `Цел: ${meta.label} | Магазин: ${store === 'any' ? 'Всички' : store}`,
-      `Бюджет: ${budget.toFixed(2)} лв.`,
+      `Бюджет: ${budget.toFixed(2)} €`,
       '',
       ...lines,
       '',
-      `Обща сума: ${total.toFixed(2)} лв.`,
-      `Оставащо: ${remaining.toFixed(2)} лв.`,
+      `Обща сума: ${total.toFixed(2)} €`,
+      `Оставащо: ${remaining.toFixed(2)} €`,
     ].join('\n');
     await Share.share({ message: text });
   };
@@ -118,8 +118,8 @@ export default function ShoppingListScreen({ route, navigation }) {
         </View>
         <View style={styles.itemRight}>
           <Text style={styles.itemQty}>×{item.quantity}</Text>
-          <Text style={styles.itemPrice}>{item.subtotal.toFixed(2)} лв.</Text>
-          <Text style={styles.itemUnit}>{item.price.toFixed(2)} лв./{item.unit || 'бр.'}</Text>
+          <Text style={styles.itemPrice}>{item.subtotal.toFixed(2)} €</Text>
+          <Text style={styles.itemUnit}>{item.price.toFixed(2)} €/{item.unit || 'бр.'}</Text>
         </View>
       </TouchableOpacity>
     );
@@ -155,7 +155,7 @@ export default function ShoppingListScreen({ route, navigation }) {
       <View style={styles.totalsCard}>
         <View style={styles.totalRow}>
           <Text style={styles.totalLabel}>Обща сума</Text>
-          <Text style={styles.totalValue}>{total.toFixed(2)} лв.</Text>
+          <Text style={styles.totalValue}>{total.toFixed(2)} €</Text>
         </View>
         <View style={styles.divider} />
         <View style={styles.totalRow}>
@@ -164,7 +164,7 @@ export default function ShoppingListScreen({ route, navigation }) {
             styles.totalValue,
             { color: remaining >= 0 ? '#2ecc71' : '#e74c3c' }
           ]}>
-            {remaining >= 0 ? '+' : ''}{remaining.toFixed(2)} лв.
+            {remaining >= 0 ? '+' : ''}{remaining.toFixed(2)} €
           </Text>
         </View>
         {goal === 'high_protein' && (

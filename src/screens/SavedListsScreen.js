@@ -131,7 +131,7 @@ export default function SavedListsScreen({ navigation }) {
         <View style={styles.cardFooter}>
           <View>
             <Text style={styles.totalLabel}>Обща сума</Text>
-            <Text style={styles.totalValue}>{item.total?.toFixed(2)} лв.</Text>
+            <Text style={styles.totalValue}>{item.total?.toFixed(2)} €</Text>
           </View>
           <TouchableOpacity style={styles.viewBtn} onPress={() => handleViewList(item)}>
             <Text style={styles.viewBtnText}>Виж списъка →</Text>
