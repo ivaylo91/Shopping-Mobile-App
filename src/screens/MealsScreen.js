@@ -20,6 +20,7 @@ function getCategoryIcon(cat) {
 
 /**
  * Build a full day meal plan from available product categories.
+ * Each recipe uses 1–3 specific products from the user's list.
  * Returns { breakfast, lunch, dinner, snack? }
  */
 function buildMealPlan(list, goal) {
@@ -30,154 +31,209 @@ function buildMealPlan(list, goal) {
     byCategory[cat].push(item);
   });
 
-  const has = (cat) => !!byCategory[cat]?.length;
-  const names = (cats) =>
-    cats
-      .flatMap((c) => byCategory[c] || [])
-      .map((i) => i.name)
-      .filter(Boolean)
-      .join(', ') || '—';
+  const first = (cat) => byCategory[cat]?.[0] || null;
+  const has   = (cat) => !!byCategory[cat]?.length;
+  // pick up to 3 products across given categories and return their names joined
+  const pick  = (...cats) =>
+    cats.map(first).filter(Boolean).slice(0, 3).map((i) => i.name).join(', ') || '—';
 
   const plan = { breakfast: null, lunch: null, dinner: null, snack: null };
 
   // ── Закуска ──
-  if (has('eggs') && has('dairy')) {
+  const egg    = first('eggs');
+  const dairy  = first('dairy');
+  const grain  = first('grains');
+  const bakery = first('bakery');
+  const fruit  = first('fruit');
+
+  if (egg && dairy) {
     plan.breakfast = {
       name: 'Бъркани яйца с кисело мляко',
       icon: '🍳',
       kcal: '280 ккал',
       time: '10 мин',
-      ingredients: names(['eggs', 'dairy']),
-      tip: 'Добавете малко сол и черен пипер.',
+      ingredients: pick('eggs', 'dairy'),
+      tip: 'Запържете яйцата на тихо, добавете щипка сол и поднесете с кисело мляко.',
     };
-  } else if (has('grains')) {
+  } else if (grain && fruit) {
     plan.breakfast = {
-      name: 'Овесена каша с плодове',
+      name: 'Овесена каша с плод',
       icon: '🥣',
-      kcal: '320 ккал',
+      kcal: '310 ккал',
       time: '5 мин',
-      ingredients: names(['grains', 'fruit', 'dairy']),
-      tip: 'Може да добавите мед за вкус.',
+      ingredients: pick('grains', 'fruit'),
+      tip: 'Залейте с гореща вода или мляко, добавете нарязания плод отгоре.',
     };
-  } else if (has('bakery') && has('dairy')) {
+  } else if (bakery && dairy) {
     plan.breakfast = {
-      name: 'Хляб с извара',
+      name: 'Препечен хляб с кисело мляко',
       icon: '🍞',
-      kcal: '250 ккал',
+      kcal: '240 ккал',
       time: '5 мин',
-      ingredients: names(['bakery', 'dairy']),
-      tip: 'Добавете пресни зеленчуци за баланс.',
+      ingredients: pick('bakery', 'dairy'),
+      tip: 'Препечете хляба, поднесете с кисело мляко и малко мед по желание.',
     };
-  } else if (has('fruit')) {
+  } else if (fruit) {
     plan.breakfast = {
-      name: 'Плодова чиния',
+      name: 'Плодова закуска',
       icon: '🍎',
-      kcal: '150 ккал',
+      kcal: '140 ккал',
       time: '3 мин',
-      ingredients: names(['fruit']),
-      tip: 'Лека и свежа закуска.',
+      ingredients: pick('fruit'),
+      tip: 'Нарежете на хапки и поднесете свежо.',
+    };
+  } else if (dairy) {
+    plan.breakfast = {
+      name: 'Кисело мляко',
+      icon: '🥛',
+      kcal: '120 ккал',
+      time: '1 мин',
+      ingredients: pick('dairy'),
+      tip: 'Лека закуска — може да добавите малко мед.',
     };
   }
 
   // ── Обяд ──
-  if (has('meat') && has('vegetables')) {
+  const meat = first('meat');
+  const veg  = first('vegetables');
+  const fish = first('fish');
+
+  if (meat && veg) {
     plan.lunch = {
-      name: 'Пилешко с зеленчуци на фурна',
+      name: 'Месо с зеленчуци на фурна',
       icon: '🍗',
       kcal: '480 ккал',
       time: '40 мин',
-      ingredients: names(['meat', 'vegetables', 'grains']),
-      tip: 'Печете на 200°C. Полейте с зехтин.',
+      ingredients: pick('meat', 'vegetables', 'grains'),
+      tip: 'Наредете в тава, полейте с малко олио, печете на 200°C около 35 мин.',
     };
-  } else if (has('fish')) {
+  } else if (meat && grain) {
+    plan.lunch = {
+      name: 'Месо с гарнитура',
+      icon: '🍖',
+      kcal: '500 ккал',
+      time: '35 мин',
+      ingredients: pick('meat', 'grains'),
+      tip: 'Изпечете месото на тиган, сварете гарнитурата и поднесете заедно.',
+    };
+  } else if (fish) {
     plan.lunch = {
       name: 'Риба с гарнитура',
       icon: '🐟',
-      kcal: '380 ккал',
+      kcal: '370 ккал',
       time: '25 мин',
-      ingredients: names(['fish', 'vegetables', 'grains']),
-      tip: 'Поднесете с лимон и зелени подправки.',
+      ingredients: pick('fish', 'vegetables'),
+      tip: 'Изпечете рибата на грил, поднесете с лимон и зеленчуците.',
     };
-  } else if (has('legumes') || has('vegetables')) {
+  } else if (veg && grain) {
     plan.lunch = {
-      name: 'Зеленчукова яхния',
+      name: 'Зеленчукова яхния с леща',
       icon: '🥘',
       kcal: '290 ккал',
       time: '30 мин',
-      ingredients: names(['legumes', 'vegetables', 'grains']),
-      tip: 'Добавете подправки на вкус.',
+      ingredients: pick('vegetables', 'grains'),
+      tip: 'Задушете зеленчуците, добавете лещата и варете 20 мин.',
     };
-  } else if (has('eggs')) {
+  } else if (egg) {
     plan.lunch = {
-      name: 'Омлет с хляб',
+      name: 'Омлет',
       icon: '🥚',
-      kcal: '310 ккал',
-      time: '15 мин',
-      ingredients: names(['eggs', 'bakery', 'vegetables']),
-      tip: 'Бърза и засищаща алтернатива.',
+      kcal: '300 ккал',
+      time: '10 мин',
+      ingredients: pick('eggs', 'vegetables'),
+      tip: 'Разбийте яйцата, добавете нарязан зеленчук и запържете.',
     };
   }
 
   // ── Вечеря ──
-  if (has('meat') && has('grains')) {
+  const meat2 = byCategory['meat']?.[1] || meat;
+
+  if (meat2 && grain) {
     plan.dinner = {
-      name: 'Кайма с ориз',
+      name: 'Месо с ориз',
       icon: '🍚',
-      kcal: '520 ккал',
+      kcal: '510 ккал',
       time: '30 мин',
-      ingredients: names(['meat', 'grains', 'vegetables']),
-      tip: 'Класическа и лесна вечеря.',
+      ingredients: [meat2.name, grain.name].join(', '),
+      tip: 'Сварете ориза, запържете месото с подправки и поднесете.',
     };
-  } else if (has('dairy') && has('vegetables')) {
+  } else if (dairy && veg) {
     plan.dinner = {
       name: 'Салата с кисело мляко',
       icon: '🥗',
-      kcal: '210 ккал',
+      kcal: '200 ккал',
       time: '10 мин',
-      ingredients: names(['dairy', 'vegetables', 'fruit']),
-      tip: 'Лека вечеря, богата на пробиотики.',
+      ingredients: pick('vegetables', 'dairy'),
+      tip: 'Нарежете зеленчуците, полейте с кисело мляко и малко сол.',
     };
-  } else if (has('eggs')) {
-    plan.dinner = {
-      name: 'Бъркани яйца с зеленчуци',
-      icon: '🍳',
-      kcal: '280 ккал',
-      time: '15 мин',
-      ingredients: names(['eggs', 'vegetables']),
-      tip: 'Бърза и лека вечеря.',
-    };
-  } else if (has('fish')) {
+  } else if (fish && veg) {
     plan.dinner = {
       name: 'Лека рибна чиния',
       icon: '🐟',
-      kcal: '300 ккал',
+      kcal: '290 ккал',
       time: '20 мин',
-      ingredients: names(['fish', 'vegetables']),
-      tip: 'Идеална за лека вечеря.',
+      ingredients: pick('fish', 'vegetables'),
+      tip: 'Загрейте рибата, поднесете с пресни зеленчуци.',
+    };
+  } else if (egg && veg) {
+    plan.dinner = {
+      name: 'Бъркани яйца със зеленчуци',
+      icon: '🍳',
+      kcal: '270 ккал',
+      time: '15 мин',
+      ingredients: pick('eggs', 'vegetables'),
+      tip: 'Запържете зеленчуците, добавете яйцата и бъркайте на тихо.',
+    };
+  } else if (dairy) {
+    plan.dinner = {
+      name: 'Лека млечна вечеря',
+      icon: '🥛',
+      kcal: '180 ккал',
+      time: '5 мин',
+      ingredients: pick('dairy', 'bakery'),
+      tip: 'Лека и бърза вечеря преди сън.',
     };
   }
 
   // ── Снак ──
-  if (goal === 'high_protein') {
-    const proteinItems = list.filter((i) => (i.protein || 0) >= 10).map((i) => i.name).join(', ');
-    if (proteinItems) {
-      plan.snack = {
-        name: 'Протеинов снак',
-        icon: '💪',
-        kcal: '200 ккал',
-        time: '2 мин',
-        ingredients: proteinItems,
-        tip: 'Консумирайте след тренировка.',
-      };
-    }
-  } else if (has('fruit') || has('dairy')) {
+  const snackItem = first('snacks');
+  const hiPro     = list.filter((i) => (i.protein || 0) >= 10);
+
+  if (goal === 'high_protein' && hiPro.length) {
     plan.snack = {
-      name: 'Плод или кисело мляко',
+      name: 'Протеинов снак',
+      icon: '💪',
+      kcal: '200 ккал',
+      time: '2 мин',
+      ingredients: hiPro.slice(0, 2).map((i) => i.name).join(', '),
+      tip: 'Консумирайте в рамките на 30 мин след тренировка.',
+    };
+  } else if (fruit && dairy) {
+    plan.snack = {
+      name: 'Плод с кисело мляко',
       icon: '🍌',
       kcal: '120 ккал',
+      time: '2 мин',
+      ingredients: pick('fruit', 'dairy'),
+      tip: 'Нарежете плода и поднесете с кисело мляко.',
+    };
+  } else if (fruit) {
+    plan.snack = {
+      name: 'Плодов снак',
+      icon: '🍎',
+      kcal: '90 ккал',
       time: '1 мин',
-      ingredients: names(['fruit', 'dairy']),
-      tip: 'Здравословен снак между храненията.',
+      ingredients: pick('fruit'),
+      tip: 'Освежаващ снак между храненията.',
+    };
+  } else if (snackItem) {
+    plan.snack = {
+      name: snackItem.name,
+      icon: '🍪',
+      kcal: '150 ккал',
+      time: '1 мин',
+      ingredients: snackItem.name,
+      tip: 'Малък снак за бърза енергия.',
     };
   }
 
