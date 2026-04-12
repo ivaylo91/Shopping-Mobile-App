@@ -29,6 +29,25 @@ const MEAL_SLOTS = [
 // ─── Module-level cache (survives re-renders, cleared on app restart) ─────────
 const recipeCache = new Map();
 
+// ─── gotvach.bg RSS feed IDs by product category ─────────────────────────────
+// Discovered by inspecting recepti.gotvach.bg/rssnew/recepti-6-{id}.xml
+const FEED_BY_CAT = {
+  meat:       7,   // Ястия с месо
+  fish:       209, // Риба и Морски Дарове
+  vegetables: 18,  // Вегетарианска кухня
+  legumes:    18,
+  dairy:      14,  // Българска кухня
+  eggs:       14,
+  bakery:     14,
+  grains:     9,   // Паста и пица
+  fruit:      6,   // Десерти и сладкиши
+  snacks:     6,
+  protein:    203, // Кето Рецепти
+  organic:    18,
+  frozen:     11,  // Запеканки
+  default:    14,  // Българска кухня
+};
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function getCategoryIcon(cat) {
@@ -72,52 +91,62 @@ function pickProducts(byCategory, cats, usedIds, max = 3) {
 }
 
 /**
- * Fetch the first gotvach.bg recipe for `query`.
- * Results are cached in `recipeCache` so repeated opens cost 0 network calls.
- * Falls back to the search URL if parsing fails.
+ * Pick the RSS feed ID that best matches the slot's products.
+ * Uses the primary category of the first picked product.
  */
-async function fetchGotvachResult(query) {
-  if (recipeCache.has(query)) return recipeCache.get(query);
+function pickFeedId(products) {
+  const primaryCat = products[0]?.category?.toLowerCase() || 'default';
+  return FEED_BY_CAT[primaryCat] ?? FEED_BY_CAT.default;
+}
 
-  const searchUrl = `https://gotvach.bg/search?term=${encodeURIComponent(query)}`;
-  try {
-    const res = await fetch(searchUrl, {
-      headers: { 'User-Agent': 'Mozilla/5.0', Accept: 'text/html' },
-    });
-    const html = await res.text();
+/**
+ * Fetch one recipe from gotvach.bg RSS feed.
+ * - Uses RSS (XML) which is SSR and always returns real content.
+ * - Tries to find a recipe whose title contains any of the product keywords.
+ * - Falls back to the first item if no keyword match.
+ * - Results cached per feed ID.
+ */
+async function fetchGotvachResult(feedId, keywords = []) {
+  const cacheKey = `feed:${feedId}`;
 
-    // Recipe URLs on gotvach.bg: /rec/DIGITS/slug
-    const linkMatch = html.match(/href="(\/rec\/\d+\/[^"?#\s]+)"/);
-    if (!linkMatch) {
-      const fallback = { url: searchUrl, name: null, desc: null };
-      recipeCache.set(query, fallback);
-      return fallback;
+  // Parse RSS XML items
+  let items;
+  if (recipeCache.has(cacheKey)) {
+    items = recipeCache.get(cacheKey);
+  } else {
+    const rssUrl = `https://recepti.gotvach.bg/rssnew/recepti-6-${feedId}.xml`;
+    try {
+      const res = await fetch(rssUrl, {
+        headers: { 'User-Agent': 'Mozilla/5.0', Accept: 'application/rss+xml, text/xml' },
+      });
+      const xml = await res.text();
+      items = [...xml.matchAll(/<item>([\s\S]+?)<\/item>/gi)].map((m) => {
+        const block = m[1];
+        const title = block.match(/<title>(?:<!\[CDATA\[)?([^<\]]+)/)?.[1]?.trim() || null;
+        const link  = block.match(/<link>([^<]+)/)?.[1]?.trim() || null;
+        const desc  = block
+          .match(/<description>(?:<!\[CDATA\[)?([^<\]]{20,300})/)?.[1]
+          ?.replace(/<[^>]+>/g, '')
+          .replace(/&amp;/g, '&')
+          .replace(/&#\d+;/g, '')
+          .trim() || null;
+        return { title, link, desc };
+      }).filter((i) => i.title && i.link);
+      recipeCache.set(cacheKey, items);
+    } catch {
+      return null;
     }
-
-    const recipeUrl = `https://gotvach.bg${linkMatch[1]}`;
-
-    const nameRe = new RegExp(
-      `href="${linkMatch[1].replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}"[^>]*>\\s*([^<]{3,120})\\s*<`,
-    );
-    const name = html.match(nameRe)?.[1]?.trim().replace(/&amp;/g, '&') || null;
-
-    const start = Math.max(0, html.indexOf(linkMatch[1]) - 200);
-    const snippet = html.slice(start, start + 600);
-    const desc =
-      snippet
-        .match(/<p[^>]*>\s*([^<]{25,220})\s*<\/p>/)?.[1]
-        ?.trim()
-        .replace(/&amp;/g, '&')
-        .replace(/&#\d+;/g, '') || null;
-
-    const result = { url: recipeUrl, name, desc };
-    recipeCache.set(query, result);
-    return result;
-  } catch {
-    const fallback = { url: searchUrl, name: null, desc: null };
-    recipeCache.set(query, fallback);
-    return fallback;
   }
+
+  if (!items.length) return null;
+
+  // Try to find an item whose title matches one of the product keywords
+  const lower = keywords.map((k) => k.toLowerCase());
+  const match = items.find((item) =>
+    lower.some((kw) => item.title?.toLowerCase().includes(kw))
+  );
+
+  return match || items[0];
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -163,12 +192,19 @@ export default function MealsScreen({ route, navigation }) {
     // ── Step 3: fetch all slots in parallel, update each as it resolves ────
     Promise.all(
       assignments.map(async ({ products }, idx) => {
-        const query = products.map(cleanName).join(' ');
-        const { url, name, desc } = await fetchGotvachResult(query);
+        const feedId   = pickFeedId(products);
+        const keywords = products.map(cleanName);
+        const recipe   = await fetchGotvachResult(feedId, keywords);
         setSlots((prev) =>
           prev.map((s, i) =>
             i === idx
-              ? { ...s, status: 'done', recipeName: name, recipeDesc: desc, recipeUrl: url }
+              ? {
+                  ...s,
+                  status:      'done',
+                  recipeName:  recipe?.title || null,
+                  recipeDesc:  recipe?.desc  || null,
+                  recipeUrl:   recipe?.link  || `https://recepti.gotvach.bg/rssnew/recepti-6-${feedId}.xml`,
+                }
               : s,
           ),
         );
