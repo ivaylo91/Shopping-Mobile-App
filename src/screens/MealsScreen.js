@@ -10,6 +10,8 @@ import {
   Linking,
 } from 'react-native';
 
+// ─── Constants ────────────────────────────────────────────────────────────────
+
 const CATEGORY_ICONS = {
   meat: '🥩', dairy: '🥛', vegetables: '🥦', fruit: '🍎',
   grains: '🌾', snacks: '🍪', drinks: '🥤', fish: '🐟',
@@ -17,11 +19,6 @@ const CATEGORY_ICONS = {
   protein: '💪', organic: '🌿', oils: '🫙', canned: '🥫',
 };
 
-function getCategoryIcon(cat) {
-  return CATEGORY_ICONS[cat?.toLowerCase()] || '🛒';
-}
-
-// Meal slot definitions with the product category priority
 const MEAL_SLOTS = [
   { key: 'breakfast', label: 'Закуска', icon: '🌅', color: '#f39c12', cats: ['eggs', 'dairy', 'bakery', 'grains', 'fruit', 'protein'] },
   { key: 'lunch',     label: 'Обяд',    icon: '☀️',  color: '#6C63FF', cats: ['meat', 'fish', 'vegetables', 'legumes', 'grains'] },
@@ -29,23 +26,38 @@ const MEAL_SLOTS = [
   { key: 'snack',     label: 'Снак',    icon: '⚡',   color: '#e74c3c', cats: ['fruit', 'snacks', 'dairy', 'protein'] },
 ];
 
-// Strip package sizes / brand suffixes so we get clean search terms.
-// "Свински врат без кост ≈1.1кг" → "Свински врат"
-// "Пушена сьомга осолена 200г"   → "Пушена сьомга"
+// ─── Module-level cache (survives re-renders, cleared on app restart) ─────────
+const recipeCache = new Map();
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+function getCategoryIcon(cat) {
+  return CATEGORY_ICONS[cat?.toLowerCase()] || '🛒';
+}
+
+/**
+ * Smarter name cleaning:
+ * - Strips weights/sizes ("≈1.1кг", "2x170г", "XXL")
+ * - Strips leading generic Bulgarian phrases ("Месо за готвене", "Мариновани" …)
+ * - Returns up to 3 meaningful words
+ */
 function cleanName(raw) {
   return raw
     .replace(/\s*(≈|~)?\d+(\.\d+)?(кг|г|л|мл)\b/gi, '')
+    .replace(/\s*\d+x\d+[^\s]*/gi, '')
     .replace(/\bXXL\b|\bXL\b/gi, '')
-    .replace(/\d+x\d+[^\s]*/gi, '')
+    .replace(/^(Месо за готвене|Мариновани|Панирани|Деликатесен|Висококопротеин\w+|Пресни|Био)\s+/i, '')
     .replace(/\s+/g, ' ')
     .trim()
     .split(' ')
-    .slice(0, 2)
+    .slice(0, 3)
     .join(' ');
 }
 
-// Pick up to 3 products for a meal slot from the user's list.
-// Avoids re-using the same product across slots (usedIds).
+/**
+ * Pick up to `max` products for a slot, respecting already-used product IDs.
+ * Called sequentially so usedIds is always up-to-date before the next slot.
+ */
 function pickProducts(byCategory, cats, usedIds, max = 3) {
   const picked = [];
   for (const cat of cats) {
@@ -59,8 +71,14 @@ function pickProducts(byCategory, cats, usedIds, max = 3) {
   return picked;
 }
 
-// Fetch gotvach.bg search page and extract the first recipe's URL and name.
+/**
+ * Fetch the first gotvach.bg recipe for `query`.
+ * Results are cached in `recipeCache` so repeated opens cost 0 network calls.
+ * Falls back to the search URL if parsing fails.
+ */
 async function fetchGotvachResult(query) {
+  if (recipeCache.has(query)) return recipeCache.get(query);
+
   const searchUrl = `https://gotvach.bg/search?term=${encodeURIComponent(query)}`;
   try {
     const res = await fetch(searchUrl, {
@@ -68,177 +86,178 @@ async function fetchGotvachResult(query) {
     });
     const html = await res.text();
 
-    // gotvach.bg recipe URLs: /rec/DIGITS/slug
+    // Recipe URLs on gotvach.bg: /rec/DIGITS/slug
     const linkMatch = html.match(/href="(\/rec\/\d+\/[^"?#\s]+)"/);
-    if (!linkMatch) return { url: searchUrl, name: null, desc: null };
+    if (!linkMatch) {
+      const fallback = { url: searchUrl, name: null, desc: null };
+      recipeCache.set(query, fallback);
+      return fallback;
+    }
 
     const recipeUrl = `https://gotvach.bg${linkMatch[1]}`;
 
-    // Extract link text as the recipe name
     const nameRe = new RegExp(
       `href="${linkMatch[1].replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}"[^>]*>\\s*([^<]{3,120})\\s*<`,
     );
-    const nameMatch = html.match(nameRe);
-    const name = nameMatch?.[1]?.trim().replace(/&amp;/g, '&') || null;
+    const name = html.match(nameRe)?.[1]?.trim().replace(/&amp;/g, '&') || null;
 
-    // Extract a short description from the HTML snippet around the first link
     const start = Math.max(0, html.indexOf(linkMatch[1]) - 200);
     const snippet = html.slice(start, start + 600);
-    const descMatch = snippet.match(/<p[^>]*>\s*([^<]{25,220})\s*<\/p>/);
-    const desc = descMatch?.[1]
-      ?.trim()
-      .replace(/&amp;/g, '&')
-      .replace(/&#\d+;/g, '') || null;
+    const desc =
+      snippet
+        .match(/<p[^>]*>\s*([^<]{25,220})\s*<\/p>/)?.[1]
+        ?.trim()
+        .replace(/&amp;/g, '&')
+        .replace(/&#\d+;/g, '') || null;
 
-    return { url: recipeUrl, name, desc };
+    const result = { url: recipeUrl, name, desc };
+    recipeCache.set(query, result);
+    return result;
   } catch {
-    return { url: searchUrl, name: null, desc: null };
+    const fallback = { url: searchUrl, name: null, desc: null };
+    recipeCache.set(query, fallback);
+    return fallback;
   }
 }
 
+// ─── Component ────────────────────────────────────────────────────────────────
+
 export default function MealsScreen({ route, navigation }) {
   const { list, goal } = route.params;
-  const [meals, setMeals] = useState([]);
-  const [loading, setLoading] = useState(true);
+  // Each entry: { slot, products, status: 'loading'|'done', recipeName, recipeDesc, recipeUrl }
+  const [slots, setSlots] = useState([]);
 
   useEffect(() => {
-    async function load() {
-      // Build category map
-      const byCategory = {};
-      list.forEach((item) => {
-        const cat = item.category?.toLowerCase() || 'other';
-        if (!byCategory[cat]) byCategory[cat] = [];
-        byCategory[cat].push(item);
-      });
+    // ── Step 1: assign products sequentially (preserves usedIds correctness) ──
+    const byCategory = {};
+    list.forEach((item) => {
+      const cat = item.category?.toLowerCase() || 'other';
+      if (!byCategory[cat]) byCategory[cat] = [];
+      byCategory[cat].push(item);
+    });
 
-      const usedIds = new Set();
-      const results = [];
+    const usedIds = new Set();
+    const assignments = [];
 
-      for (const slot of MEAL_SLOTS) {
-        // high_protein goal: force protein products for snack
-        const cats =
-          goal === 'high_protein' && slot.key === 'snack'
-            ? ['protein', 'dairy', 'eggs', ...slot.cats]
-            : slot.cats;
+    for (const slot of MEAL_SLOTS) {
+      const cats =
+        goal === 'high_protein' && slot.key === 'snack'
+          ? ['protein', 'dairy', 'eggs', ...slot.cats]
+          : slot.cats;
 
-        const products = pickProducts(byCategory, cats, usedIds);
-        if (!products.length) continue;
+      const products = pickProducts(byCategory, cats, usedIds);
+      if (!products.length) continue;
 
-        products.forEach((p) => usedIds.add(p.id));
-
-        const query = products.map(cleanName).join(' ');
-        const { url, name, desc } = await fetchGotvachResult(query);
-
-        results.push({
-          slot,
-          products,
-          query,
-          recipeName: name,
-          recipeDesc: desc,
-          recipeUrl: url,
-        });
-      }
-
-      setMeals(results);
-      setLoading(false);
+      products.forEach((p) => usedIds.add(p.id));
+      assignments.push({ slot, products });
     }
 
-    load();
+    // ── Step 2: initialise all cards as "loading" immediately ──────────────
+    setSlots(
+      assignments.map(({ slot, products }) => ({
+        slot, products, status: 'loading',
+        recipeName: null, recipeDesc: null, recipeUrl: null,
+      })),
+    );
+
+    // ── Step 3: fetch all slots in parallel, update each as it resolves ────
+    Promise.all(
+      assignments.map(async ({ products }, idx) => {
+        const query = products.map(cleanName).join(' ');
+        const { url, name, desc } = await fetchGotvachResult(query);
+        setSlots((prev) =>
+          prev.map((s, i) =>
+            i === idx
+              ? { ...s, status: 'done', recipeName: name, recipeDesc: desc, recipeUrl: url }
+              : s,
+          ),
+        );
+      }),
+    );
   }, []);
 
   return (
     <SafeAreaView style={styles.container}>
 
-      {/* Header */}
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Идеи за ястия 🍽️</Text>
         <Text style={styles.headerSub}>Рецепти от gotvach.bg по вашите продукти</Text>
       </View>
 
-      {loading ? (
-        <View style={styles.loadingBox}>
-          <ActivityIndicator size="large" color="#6C63FF" />
-          <Text style={styles.loadingText}>Търсим рецепти в gotvach.bg…</Text>
-        </View>
-      ) : (
-        <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
 
-          {/* Product chips */}
-          <View style={styles.section}>
-            <Text style={styles.sectionLabel}>Вашите продукти</Text>
-            <View style={styles.chipsRow}>
-              {list.map((item) => (
-                <View key={item.id} style={styles.chip}>
-                  <Text style={styles.chipIcon}>{getCategoryIcon(item.category)}</Text>
-                  <Text style={styles.chipText}>{item.name}</Text>
-                </View>
-              ))}
-            </View>
+        <Text style={styles.sectionLabel}>Дневен план</Text>
+
+        {slots.length === 0 && (
+          <View style={styles.emptyBox}>
+            <ActivityIndicator color="#6C63FF" />
+            <Text style={styles.emptyText}>Подготвяме плана…</Text>
           </View>
+        )}
 
-          {/* Meal cards */}
-          <Text style={styles.sectionLabel}>Дневен план</Text>
+        {slots.map(({ slot, products, status, recipeName, recipeDesc, recipeUrl }) => (
+          <View key={slot.key} style={[styles.mealCard, { borderLeftColor: slot.color }]}>
 
-          {meals.map(({ slot, products, recipeName, recipeDesc, recipeUrl }) => (
-            <View key={slot.key} style={[styles.mealCard, { borderLeftColor: slot.color }]}>
-
-              {/* Slot badge */}
-              <View style={styles.mealCardHeader}>
-                <View style={[styles.slotBadge, { backgroundColor: slot.color }]}>
-                  <Text style={styles.slotIcon}>{slot.icon}</Text>
-                  <Text style={styles.slotLabel}>{slot.label}</Text>
-                </View>
+            {/* Slot badge */}
+            <View style={styles.mealCardHeader}>
+              <View style={[styles.slotBadge, { backgroundColor: slot.color }]}>
+                <Text style={styles.slotIcon}>{slot.icon}</Text>
+                <Text style={styles.slotLabel}>{slot.label}</Text>
               </View>
+            </View>
 
-              {/* Recipe name */}
-              <Text style={styles.mealName}>
-                {recipeName || `Рецепта с ${products.map(cleanName).join(', ')}`}
-              </Text>
-
-              {/* Matched products */}
-              <View style={styles.productsBox}>
-                <Text style={styles.productsLabel}>Основни продукти:</Text>
-                <View style={styles.productsList}>
-                  {products.map((p) => (
-                    <View key={p.id} style={styles.productPill}>
-                      <Text style={styles.productPillIcon}>{getCategoryIcon(p.category)}</Text>
-                      <Text style={styles.productPillText}>{cleanName(p.name)}</Text>
-                    </View>
-                  ))}
-                </View>
+            {status === 'loading' ? (
+              /* Per-slot skeleton */
+              <View style={styles.skeleton}>
+                <ActivityIndicator color={slot.color} size="small" />
+                <Text style={[styles.skeletonText, { color: slot.color }]}>
+                  Търсим рецепта…
+                </Text>
               </View>
+            ) : (
+              <>
+                {/* Recipe name */}
+                <Text style={styles.mealName}>
+                  {recipeName || `Рецепта с ${products.map(cleanName).join(', ')}`}
+                </Text>
 
-              {/* Short description */}
-              {recipeDesc ? (
-                <View style={styles.descBox}>
-                  <Text style={styles.descText}>{recipeDesc}</Text>
+                {/* Product pills */}
+                <View style={styles.productsBox}>
+                  <Text style={styles.productsLabel}>Основни продукти:</Text>
+                  <View style={styles.productsList}>
+                    {products.map((p) => (
+                      <View key={p.id} style={[styles.productPill, { borderColor: slot.color }]}>
+                        <Text style={styles.productPillIcon}>{getCategoryIcon(p.category)}</Text>
+                        <Text style={[styles.productPillText, { color: slot.color }]}>
+                          {cleanName(p.name)}
+                        </Text>
+                      </View>
+                    ))}
+                  </View>
                 </View>
-              ) : null}
 
-              {/* Link button */}
-              <TouchableOpacity
-                style={[styles.linkBtn, { backgroundColor: slot.color }]}
-                onPress={() => Linking.openURL(recipeUrl).catch(() => {})}
-              >
-                <Text style={styles.linkBtnText}>📖 Виж пълната рецепта</Text>
-              </TouchableOpacity>
+                {/* Short description */}
+                {recipeDesc ? (
+                  <View style={styles.descBox}>
+                    <Text style={styles.descText}>{recipeDesc}</Text>
+                  </View>
+                ) : null}
 
-            </View>
-          ))}
+                {/* Link */}
+                <TouchableOpacity
+                  style={[styles.linkBtn, { backgroundColor: slot.color }]}
+                  onPress={() => Linking.openURL(recipeUrl).catch(() => {})}
+                >
+                  <Text style={styles.linkBtnText}>📖 Виж пълната рецепта</Text>
+                </TouchableOpacity>
+              </>
+            )}
+          </View>
+        ))}
 
-          {!loading && meals.length === 0 && (
-            <View style={styles.emptyBox}>
-              <Text style={styles.emptyText}>
-                Не намерихме рецепти. Добавете повече продукти в списъка си.
-              </Text>
-            </View>
-          )}
+        <View style={{ height: 16 }} />
+      </ScrollView>
 
-          <View style={{ height: 16 }} />
-        </ScrollView>
-      )}
-
-      {/* Footer */}
       <View style={styles.footer}>
         <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
           <Text style={styles.backBtnText}>← Обратно</Text>
@@ -252,67 +271,61 @@ export default function MealsScreen({ route, navigation }) {
   );
 }
 
+// ─── Styles ───────────────────────────────────────────────────────────────────
+
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F7F8FC' },
 
   header: {
     backgroundColor: '#fff',
-    paddingHorizontal: 20,
-    paddingTop: 16,
-    paddingBottom: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
+    paddingHorizontal: 20, paddingTop: 16, paddingBottom: 16,
+    borderBottomWidth: 1, borderBottomColor: '#eee',
   },
   headerTitle: { fontSize: 24, fontWeight: '800', color: '#1A1A2E', marginBottom: 2 },
-  headerSub: { fontSize: 13, color: '#999' },
-
-  loadingBox: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: 16 },
-  loadingText: { fontSize: 15, color: '#888' },
+  headerSub:   { fontSize: 13, color: '#999' },
 
   scroll: { padding: 16 },
 
-  section: { marginBottom: 20 },
   sectionLabel: {
     fontSize: 12, fontWeight: '700', color: '#aaa',
-    letterSpacing: 1, textTransform: 'uppercase', marginBottom: 10,
+    letterSpacing: 1, textTransform: 'uppercase', marginBottom: 12,
   },
-  chipsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  chip: {
-    flexDirection: 'row', alignItems: 'center',
-    backgroundColor: '#fff', borderRadius: 20,
-    paddingHorizontal: 10, paddingVertical: 5, gap: 4,
-    shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 3, elevation: 1,
-  },
-  chipIcon: { fontSize: 14 },
-  chipText: { fontSize: 12, fontWeight: '600', color: '#444' },
 
   mealCard: {
     backgroundColor: '#fff', borderRadius: 16,
     padding: 16, marginBottom: 16, borderLeftWidth: 5,
     shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 8, elevation: 2,
   },
-  mealCardHeader: { marginBottom: 10 },
+  mealCardHeader: { marginBottom: 12 },
   slotBadge: {
     flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-start',
     borderRadius: 20, paddingHorizontal: 12, paddingVertical: 5, gap: 5,
   },
-  slotIcon: { fontSize: 13 },
+  slotIcon:  { fontSize: 13 },
   slotLabel: { color: '#fff', fontWeight: '700', fontSize: 13 },
 
+  /* Per-slot skeleton */
+  skeleton: {
+    flexDirection: 'row', alignItems: 'center', gap: 10,
+    paddingVertical: 12,
+  },
+  skeletonText: { fontSize: 14, fontWeight: '600' },
+
   mealName: {
-    fontSize: 18, fontWeight: '800', color: '#1A1A2E', marginBottom: 12, lineHeight: 24,
+    fontSize: 18, fontWeight: '800', color: '#1A1A2E',
+    marginBottom: 12, lineHeight: 24,
   },
 
-  productsBox: { marginBottom: 12 },
+  productsBox:   { marginBottom: 12 },
   productsLabel: { fontSize: 11, color: '#aaa', fontWeight: '700', marginBottom: 8 },
-  productsList: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  productsList:  { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   productPill: {
     flexDirection: 'row', alignItems: 'center',
-    backgroundColor: '#F0EEFF', borderRadius: 20,
-    paddingHorizontal: 10, paddingVertical: 5, gap: 5,
+    backgroundColor: '#fff', borderWidth: 1.5,
+    borderRadius: 20, paddingHorizontal: 10, paddingVertical: 4, gap: 5,
   },
   productPillIcon: { fontSize: 14 },
-  productPillText: { fontSize: 12, fontWeight: '700', color: '#6C63FF' },
+  productPillText: { fontSize: 12, fontWeight: '700' },
 
   descBox: {
     backgroundColor: '#FFFBEA', borderRadius: 10,
@@ -325,8 +338,8 @@ const styles = StyleSheet.create({
   },
   linkBtnText: { color: '#fff', fontWeight: '700', fontSize: 14 },
 
-  emptyBox: { padding: 24, alignItems: 'center' },
-  emptyText: { fontSize: 14, color: '#aaa', textAlign: 'center', lineHeight: 22 },
+  emptyBox: { alignItems: 'center', gap: 12, paddingVertical: 40 },
+  emptyText: { fontSize: 14, color: '#aaa' },
 
   footer: {
     flexDirection: 'row', padding: 16, gap: 12,
