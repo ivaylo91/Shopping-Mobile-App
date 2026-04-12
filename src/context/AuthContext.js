@@ -16,11 +16,19 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Safety timeout — if Firebase doesn't respond in 5s, stop loading
+    const timeout = setTimeout(() => setLoading(false), 5000);
+
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+      clearTimeout(timeout);
       setUser((prev) => (prev?.isGuest ? prev : firebaseUser));
       setLoading(false);
     });
-    return unsubscribe;
+
+    return () => {
+      clearTimeout(timeout);
+      unsubscribe();
+    };
   }, []);
 
   const register = (email, password) =>
