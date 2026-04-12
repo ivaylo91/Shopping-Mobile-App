@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -5,6 +6,7 @@ import {
   TouchableOpacity,
   SafeAreaView,
   ScrollView,
+  ActivityIndicator,
   Linking,
 } from 'react-native';
 
@@ -19,282 +21,130 @@ function getCategoryIcon(cat) {
   return CATEGORY_ICONS[cat?.toLowerCase()] || '🛒';
 }
 
-// Real Bulgarian recipes, matched by product category priority.
-// searchTerm is used to build a gotvach.bg search link.
-const BG_RECIPES = [
-  // ── ЗАКУСКА ──
-  {
-    slot: 'breakfast',
-    name: 'Баница с яйца и сирене',
-    cats: ['eggs', 'dairy'],
-    kcal: '350 ккал',
-    time: '40 мин',
-    tip: 'Разбийте яйцата, натрошете сиренето и наредете с кори. Печете на 180°C до зачервяване.',
-    search: 'баница яйца сирене',
-  },
-  {
-    slot: 'breakfast',
-    name: 'Тутманик',
-    cats: ['dairy', 'bakery'],
-    kcal: '280 ккал',
-    time: '50 мин',
-    tip: 'Замесете тесто с кисело мляко и масло, добавете сирене и изпечете.',
-    search: 'тутманик',
-  },
-  {
-    slot: 'breakfast',
-    name: 'Кисело мляко с мед',
-    cats: ['dairy'],
-    kcal: '180 ккал',
-    time: '2 мин',
-    tip: 'Изсипете кисело мляко в купичка, добавете мед и орехи по желание.',
-    search: 'кисело мляко мед орехи',
-  },
-  {
-    slot: 'breakfast',
-    name: 'Овесена каша с пресни плодове',
-    cats: ['grains', 'fruit'],
-    kcal: '310 ккал',
-    time: '10 мин',
-    tip: 'Сварете овесените ядки с мляко, добавете нарязани плодове и мед.',
-    search: 'овесена каша плодове',
-  },
-  {
-    slot: 'breakfast',
-    name: 'Скир с плодове',
-    cats: ['protein', 'dairy', 'fruit'],
-    kcal: '160 ккал',
-    time: '2 мин',
-    tip: 'Изсипете скира в купичка, наредете нарязани плодове отгоре.',
-    search: 'скир плодове закуска',
-  },
-
-  // ── ОБЯД ──
-  {
-    slot: 'lunch',
-    name: 'Пилешка супа с зеленчуци',
-    cats: ['meat', 'vegetables'],
-    kcal: '280 ккал',
-    time: '50 мин',
-    tip: 'Сварете пилешкото с моркови, целина и лук. Добавете фиде и магданоз накрая.',
-    search: 'пилешка супа зеленчуци',
-  },
-  {
-    slot: 'lunch',
-    name: 'Мусака',
-    cats: ['meat', 'vegetables'],
-    kcal: '480 ккал',
-    time: '70 мин',
-    tip: 'Запържете кайма с лук, наредете с картофи на пластове и залейте с яйца и мляко.',
-    search: 'мусака рецепта',
-  },
-  {
-    slot: 'lunch',
-    name: 'Шопска салата',
-    cats: ['vegetables', 'dairy'],
-    kcal: '180 ккал',
-    time: '10 мин',
-    tip: 'Нарежете домати, краставици и чушки. Добавете маслини и поръсете с настъргано сирене.',
-    search: 'шопска салата',
-  },
-  {
-    slot: 'lunch',
-    name: 'Таратор',
-    cats: ['dairy', 'vegetables'],
-    kcal: '140 ккал',
-    time: '10 мин',
-    tip: 'Разредете кисело мляко с вода, добавете настъргана краставица, чесън и копър.',
-    search: 'таратор рецепта',
-  },
-  {
-    slot: 'lunch',
-    name: 'Рибена чорба',
-    cats: ['fish', 'vegetables'],
-    kcal: '220 ккал',
-    time: '40 мин',
-    tip: 'Сварете рибата с домати, лук и моркови. Подправете с магданоз и лимон.',
-    search: 'рибена чорба рецепта',
-  },
-  {
-    slot: 'lunch',
-    name: 'Гювеч с месо и зеленчуци',
-    cats: ['meat', 'vegetables'],
-    kcal: '430 ккал',
-    time: '70 мин',
-    tip: 'Запържете месото, добавете нарязани зеленчуци и изпечете в тава на 180°C.',
-    search: 'гювеч месо зеленчуци',
-  },
-  {
-    slot: 'lunch',
-    name: 'Боб чорба',
-    cats: ['legumes', 'vegetables'],
-    kcal: '300 ккал',
-    time: '90 мин',
-    tip: 'Накиснете боба от предната вечер. Сварете с лук, морков и подправки. Добавете джоджен.',
-    search: 'боб чорба рецепта',
-  },
-
-  // ── ВЕЧЕРЯ ──
-  {
-    slot: 'dinner',
-    name: 'Кебапчета на скара',
-    cats: ['meat'],
-    kcal: '380 ккал',
-    time: '20 мин',
-    tip: 'Смесете каймата с подправки, оформете кебапчета и изпечете на загрята скара.',
-    search: 'кебапчета скара рецепта',
-  },
-  {
-    slot: 'dinner',
-    name: 'Пълнени чушки с кайма и ориз',
-    cats: ['meat', 'vegetables'],
-    kcal: '450 ккал',
-    time: '60 мин',
-    tip: 'Напълнете чушките с кайма, ориз и подправки. Залейте с доматен сос и изпечете.',
-    search: 'пълнени чушки кайма ориз',
-  },
-  {
-    slot: 'dinner',
-    name: 'Риба на фурна с лимон',
-    cats: ['fish'],
-    kcal: '290 ккал',
-    time: '35 мин',
-    tip: 'Наредете рибата в тава, полейте с лимонов сок и зехтин. Печете на 200°C.',
-    search: 'риба фурна лимон',
-  },
-  {
-    slot: 'dinner',
-    name: 'Картофена мусака с яйца',
-    cats: ['eggs', 'vegetables'],
-    kcal: '370 ккал',
-    time: '50 мин',
-    tip: 'Наредете варени картофи, залейте с разбити яйца и кисело мляко. Изпечете до зачервяване.',
-    search: 'картофена мусака яйца',
-  },
-  {
-    slot: 'dinner',
-    name: 'Леща яхния',
-    cats: ['legumes', 'grains'],
-    kcal: '320 ккал',
-    time: '40 мин',
-    tip: 'Задушете лук и моркови, добавете червена леща и варете 20 мин с подправки.',
-    search: 'леща яхния рецепта',
-  },
-  {
-    slot: 'dinner',
-    name: 'Лека салата с кисело мляко',
-    cats: ['dairy', 'vegetables'],
-    kcal: '170 ккал',
-    time: '10 мин',
-    tip: 'Нарежете краставица и домати, залейте с кисело мляко, чесън и сол.',
-    search: 'салата кисело мляко краставица',
-  },
-
-  // ── СНАК ──
-  {
-    slot: 'snack',
-    name: 'Кисело мляко с пресни плодове',
-    cats: ['dairy', 'fruit'],
-    kcal: '130 ккал',
-    time: '2 мин',
-    tip: 'Изсипете кисело мляко, наредете нарязани плодове и добавете малко мед.',
-    search: 'кисело мляко плодове снак',
-  },
-  {
-    slot: 'snack',
-    name: 'Халва с бадеми',
-    cats: ['snacks'],
-    kcal: '200 ккал',
-    time: '1 мин',
-    tip: 'Нарежете халвата на малки парчета и поднесете с шепа бадеми.',
-    search: 'халва бадеми',
-  },
-  {
-    slot: 'snack',
-    name: 'Плодова чиния',
-    cats: ['fruit'],
-    kcal: '100 ккал',
-    time: '3 мин',
-    tip: 'Нарежете сезонни плодове — ягоди, манго или грозде — и поднесете свежо.',
-    search: 'плодова чиния рецепта',
-  },
-  {
-    slot: 'snack',
-    name: 'Протеинов йогурт с плодове',
-    cats: ['protein'],
-    kcal: '170 ккал',
-    time: '2 мин',
-    tip: 'Смесете протеинов йогурт с нарязани плодове за бърз снак след тренировка.',
-    search: 'протеинов йогурт плодове',
-  },
-];
-
+// Meal slot definitions with the product category priority
 const MEAL_SLOTS = [
-  { key: 'breakfast', label: 'Закуска', icon: '🌅', color: '#f39c12' },
-  { key: 'lunch',     label: 'Обяд',    icon: '☀️',  color: '#6C63FF' },
-  { key: 'dinner',    label: 'Вечеря',  icon: '🌙',  color: '#2ecc71' },
-  { key: 'snack',     label: 'Снак',    icon: '⚡',   color: '#e74c3c' },
+  { key: 'breakfast', label: 'Закуска', icon: '🌅', color: '#f39c12', cats: ['eggs', 'dairy', 'bakery', 'grains', 'fruit', 'protein'] },
+  { key: 'lunch',     label: 'Обяд',    icon: '☀️',  color: '#6C63FF', cats: ['meat', 'fish', 'vegetables', 'legumes', 'grains'] },
+  { key: 'dinner',    label: 'Вечеря',  icon: '🌙',  color: '#2ecc71', cats: ['meat', 'fish', 'grains', 'dairy', 'vegetables', 'eggs'] },
+  { key: 'snack',     label: 'Снак',    icon: '⚡',   color: '#e74c3c', cats: ['fruit', 'snacks', 'dairy', 'protein'] },
 ];
 
-function buildPlan(list, goal) {
-  const byCategory = {};
-  list.forEach((item) => {
-    const cat = item.category?.toLowerCase() || 'other';
-    if (!byCategory[cat]) byCategory[cat] = [];
-    byCategory[cat].push(item);
-  });
+// Strip package sizes / brand suffixes so we get clean search terms.
+// "Свински врат без кост ≈1.1кг" → "Свински врат"
+// "Пушена сьомга осолена 200г"   → "Пушена сьомга"
+function cleanName(raw) {
+  return raw
+    .replace(/\s*(≈|~)?\d+(\.\d+)?(кг|г|л|мл)\b/gi, '')
+    .replace(/\bXXL\b|\bXL\b/gi, '')
+    .replace(/\d+x\d+[^\s]*/gi, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .split(' ')
+    .slice(0, 2)
+    .join(' ');
+}
 
-  const plan = {};
-
-  for (const slot of MEAL_SLOTS) {
-    // Find all recipes for this slot
-    const candidates = BG_RECIPES.filter((r) => r.slot === slot.key);
-
-    // Score each recipe by how many of its cats are present in the user's list
-    const scored = candidates
-      .map((r) => ({
-        recipe: r,
-        score: r.cats.filter((c) => byCategory[c]?.length).length,
-      }))
-      .filter((s) => s.score > 0)
-      .sort((a, b) => b.score - a.score);
-
-    // high_protein goal: boost protein-cat recipes for snack slot
-    if (goal === 'high_protein' && slot.key === 'snack') {
-      const hiPro = candidates.find((r) => r.cats.includes('protein') && byCategory['protein']?.length);
-      if (hiPro) { plan[slot.key] = hiPro; continue; }
+// Pick up to 3 products for a meal slot from the user's list.
+// Avoids re-using the same product across slots (usedIds).
+function pickProducts(byCategory, cats, usedIds, max = 3) {
+  const picked = [];
+  for (const cat of cats) {
+    for (const p of byCategory[cat] || []) {
+      if (!usedIds.has(p.id)) {
+        picked.push(p);
+        if (picked.length >= max) return picked;
+      }
     }
-
-    if (!scored.length) continue;
-
-    const chosen = scored[0].recipe;
-
-    // Pick up to 3 matching products from the user's list to show as ingredients
-    const matchedProducts = chosen.cats
-      .flatMap((c) => byCategory[c] || [])
-      .slice(0, 3)
-      .map((p) => p.name);
-
-    plan[slot.key] = { ...chosen, matchedProducts };
   }
+  return picked;
+}
 
-  return plan;
+// Fetch gotvach.bg search page and extract the first recipe's URL and name.
+async function fetchGotvachResult(query) {
+  const searchUrl = `https://gotvach.bg/search?term=${encodeURIComponent(query)}`;
+  try {
+    const res = await fetch(searchUrl, {
+      headers: { 'User-Agent': 'Mozilla/5.0', Accept: 'text/html' },
+    });
+    const html = await res.text();
+
+    // gotvach.bg recipe URLs: /rec/DIGITS/slug
+    const linkMatch = html.match(/href="(\/rec\/\d+\/[^"?#\s]+)"/);
+    if (!linkMatch) return { url: searchUrl, name: null, desc: null };
+
+    const recipeUrl = `https://gotvach.bg${linkMatch[1]}`;
+
+    // Extract link text as the recipe name
+    const nameRe = new RegExp(
+      `href="${linkMatch[1].replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}"[^>]*>\\s*([^<]{3,120})\\s*<`,
+    );
+    const nameMatch = html.match(nameRe);
+    const name = nameMatch?.[1]?.trim().replace(/&amp;/g, '&') || null;
+
+    // Extract a short description from the HTML snippet around the first link
+    const start = Math.max(0, html.indexOf(linkMatch[1]) - 200);
+    const snippet = html.slice(start, start + 600);
+    const descMatch = snippet.match(/<p[^>]*>\s*([^<]{25,220})\s*<\/p>/);
+    const desc = descMatch?.[1]
+      ?.trim()
+      .replace(/&amp;/g, '&')
+      .replace(/&#\d+;/g, '') || null;
+
+    return { url: recipeUrl, name, desc };
+  } catch {
+    return { url: searchUrl, name: null, desc: null };
+  }
 }
 
 export default function MealsScreen({ route, navigation }) {
   const { list, goal } = route.params;
-  const plan = buildPlan(list, goal);
+  const [meals, setMeals] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const totalKcal = MEAL_SLOTS.reduce((sum, slot) => {
-    const meal = plan[slot.key];
-    if (!meal) return sum;
-    return sum + (parseInt(meal.kcal) || 0);
-  }, 0);
+  useEffect(() => {
+    async function load() {
+      // Build category map
+      const byCategory = {};
+      list.forEach((item) => {
+        const cat = item.category?.toLowerCase() || 'other';
+        if (!byCategory[cat]) byCategory[cat] = [];
+        byCategory[cat].push(item);
+      });
 
-  const openRecipe = (searchTerm) => {
-    const url = `https://gotvach.bg/search?term=${encodeURIComponent(searchTerm)}`;
-    Linking.openURL(url).catch(() => {});
-  };
+      const usedIds = new Set();
+      const results = [];
+
+      for (const slot of MEAL_SLOTS) {
+        // high_protein goal: force protein products for snack
+        const cats =
+          goal === 'high_protein' && slot.key === 'snack'
+            ? ['protein', 'dairy', 'eggs', ...slot.cats]
+            : slot.cats;
+
+        const products = pickProducts(byCategory, cats, usedIds);
+        if (!products.length) continue;
+
+        products.forEach((p) => usedIds.add(p.id));
+
+        const query = products.map(cleanName).join(' ');
+        const { url, name, desc } = await fetchGotvachResult(query);
+
+        results.push({
+          slot,
+          products,
+          query,
+          recipeName: name,
+          recipeDesc: desc,
+          recipeUrl: url,
+        });
+      }
+
+      setMeals(results);
+      setLoading(false);
+    }
+
+    load();
+  }, []);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -302,34 +152,34 @@ export default function MealsScreen({ route, navigation }) {
       {/* Header */}
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Идеи за ястия 🍽️</Text>
-        <Text style={styles.headerSub}>Български рецепти по вашия списък</Text>
-        <View style={styles.kcalBadge}>
-          <Text style={styles.kcalText}>🔥 ~{totalKcal} ккал общо</Text>
-        </View>
+        <Text style={styles.headerSub}>Рецепти от gotvach.bg по вашите продукти</Text>
       </View>
 
-      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
-
-        {/* Product chips */}
-        <View style={styles.section}>
-          <Text style={styles.sectionLabel}>Вашите продукти</Text>
-          <View style={styles.chipsRow}>
-            {list.map((item) => (
-              <View key={item.id} style={styles.chip}>
-                <Text style={styles.chipIcon}>{getCategoryIcon(item.category)}</Text>
-                <Text style={styles.chipText}>{item.name}</Text>
-              </View>
-            ))}
-          </View>
+      {loading ? (
+        <View style={styles.loadingBox}>
+          <ActivityIndicator size="large" color="#6C63FF" />
+          <Text style={styles.loadingText}>Търсим рецепти в gotvach.bg…</Text>
         </View>
+      ) : (
+        <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
 
-        {/* Meal cards */}
-        <Text style={styles.sectionLabel}>Дневен план</Text>
+          {/* Product chips */}
+          <View style={styles.section}>
+            <Text style={styles.sectionLabel}>Вашите продукти</Text>
+            <View style={styles.chipsRow}>
+              {list.map((item) => (
+                <View key={item.id} style={styles.chip}>
+                  <Text style={styles.chipIcon}>{getCategoryIcon(item.category)}</Text>
+                  <Text style={styles.chipText}>{item.name}</Text>
+                </View>
+              ))}
+            </View>
+          </View>
 
-        {MEAL_SLOTS.map((slot) => {
-          const meal = plan[slot.key];
-          if (!meal) return null;
-          return (
+          {/* Meal cards */}
+          <Text style={styles.sectionLabel}>Дневен план</Text>
+
+          {meals.map(({ slot, products, recipeName, recipeDesc, recipeUrl }) => (
             <View key={slot.key} style={[styles.mealCard, { borderLeftColor: slot.color }]}>
 
               {/* Slot badge */}
@@ -338,50 +188,55 @@ export default function MealsScreen({ route, navigation }) {
                   <Text style={styles.slotIcon}>{slot.icon}</Text>
                   <Text style={styles.slotLabel}>{slot.label}</Text>
                 </View>
-                <View style={styles.mealMeta}>
-                  <Text style={styles.mealMetaText}>⏱ {meal.time}</Text>
-                  <Text style={styles.mealMetaText}>🔥 {meal.kcal}</Text>
+              </View>
+
+              {/* Recipe name */}
+              <Text style={styles.mealName}>
+                {recipeName || `Рецепта с ${products.map(cleanName).join(', ')}`}
+              </Text>
+
+              {/* Matched products */}
+              <View style={styles.productsBox}>
+                <Text style={styles.productsLabel}>Основни продукти:</Text>
+                <View style={styles.productsList}>
+                  {products.map((p) => (
+                    <View key={p.id} style={styles.productPill}>
+                      <Text style={styles.productPillIcon}>{getCategoryIcon(p.category)}</Text>
+                      <Text style={styles.productPillText}>{cleanName(p.name)}</Text>
+                    </View>
+                  ))}
                 </View>
               </View>
 
-              {/* Name */}
-              <Text style={styles.mealName}>{meal.name}</Text>
+              {/* Short description */}
+              {recipeDesc ? (
+                <View style={styles.descBox}>
+                  <Text style={styles.descText}>{recipeDesc}</Text>
+                </View>
+              ) : null}
 
-              {/* Matched products from list */}
-              <View style={styles.ingredientsBox}>
-                <Text style={styles.ingredientsLabel}>Продукти от вашия списък:</Text>
-                {meal.matchedProducts.map((p, i) => (
-                  <Text key={i} style={styles.ingredientItem}>• {p}</Text>
-                ))}
-              </View>
-
-              {/* Tip */}
-              <View style={styles.tipBox}>
-                <Text style={styles.tipText}>💡 {meal.tip}</Text>
-              </View>
-
-              {/* Recipe link */}
+              {/* Link button */}
               <TouchableOpacity
                 style={[styles.linkBtn, { backgroundColor: slot.color }]}
-                onPress={() => openRecipe(meal.search)}
+                onPress={() => Linking.openURL(recipeUrl).catch(() => {})}
               >
-                <Text style={styles.linkBtnText}>📖 Виж рецептата в gotvach.bg</Text>
+                <Text style={styles.linkBtnText}>📖 Виж пълната рецепта</Text>
               </TouchableOpacity>
 
             </View>
-          );
-        })}
+          ))}
 
-        {Object.keys(plan).length === 0 && (
-          <View style={styles.emptyBox}>
-            <Text style={styles.emptyText}>
-              Не намерихме подходящи рецепти. Добавете повече продукти в списъка си.
-            </Text>
-          </View>
-        )}
+          {!loading && meals.length === 0 && (
+            <View style={styles.emptyBox}>
+              <Text style={styles.emptyText}>
+                Не намерихме рецепти. Добавете повече продукти в списъка си.
+              </Text>
+            </View>
+          )}
 
-        <View style={{ height: 16 }} />
-      </ScrollView>
+          <View style={{ height: 16 }} />
+        </ScrollView>
+      )}
 
       {/* Footer */}
       <View style={styles.footer}>
@@ -409,15 +264,10 @@ const styles = StyleSheet.create({
     borderBottomColor: '#eee',
   },
   headerTitle: { fontSize: 24, fontWeight: '800', color: '#1A1A2E', marginBottom: 2 },
-  headerSub: { fontSize: 13, color: '#999', marginBottom: 10 },
-  kcalBadge: {
-    alignSelf: 'flex-start',
-    backgroundColor: '#FFF3E0',
-    borderRadius: 20,
-    paddingHorizontal: 14,
-    paddingVertical: 5,
-  },
-  kcalText: { color: '#f39c12', fontWeight: '700', fontSize: 13 },
+  headerSub: { fontSize: 13, color: '#999' },
+
+  loadingBox: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: 16 },
+  loadingText: { fontSize: 15, color: '#888' },
 
   scroll: { padding: 16 },
 
@@ -441,34 +291,37 @@ const styles = StyleSheet.create({
     padding: 16, marginBottom: 16, borderLeftWidth: 5,
     shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 8, elevation: 2,
   },
-  mealCardHeader: {
-    flexDirection: 'row', justifyContent: 'space-between',
-    alignItems: 'center', marginBottom: 10,
-  },
+  mealCardHeader: { marginBottom: 10 },
   slotBadge: {
-    flexDirection: 'row', alignItems: 'center',
+    flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-start',
     borderRadius: 20, paddingHorizontal: 12, paddingVertical: 5, gap: 5,
   },
   slotIcon: { fontSize: 13 },
   slotLabel: { color: '#fff', fontWeight: '700', fontSize: 13 },
-  mealMeta: { alignItems: 'flex-end', gap: 3 },
-  mealMetaText: { fontSize: 12, color: '#aaa', fontWeight: '600' },
 
-  mealName: { fontSize: 20, fontWeight: '800', color: '#1A1A2E', marginBottom: 12 },
-
-  ingredientsBox: {
-    backgroundColor: '#F7F8FC', borderRadius: 10, padding: 10, marginBottom: 10,
+  mealName: {
+    fontSize: 18, fontWeight: '800', color: '#1A1A2E', marginBottom: 12, lineHeight: 24,
   },
-  ingredientsLabel: { fontSize: 11, color: '#aaa', fontWeight: '700', marginBottom: 4 },
-  ingredientItem: { fontSize: 13, color: '#444', lineHeight: 22 },
 
-  tipBox: {
-    backgroundColor: '#FFFBEA', borderRadius: 10, padding: 10, marginBottom: 12,
+  productsBox: { marginBottom: 12 },
+  productsLabel: { fontSize: 11, color: '#aaa', fontWeight: '700', marginBottom: 8 },
+  productsList: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  productPill: {
+    flexDirection: 'row', alignItems: 'center',
+    backgroundColor: '#F0EEFF', borderRadius: 20,
+    paddingHorizontal: 10, paddingVertical: 5, gap: 5,
   },
-  tipText: { fontSize: 12, color: '#b7950b', fontWeight: '600', lineHeight: 18 },
+  productPillIcon: { fontSize: 14 },
+  productPillText: { fontSize: 12, fontWeight: '700', color: '#6C63FF' },
+
+  descBox: {
+    backgroundColor: '#FFFBEA', borderRadius: 10,
+    padding: 12, marginBottom: 12,
+  },
+  descText: { fontSize: 13, color: '#7d6608', lineHeight: 20 },
 
   linkBtn: {
-    borderRadius: 12, paddingVertical: 12, alignItems: 'center',
+    borderRadius: 12, paddingVertical: 13, alignItems: 'center',
   },
   linkBtnText: { color: '#fff', fontWeight: '700', fontSize: 14 },
 
