@@ -9,13 +9,15 @@ import { auth } from '../config/firebase';
 
 const AuthContext = createContext(null);
 
+const GUEST_USER = { uid: 'guest', email: 'guest@test.com', isGuest: true };
+
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
-      setUser(firebaseUser);
+      setUser((prev) => (prev?.isGuest ? prev : firebaseUser));
       setLoading(false);
     });
     return unsubscribe;
@@ -27,10 +29,15 @@ export function AuthProvider({ children }) {
   const login = (email, password) =>
     signInWithEmailAndPassword(auth, email, password);
 
-  const logout = () => signOut(auth);
+  const logout = () => {
+    setUser(null);
+    return signOut(auth).catch(() => {});
+  };
+
+  const loginAsGuest = () => setUser(GUEST_USER);
 
   return (
-    <AuthContext.Provider value={{ user, loading, register, login, logout }}>
+    <AuthContext.Provider value={{ user, loading, register, login, logout, loginAsGuest }}>
       {children}
     </AuthContext.Provider>
   );

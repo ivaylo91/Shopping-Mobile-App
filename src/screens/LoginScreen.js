@@ -13,7 +13,7 @@ import {
 import { useAuth } from '../context/AuthContext';
 
 export default function LoginScreen({ navigation }) {
-  const { login } = useAuth();
+  const { login, loginAsGuest } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -88,6 +88,10 @@ export default function LoginScreen({ navigation }) {
       <TouchableOpacity onPress={() => navigation.navigate('Register')}>
         <Text style={styles.link}>Нямате акаунт? <Text style={styles.linkBold}>Регистрирай се</Text></Text>
       </TouchableOpacity>
+
+      <TouchableOpacity style={styles.guestBtn} onPress={loginAsGuest}>
+        <Text style={styles.guestText}>Тествай без вход →</Text>
+      </TouchableOpacity>
     </KeyboardAvoidingView>
   );
 }
@@ -143,4 +147,6 @@ const styles = StyleSheet.create({
   buttonText: { color: '#fff', fontWeight: '800', fontSize: 17 },
   link: { color: '#999', textAlign: 'center', fontSize: 14 },
   linkBold: { color: '#6C63FF', fontWeight: '700' },
+  guestBtn: { marginTop: 24, alignItems: 'center' },
+  guestText: { color: '#bbb', fontSize: 13, fontWeight: '600' },
 });
