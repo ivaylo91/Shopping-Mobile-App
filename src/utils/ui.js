@@ -17,6 +17,8 @@ export const CATEGORY_ICONS = {
   organic: '🌿',
   oils: '🫙',
   canned: '🥫',
+  coffee: '☕',
+  alcohol: '🍺',
 };
 
 export function getCategoryIcon(cat) {

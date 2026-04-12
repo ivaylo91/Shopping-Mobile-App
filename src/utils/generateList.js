@@ -174,8 +174,12 @@ function buildHighProteinList(products, budget) {
 /**
  * Main entry point called from HomeScreen.
  */
+const EXCLUDED_CATEGORIES = new Set(['alcohol']);
+
 export function generateList({ products, budget, goal, store }) {
-  const pool = filterByStore(products, store);
+  const pool = filterByStore(products, store).filter(
+    (p) => !EXCLUDED_CATEGORIES.has(p.category?.toLowerCase())
+  );
 
   if (pool.length === 0) return [];
 

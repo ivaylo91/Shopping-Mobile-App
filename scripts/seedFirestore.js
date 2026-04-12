@@ -22,8 +22,8 @@ const products = [
   // ===== ЛИДЛ — Брошура 13.04–19.04.2026 =====
 
   // 🥩 МЕСО
-  { name: 'Свински врат без кост ≈1.1кг',         price: 3.47,  unit: 'кг',  store: 'Lidl', category: 'meat',       protein: 18, calories: 215, isHealthy: false },
-  { name: 'Ръмп стек от говеждо ≈350г',           price: 18.99, unit: 'кг',  store: 'Lidl', category: 'meat',       protein: 26, calories: 190, isHealthy: true  },
+  { name: 'Свински врат без кост ≈1.1кг',         price: 3.82,  unit: 'бр.', store: 'Lidl', category: 'meat',       protein: 18, calories: 215, isHealthy: false },
+  { name: 'Ръмп стек от говеждо ≈350г',           price: 6.65,  unit: 'бр.', store: 'Lidl', category: 'meat',       protein: 26, calories: 190, isHealthy: true  },
   { name: 'Факлички от свински гърди XXL 600г',   price: 5.99,  unit: 'бр.', store: 'Lidl', category: 'meat',       protein: 18, calories: 280, isHealthy: false },
   { name: 'Пилешко мляно месо 500г',              price: 2.04,  unit: 'бр.', store: 'Lidl', category: 'meat',       protein: 22, calories: 160, isHealthy: true  },
   { name: 'СВЕЖО Кюфтета или кебапчета 480г',     price: 1.79,  unit: 'бр.', store: 'Lidl', category: 'meat',       protein: 16, calories: 250, isHealthy: false },
@@ -72,10 +72,15 @@ const products = [
   { name: 'Био крем сирене 160г',                price: 1.58,  unit: 'бр.', store: 'Lidl', category: 'dairy',      protein: 5,  calories: 200, isHealthy: false },
 
   // 🥚 ЯЙЦА
+  { name: 'Яйца кокоши 10бр.',                    price: 2.29,  unit: 'бр.', store: 'Lidl', category: 'eggs',       protein: 13, calories: 155, isHealthy: true  },
   { name: 'Яйца от пъдпъдъци 12бр.',             price: 1.39,  unit: 'бр.', store: 'Lidl', category: 'eggs',       protein: 13, calories: 158, isHealthy: true  },
   { name: 'OPTISANA Яйчен белтък 500г',           price: 1.69,  unit: 'бр.', store: 'Lidl', category: 'eggs',       protein: 11, calories: 52,  isHealthy: true  },
 
   // 🥦 ЗЕЛЕНЧУЦИ
+  { name: 'Картофи/кг',                           price: 0.49,  unit: 'кг',  store: 'Lidl', category: 'vegetables', protein: 2,  calories: 77,  isHealthy: true  },
+  { name: 'Моркови/кг',                           price: 0.55,  unit: 'кг',  store: 'Lidl', category: 'vegetables', protein: 1,  calories: 41,  isHealthy: true  },
+  { name: 'Чесън/глава',                          price: 0.39,  unit: 'бр.', store: 'Lidl', category: 'vegetables', protein: 6,  calories: 149, isHealthy: true  },
+  { name: 'Чери домати 500г',                     price: 1.59,  unit: 'бр.', store: 'Lidl', category: 'vegetables', protein: 1,  calories: 18,  isHealthy: true  },
   { name: 'Лук Полша/кг',                        price: 0.38,  unit: 'кг',  store: 'Lidl', category: 'vegetables', protein: 1,  calories: 40,  isHealthy: true  },
   { name: 'Кралски печурки 500г',                price: 1.99,  unit: 'бр.', store: 'Lidl', category: 'vegetables', protein: 3,  calories: 22,  isHealthy: true  },
   { name: 'Български краставици/бр.',            price: 0.69,  unit: 'бр.', store: 'Lidl', category: 'vegetables', protein: 1,  calories: 15,  isHealthy: true  },
@@ -107,6 +112,8 @@ const products = [
   { name: 'Ръчен хляб 380г',                     price: 1.15,  unit: 'бр.', store: 'Lidl', category: 'bakery',     protein: 9,  calories: 235, isHealthy: true  },
 
   // 🌾 ЗЪРНЕНИ / ПАСТИ
+  { name: 'Ориз за готвене 1кг',                 price: 1.29,  unit: 'бр.', store: 'Lidl', category: 'grains',     protein: 7,  calories: 350, isHealthy: true  },
+  { name: 'Брашно тип 500 1кг',                  price: 0.99,  unit: 'бр.', store: 'Lidl', category: 'grains',     protein: 10, calories: 342, isHealthy: false },
   { name: 'Пене от мека пшеница 500г',           price: 0.49,  unit: 'бр.', store: 'Lidl', category: 'grains',     protein: 7,  calories: 352, isHealthy: true  },
   { name: 'Червена леща 2x500г',                 price: 1.63,  unit: 'бр.', store: 'Lidl', category: 'grains',     protein: 25, calories: 340, isHealthy: true  },
   { name: 'Тесто за пица 2x400г',               price: 1.22,  unit: 'бр.', store: 'Lidl', category: 'grains',     protein: 9,  calories: 270, isHealthy: false },
@@ -167,11 +174,11 @@ const products = [
   { name: 'AYATANA Био Комбуча 330мл',           price: 1.68,  unit: 'бр.', store: 'Lidl', category: 'drinks',     protein: 0,  calories: 22,  isHealthy: true  },
   { name: 'Висококопротеинова напитка 330мл',    price: 1.25,  unit: 'бр.', store: 'Lidl', category: 'drinks',     protein: 35, calories: 180, isHealthy: true  },
   { name: 'DEVIN SPORT Изворна вода 750мл',      price: 0.51,  unit: 'бр.', store: 'Lidl', category: 'drinks',     protein: 0,  calories: 0,   isHealthy: true  },
-  { name: 'BIRA Пиринско Младо 12x0.5л',        price: 6.13,  unit: 'бр.', store: 'Lidl', category: 'drinks',     protein: 1,  calories: 43,  isHealthy: false },
-  { name: 'КАМЕНИЦА Бира 6x0.5л',               price: 2.69,  unit: 'бр.', store: 'Lidl', category: 'drinks',     protein: 1,  calories: 43,  isHealthy: false },
-  { name: 'АРИАНА Бира 2л',                     price: 1.07,  unit: 'бр.', store: 'Lidl', category: 'drinks',     protein: 1,  calories: 43,  isHealthy: false },
-  { name: 'PILSNER URQUELL Бира 6x0.5л',        price: 5.62,  unit: 'бр.', store: 'Lidl', category: 'drinks',     protein: 1,  calories: 42,  isHealthy: false },
-  { name: 'STAROBRNO Бира 6x0.5л',              price: 3.57,  unit: 'бр.', store: 'Lidl', category: 'drinks',     protein: 1,  calories: 42,  isHealthy: false },
+  { name: 'BIRA Пиринско Младо 12x0.5л',        price: 6.13,  unit: 'бр.', store: 'Lidl', category: 'alcohol',    protein: 1,  calories: 43,  isHealthy: false },
+  { name: 'КАМЕНИЦА Бира 6x0.5л',               price: 2.69,  unit: 'бр.', store: 'Lidl', category: 'alcohol',    protein: 1,  calories: 43,  isHealthy: false },
+  { name: 'АРИАНА Бира 2л',                     price: 1.07,  unit: 'бр.', store: 'Lidl', category: 'alcohol',    protein: 1,  calories: 43,  isHealthy: false },
+  { name: 'PILSNER URQUELL Бира 6x0.5л',        price: 5.62,  unit: 'бр.', store: 'Lidl', category: 'alcohol',    protein: 1,  calories: 42,  isHealthy: false },
+  { name: 'STAROBRNO Бира 6x0.5л',              price: 3.57,  unit: 'бр.', store: 'Lidl', category: 'alcohol',    protein: 1,  calories: 42,  isHealthy: false },
 
   // ☕ КАФЕ
   { name: 'SEGAFREDO INTERMEZZO Кафе на зърна 1кг', price: 13.99, unit: 'бр.', store: 'Lidl', category: 'coffee', protein: 0,  calories: 2,   isHealthy: false },
@@ -210,17 +217,16 @@ const products = [
   { name: 'Протеинови топчета 45г',             price: 0.99,  unit: 'бр.', store: 'Lidl', category: 'protein',   protein: 10, calories: 150, isHealthy: true  },
   { name: 'Висококопротеинов пудинг 4x125г',    price: 3.06,  unit: 'бр.', store: 'Lidl', category: 'protein',   protein: 13, calories: 130, isHealthy: true  },
   { name: 'BORN WINNER Протеин на прах 810г',   price: 20.45, unit: 'бр.', store: 'Lidl', category: 'protein',   protein: 21, calories: 105, isHealthy: true  },
-  { name: 'OPTISANA Яйчен белтък 500г',         price: 1.69,  unit: 'бр.', store: 'Lidl', category: 'protein',   protein: 11, calories: 52,  isHealthy: true  },
   { name: 'Висококопротеинова овесена закуска 200г', price: 1.49, unit: 'бр.', store: 'Lidl', category: 'protein', protein: 10, calories: 340, isHealthy: true },
   { name: 'Висококопротеинов микс за палачинки 150г', price: 2.29, unit: 'бр.', store: 'Lidl', category: 'protein', protein: 25, calories: 310, isHealthy: true },
   { name: 'Висококопротеиново фъстъчено масло 350г', price: 2.99, unit: 'бр.', store: 'Lidl', category: 'protein', protein: 28, calories: 580, isHealthy: true },
 
-  // 🌿 БИО
-  { name: 'Био алтернативна паста 250г',        price: 1.73,  unit: 'бр.', store: 'Lidl', category: 'organic',   protein: 22, calories: 340, isHealthy: true  },
-  { name: 'Био пица с прошуто 350г',            price: 3.57,  unit: 'бр.', store: 'Lidl', category: 'organic',   protein: 14, calories: 265, isHealthy: false },
-  { name: 'Био пица Джоб 2x120г',              price: 3.06,  unit: 'бр.', store: 'Lidl', category: 'organic',   protein: 10, calories: 240, isHealthy: false },
-  { name: 'Био десерт Кварк 12x50г',           price: 3.32,  unit: 'бр.', store: 'Lidl', category: 'organic',   protein: 8,  calories: 90,  isHealthy: true  },
-  { name: 'Био зърнесто прясно сирене 200г',   price: 1.68,  unit: 'бр.', store: 'Lidl', category: 'organic',   protein: 11, calories: 100, isHealthy: true  },
+  // 🌿 БИО (разпределени по реална категория)
+  { name: 'Био алтернативна паста 250г',        price: 1.73,  unit: 'бр.', store: 'Lidl', category: 'grains',    protein: 22, calories: 340, isHealthy: true  },
+  { name: 'Био пица с прошуто 350г',            price: 3.57,  unit: 'бр.', store: 'Lidl', category: 'frozen',    protein: 14, calories: 265, isHealthy: false },
+  { name: 'Био пица Джоб 2x120г',              price: 3.06,  unit: 'бр.', store: 'Lidl', category: 'frozen',    protein: 10, calories: 240, isHealthy: false },
+  { name: 'Био десерт Кварк 12x50г',           price: 3.32,  unit: 'бр.', store: 'Lidl', category: 'dairy',     protein: 8,  calories: 90,  isHealthy: true  },
+  { name: 'Био зърнесто прясно сирене 200г',   price: 1.68,  unit: 'бр.', store: 'Lidl', category: 'dairy',     protein: 11, calories: 100, isHealthy: true  },
 ];
 
 async function seed() {
