@@ -24,7 +24,8 @@
         "buildType": "apk"
       },
       "ios": {
-        "simulator": false
+        "simulator": false,
+        "credentialSource": "remote"
       },
       "channel": "production"
     }
