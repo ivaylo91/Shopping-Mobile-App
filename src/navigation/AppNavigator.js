@@ -69,9 +69,12 @@ export default function AppNavigator() {
     );
   }
 
+  // DEV: set to true to always show login screen (e.g. for UI testing)
+  const __DEV_SHOW_AUTH__ = false;
+
   return (
     <NavigationContainer>
-      {user ? <AppStack /> : <AuthStack />}
+      {!__DEV_SHOW_AUTH__ && user ? <AppStack /> : <AuthStack />}
     </NavigationContainer>
   );
 }
