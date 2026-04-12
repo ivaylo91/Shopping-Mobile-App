@@ -116,9 +116,13 @@ async function fetchGotvachResult(feedId, keywords = []) {
   } else {
     const rssUrl = `https://recepti.gotvach.bg/rssnew/recepti-6-${feedId}.xml`;
     try {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 6000);
       const res = await fetch(rssUrl, {
+        signal: controller.signal,
         headers: { 'User-Agent': 'Mozilla/5.0', Accept: 'application/rss+xml, text/xml' },
       });
+      clearTimeout(timer);
       const xml = await res.text();
       items = [...xml.matchAll(/<item>([\s\S]+?)<\/item>/gi)].map((m) => {
         const block = m[1];
@@ -157,42 +161,43 @@ export default function MealsScreen({ route, navigation }) {
   const [slots, setSlots] = useState([]);
 
   useEffect(() => {
-    // ── Step 1: assign products sequentially (preserves usedIds correctness) ──
+    // Build category map from the shopping list
     const byCategory = {};
-    list.forEach((item) => {
+    (list || []).forEach((item) => {
       const cat = item.category?.toLowerCase() || 'other';
       if (!byCategory[cat]) byCategory[cat] = [];
       byCategory[cat].push(item);
     });
 
-    const usedIds = new Set();
-    const assignments = [];
-
-    for (const slot of MEAL_SLOTS) {
-      const cats =
-        goal === 'high_protein' && slot.key === 'snack'
-          ? ['protein', 'dairy', 'eggs', ...slot.cats]
-          : slot.cats;
-
-      const products = pickProducts(byCategory, cats, usedIds);
-      if (!products.length) continue;
-
-      products.forEach((p) => usedIds.add(p.id));
-      assignments.push({ slot, products });
-    }
-
-    // ── Step 2: initialise all cards as "loading" immediately ──────────────
+    // ── Step 1: show all 4 slots immediately as "loading" ──────────────────
+    // Each slot gets its own fresh product pick (no shared usedIds that could
+    // block all products after the first slot consumes them).
     setSlots(
-      assignments.map(({ slot, products }) => ({
-        slot, products, status: 'loading',
-        recipeName: null, recipeDesc: null, recipeUrl: null,
-      })),
+      MEAL_SLOTS.map((slot) => {
+        const cats =
+          goal === 'high_protein' && slot.key === 'snack'
+            ? ['protein', 'dairy', 'eggs', ...slot.cats]
+            : slot.cats;
+        return {
+          slot,
+          products: pickProducts(byCategory, cats, new Set()),
+          status: 'loading',
+          recipeName: null, recipeDesc: null, recipeUrl: null,
+        };
+      }),
     );
 
-    // ── Step 3: fetch all slots in parallel, update each as it resolves ────
+    // ── Step 2: fetch all slots in parallel ────────────────────────────────
     Promise.all(
-      assignments.map(async ({ products }, idx) => {
-        const feedId   = pickFeedId(products);
+      MEAL_SLOTS.map(async (slot, idx) => {
+        const cats =
+          goal === 'high_protein' && slot.key === 'snack'
+            ? ['protein', 'dairy', 'eggs', ...slot.cats]
+            : slot.cats;
+        const products = pickProducts(byCategory, cats, new Set());
+        // If the list has no matching products for this slot, use the default
+        // Bulgarian cuisine feed so we still show a real recipe.
+        const feedId  = products.length ? pickFeedId(products) : FEED_BY_CAT.default;
         const keywords = products.map(cleanName);
         const recipe   = await fetchGotvachResult(feedId, keywords);
         setSlots((prev) =>
@@ -200,10 +205,11 @@ export default function MealsScreen({ route, navigation }) {
             i === idx
               ? {
                   ...s,
-                  status:      'done',
-                  recipeName:  recipe?.title || null,
-                  recipeDesc:  recipe?.desc  || null,
-                  recipeUrl:   recipe?.link  || `https://recepti.gotvach.bg/rssnew/recepti-6-${feedId}.xml`,
+                  products,
+                  status:     'done',
+                  recipeName: recipe?.title ?? null,
+                  recipeDesc: recipe?.desc  ?? null,
+                  recipeUrl:  recipe?.link  ?? `https://recepti.gotvach.bg`,
                 }
               : s,
           ),
@@ -224,10 +230,10 @@ export default function MealsScreen({ route, navigation }) {
 
         <Text style={styles.sectionLabel}>Дневен план</Text>
 
-        {slots.length === 0 && (
+        {slots.every((s) => s.status === 'loading') && slots.length > 0 && (
           <View style={styles.emptyBox}>
             <ActivityIndicator color="#6C63FF" />
-            <Text style={styles.emptyText}>Подготвяме плана…</Text>
+            <Text style={styles.emptyText}>Зареждаме рецепти…</Text>
           </View>
         )}
 
