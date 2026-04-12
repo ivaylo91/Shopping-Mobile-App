@@ -1,16 +1,105 @@
-import { useState, useEffect } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  SafeAreaView,
-  ScrollView,
-  ActivityIndicator,
-  Linking,
+  View, Text, StyleSheet, TouchableOpacity,
+  SafeAreaView, ScrollView, Linking,
 } from 'react-native';
 
-// ─── Constants ────────────────────────────────────────────────────────────────
+// ─── Real gotvach.bg recipes, fetched from RSS and hardcoded for reliability ──
+// URL format: https://recepti.gotvach.bg/r-{id}-{slug}
+
+const RECIPES = {
+  // Ястия с месо (feed 7)
+  meat: [
+    { title: 'Бързо пиле с аспержи на тиган',                   url: 'https://recepti.gotvach.bg/r-289518-Бързо_пиле_с_аспержи_на_тиган',                  desc: 'Пилешкото филе се нарязва на малки хапки и се запържва в тиган с масло и подправки.' },
+    { title: 'Свинско контрафиле на тиган с хрупкави аспержи',  url: 'https://recepti.gotvach.bg/r-289553-Свинско_контрафиле_на_тиган_с_хрупкави_аспержи', desc: 'Свинското контрафиле се изпича на тиган до хрупкава коричка и се поднася с аспержи.' },
+    { title: 'Крехко телешко с лук и домати',                   url: 'https://recepti.gotvach.bg/r-289493-Крехко_телешко_с_лук_и_домати_(Swiss_Steak)',     desc: 'Телешките пържоли се задушават с лук и домати до пълно омекване.' },
+    { title: 'Ароматно свинско печено с картофи и зеленчуци',   url: 'https://recepti.gotvach.bg/r-289479-Ароматно_свинско_печено_с_картофи_и_зеленчуци',  desc: 'Свинско месо, печено на фурна с картофи, моркови и подправки на 190°C.' },
+    { title: 'Агнешки джоланчета с картофи',                    url: 'https://recepti.gotvach.bg/r-288118-Агнешки_джоланчета_с_картофи',                   desc: 'Агнешки джолани, бавно изпечени с картофи и ароматни подправки.' },
+  ],
+  // Риба и Морски Дарове (feed 209)
+  fish: [
+    { title: 'Лека рибна запеканка за вечеря',          url: 'https://recepti.gotvach.bg/r-289340-Лека_рибна_запеканка_за_вечеря',           desc: 'Рибно филе с хляб и зеленчуци, запечено на фурна за лека вечеря.' },
+    { title: 'Сьомга със сос от синьо сирене и гъби',  url: 'https://recepti.gotvach.bg/r-288255-Сьомга_със_сос_от_синьо_сирене_и_гъби',   desc: 'Сьомга, изпечена на тиган и поднесена с кремообразен сос от сирене и гъби.' },
+    { title: 'Скариди в чесново масло',                 url: 'https://recepti.gotvach.bg/r-288260-Скариди_в_чесново_масло',                  desc: 'Скаридите се запържват в масло с чесън и магданоз — готово за 10 минути.' },
+    { title: 'Кеджъри с пушена сьомга и ориз',         url: 'https://recepti.gotvach.bg/r-288256-Кеджъри_с_пушена_сьомга_и_ориз',          desc: 'Класическо ястие с пушена сьомга, ориз и яйца — сити и ароматно.' },
+    { title: 'Печена риба със зеленчуци',               url: 'https://recepti.gotvach.bg/r-288027-Печена_риба_със_зеленчуци_-_тип_пеперуда', desc: 'Цяла риба, разгъната като пеперуда и изпечена с пресни зеленчуци.' },
+  ],
+  // Чорби и супи (feed 8)
+  soup: [
+    { title: 'Перфектната крем супа от леща',              url: 'https://recepti.gotvach.bg/r-288374-Перфектната_крем_супа_от_леща',               desc: 'Кадифена крем супа от червена леща с лук, морков и подправки.' },
+    { title: 'Крем супа от спанак, батат и пащърнак',     url: 'https://recepti.gotvach.bg/r-287955-Крем_супа_от_спанак,_батат_и_пащърнак',      desc: 'Богата крем супа от спанак и сладки картофи — здравословна и засища.' },
+    { title: 'Нежна крем супа с праз и гъби',             url: 'https://recepti.gotvach.bg/r-287367-Нежна_крем_супа_с_праз_и_гъби',              desc: 'Праз и гъби, задушени с масло и пасирани до копринена текстура.' },
+    { title: 'Гъбена супа от челядинки и карфиол',        url: 'https://recepti.gotvach.bg/r-287460-Гъбена_супа_от_челядинки_и_карфиол',         desc: 'Ароматна гъбена супа с карфиол — лека и изпълнена с вкус.' },
+  ],
+  // Салати и предястия (feed 10)
+  salad: [
+    { title: 'Класическа яйчена салата с грах',         url: 'https://recepti.gotvach.bg/r-289505-Класическа_яйчена_салата_с_грах',           desc: 'Твърдо сварени яйца, грах и майонеза — бърза и вкусна салата.' },
+    { title: 'Салата с нахут, сирене и авокадо',        url: 'https://recepti.gotvach.bg/r-287964-Салата_с_нахут,_сирене_и_авокадо',          desc: 'Нахут, фета сирене и авокадо с лимонов дресинг.' },
+    { title: 'Пълнени гъби със спанак, галета и сирене',url: 'https://recepti.gotvach.bg/r-287965-Пълнени_гъби_със_спанак,_галета_и_сирене',  desc: 'Гъбени шапки, пълнени с ароматна смес от спанак и сирене.' },
+    { title: 'Лека гръцка великденска салата',          url: 'https://recepti.gotvach.bg/r-289471-Лека_гръцка_великденска_салата',            desc: 'Китайско зеле, чери домати и фета с лек дресинг.' },
+  ],
+  // Българска кухня (feed 14)
+  bulgarian: [
+    { title: 'Меки като облак златисти палачинки',                url: 'https://recepti.gotvach.bg/r-287947-Меки_като_облак_златисти_палачинки',                 desc: 'Пухкави палачинки с мляко и яйца — класическа закуска за цялото семейство.' },
+    { title: 'Пролетна супа от киселец с яйца',                   url: 'https://recepti.gotvach.bg/r-288162-Пролетна_супа_от_киселец_с_яйца',                    desc: 'Лека пролетна супа от киселец с яйца и застройка.' },
+    { title: 'Панирани картофени кюфтета с пресен лук',           url: 'https://recepti.gotvach.bg/r-289466-Панирани_картофени_кюфтета_с_пресен_лук',            desc: 'Картофени кюфтета с пресен лук, панирани и запържени до хрупкавост.' },
+    { title: 'Постни сарми от лапад',                             url: 'https://recepti.gotvach.bg/r-289416-Постни_сарми_от_лапад',                              desc: 'Традиционни постни сарми, завити в листа от лапад с пълнеж от ориз и лук.' },
+  ],
+  // Десерти и сладкиши (feed 6)
+  dessert: [
+    { title: 'Постна портокалова торта без захар и печене', url: 'https://recepti.gotvach.bg/r-289315-Постна_портокалова_торта_без_захар_и_печене', desc: 'Лесна торта с бисквити и портокалов крем — без печене и без захар.' },
+    { title: 'Бяла бисквитена торта с бананов крем',        url: 'https://recepti.gotvach.bg/r-289509-Бяла_бисквитена_торта_с_бананов_крем',        desc: 'Бисквитена торта с копринен бананов крем — без фурна.' },
+  ],
+  // Вегетарианска кухня (feed 18)
+  veg: [
+    { title: 'Хрупкави топчета от броколи',    url: 'https://recepti.gotvach.bg/r-287422-Хрупкави_топчета_от_броколи',    desc: 'Броколи, смесено с яйца и сирене, оформено на топчета и запечено.' },
+    { title: 'Домашна пица с левурда и моцарела', url: 'https://recepti.gotvach.bg/r-288552-Домашна_пица_с_левурда_и_моцарела', desc: 'Домашна пица с тесто, левурда и разтопена моцарела.' },
+  ],
+};
+
+// ─── Category → recipe pool mapping ─────────────────────────────────────────
+
+const SLOT_POOLS = {
+  breakfast: ['bulgarian', 'salad', 'dessert'],
+  lunch:     { meat: 'meat', fish: 'fish', default: 'soup' },
+  dinner:    { meat: 'meat', fish: 'fish', default: 'bulgarian' },
+  snack:     ['salad', 'dessert'],
+};
+
+function pickRecipe(slotKey, products) {
+  const cats = products.map((p) => p.category?.toLowerCase());
+
+  let poolKey;
+  if (slotKey === 'lunch' || slotKey === 'dinner') {
+    if (cats.includes('meat'))  poolKey = 'meat';
+    else if (cats.includes('fish')) poolKey = 'fish';
+    else if (cats.includes('vegetables') || cats.includes('legumes')) poolKey = slotKey === 'lunch' ? 'soup' : 'veg';
+    else poolKey = slotKey === 'lunch' ? 'soup' : 'bulgarian';
+  } else {
+    // breakfast / snack
+    const order = SLOT_POOLS[slotKey];
+    poolKey = order[0]; // default
+    for (const cat of cats) {
+      if (cat === 'dairy' || cat === 'eggs' || cat === 'bakery') { poolKey = 'bulgarian'; break; }
+      if (cat === 'fruit') { poolKey = 'dessert'; break; }
+    }
+  }
+
+  const pool = RECIPES[poolKey] || RECIPES.bulgarian;
+
+  // Try to find a recipe whose title matches a product keyword
+  const keywords = products.map((p) =>
+    p.name.replace(/\s*(≈|~)?\d+(\.\d+)?(кг|г|л|мл)\b/gi, '').trim().split(' ').slice(0, 2).join(' ').toLowerCase()
+  );
+  const match = pool.find((r) =>
+    keywords.some((kw) => r.title.toLowerCase().includes(kw))
+  );
+
+  // Deterministic variety: rotate by first product id hash
+  const seed = (products[0]?.id?.charCodeAt?.(0) || 0) % pool.length;
+  return match || pool[seed] || pool[0];
+}
+
+// ─── Constants ───────────────────────────────────────────────────────────────
 
 const CATEGORY_ICONS = {
   meat: '🥩', dairy: '🥛', vegetables: '🥦', fruit: '🍎',
@@ -26,40 +115,10 @@ const MEAL_SLOTS = [
   { key: 'snack',     label: 'Снак',    icon: '⚡',   color: '#e74c3c', cats: ['fruit', 'snacks', 'dairy', 'protein'] },
 ];
 
-// ─── Module-level cache (survives re-renders, cleared on app restart) ─────────
-const recipeCache = new Map();
-
-// ─── gotvach.bg RSS feed IDs by product category ─────────────────────────────
-// Discovered by inspecting recepti.gotvach.bg/rssnew/recepti-6-{id}.xml
-const FEED_BY_CAT = {
-  meat:       7,   // Ястия с месо
-  fish:       209, // Риба и Морски Дарове
-  vegetables: 18,  // Вегетарианска кухня
-  legumes:    18,
-  dairy:      14,  // Българска кухня
-  eggs:       14,
-  bakery:     14,
-  grains:     9,   // Паста и пица
-  fruit:      6,   // Десерти и сладкиши
-  snacks:     6,
-  protein:    203, // Кето Рецепти
-  organic:    18,
-  frozen:     11,  // Запеканки
-  default:    14,  // Българска кухня
-};
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
 function getCategoryIcon(cat) {
   return CATEGORY_ICONS[cat?.toLowerCase()] || '🛒';
 }
 
-/**
- * Smarter name cleaning:
- * - Strips weights/sizes ("≈1.1кг", "2x170г", "XXL")
- * - Strips leading generic Bulgarian phrases ("Месо за готвене", "Мариновани" …)
- * - Returns up to 3 meaningful words
- */
 function cleanName(raw) {
   return raw
     .replace(/\s*(≈|~)?\d+(\.\d+)?(кг|г|л|мл)\b/gi, '')
@@ -73,150 +132,38 @@ function cleanName(raw) {
     .join(' ');
 }
 
-/**
- * Pick up to `max` products for a slot, respecting already-used product IDs.
- * Called sequentially so usedIds is always up-to-date before the next slot.
- */
-function pickProducts(byCategory, cats, usedIds, max = 3) {
+function pickProducts(byCategory, cats, max = 3) {
   const picked = [];
   for (const cat of cats) {
     for (const p of byCategory[cat] || []) {
-      if (!usedIds.has(p.id)) {
-        picked.push(p);
-        if (picked.length >= max) return picked;
-      }
+      picked.push(p);
+      if (picked.length >= max) return picked;
     }
   }
   return picked;
 }
 
-/**
- * Pick the RSS feed ID that best matches the slot's products.
- * Uses the primary category of the first picked product.
- */
-function pickFeedId(products) {
-  const primaryCat = products[0]?.category?.toLowerCase() || 'default';
-  return FEED_BY_CAT[primaryCat] ?? FEED_BY_CAT.default;
-}
-
-/**
- * Fetch one recipe from gotvach.bg RSS feed.
- * - Uses RSS (XML) which is SSR and always returns real content.
- * - Tries to find a recipe whose title contains any of the product keywords.
- * - Falls back to the first item if no keyword match.
- * - Results cached per feed ID.
- */
-async function fetchGotvachResult(feedId, keywords = []) {
-  const cacheKey = `feed:${feedId}`;
-
-  // Parse RSS XML items
-  let items;
-  if (recipeCache.has(cacheKey)) {
-    items = recipeCache.get(cacheKey);
-  } else {
-    const rssUrl = `https://recepti.gotvach.bg/rssnew/recepti-6-${feedId}.xml`;
-    try {
-      const controller = new AbortController();
-      const timer = setTimeout(() => controller.abort(), 6000);
-      const res = await fetch(rssUrl, {
-        signal: controller.signal,
-        headers: { 'User-Agent': 'Mozilla/5.0', Accept: 'application/rss+xml, text/xml' },
-      });
-      clearTimeout(timer);
-      const xml = await res.text();
-      items = [...xml.matchAll(/<item>([\s\S]+?)<\/item>/gi)].map((m) => {
-        const block = m[1];
-        const title = block.match(/<title>(?:<!\[CDATA\[)?([^<\]]+)/)?.[1]?.trim() || null;
-        const link  = block.match(/<link>([^<]+)/)?.[1]?.trim() || null;
-        const desc  = block
-          .match(/<description>(?:<!\[CDATA\[)?([^<\]]{20,300})/)?.[1]
-          ?.replace(/<[^>]+>/g, '')
-          .replace(/&amp;/g, '&')
-          .replace(/&#\d+;/g, '')
-          .trim() || null;
-        return { title, link, desc };
-      }).filter((i) => i.title && i.link);
-      recipeCache.set(cacheKey, items);
-    } catch {
-      return null;
-    }
-  }
-
-  if (!items.length) return null;
-
-  // Try to find an item whose title matches one of the product keywords
-  const lower = keywords.map((k) => k.toLowerCase());
-  const match = items.find((item) =>
-    lower.some((kw) => item.title?.toLowerCase().includes(kw))
-  );
-
-  return match || items[0];
-}
-
-// ─── Component ────────────────────────────────────────────────────────────────
+// ─── Component ───────────────────────────────────────────────────────────────
 
 export default function MealsScreen({ route, navigation }) {
-  const { list, goal } = route.params;
-  // Each entry: { slot, products, status: 'loading'|'done', recipeName, recipeDesc, recipeUrl }
-  const [slots, setSlots] = useState([]);
+  const { list, goal } = route.params || {};
 
-  useEffect(() => {
-    // Build category map from the shopping list
-    const byCategory = {};
-    (list || []).forEach((item) => {
-      const cat = item.category?.toLowerCase() || 'other';
-      if (!byCategory[cat]) byCategory[cat] = [];
-      byCategory[cat].push(item);
-    });
+  const byCategory = {};
+  (list || []).forEach((item) => {
+    const cat = item.category?.toLowerCase() || 'other';
+    if (!byCategory[cat]) byCategory[cat] = [];
+    byCategory[cat].push(item);
+  });
 
-    // ── Step 1: show all 4 slots immediately as "loading" ──────────────────
-    // Each slot gets its own fresh product pick (no shared usedIds that could
-    // block all products after the first slot consumes them).
-    setSlots(
-      MEAL_SLOTS.map((slot) => {
-        const cats =
-          goal === 'high_protein' && slot.key === 'snack'
-            ? ['protein', 'dairy', 'eggs', ...slot.cats]
-            : slot.cats;
-        return {
-          slot,
-          products: pickProducts(byCategory, cats, new Set()),
-          status: 'loading',
-          recipeName: null, recipeDesc: null, recipeUrl: null,
-        };
-      }),
-    );
-
-    // ── Step 2: fetch all slots in parallel ────────────────────────────────
-    Promise.all(
-      MEAL_SLOTS.map(async (slot, idx) => {
-        const cats =
-          goal === 'high_protein' && slot.key === 'snack'
-            ? ['protein', 'dairy', 'eggs', ...slot.cats]
-            : slot.cats;
-        const products = pickProducts(byCategory, cats, new Set());
-        // If the list has no matching products for this slot, use the default
-        // Bulgarian cuisine feed so we still show a real recipe.
-        const feedId  = products.length ? pickFeedId(products) : FEED_BY_CAT.default;
-        const keywords = products.map(cleanName);
-        const recipe   = await fetchGotvachResult(feedId, keywords);
-        setSlots((prev) =>
-          prev.map((s, i) =>
-            i === idx
-              ? {
-                  ...s,
-                  products,
-                  status:     'done',
-                  recipeName: recipe?.title ?? null,
-                  recipeDesc: recipe?.desc  ?? null,
-                  recipeUrl:  recipe?.link  ?? `https://recepti.gotvach.bg`,
-                }
-              : s,
-          ),
-        );
-      }),
-    );
-  }, []);
+  const slots = MEAL_SLOTS.map((slot) => {
+    const cats =
+      goal === 'high_protein' && slot.key === 'snack'
+        ? ['protein', 'dairy', 'eggs', ...slot.cats]
+        : slot.cats;
+    const products = pickProducts(byCategory, cats);
+    const recipe   = pickRecipe(slot.key, products);
+    return { slot, products, recipe };
+  });
 
   return (
     <SafeAreaView style={styles.container}>
@@ -230,70 +177,46 @@ export default function MealsScreen({ route, navigation }) {
 
         <Text style={styles.sectionLabel}>Дневен план</Text>
 
-        {slots.every((s) => s.status === 'loading') && slots.length > 0 && (
-          <View style={styles.emptyBox}>
-            <ActivityIndicator color="#6C63FF" />
-            <Text style={styles.emptyText}>Зареждаме рецепти…</Text>
-          </View>
-        )}
-
-        {slots.map(({ slot, products, status, recipeName, recipeDesc, recipeUrl }) => (
-          <View key={slot.key} style={[styles.mealCard, { borderLeftColor: slot.color }]}>
+        {slots.map(({ slot, products, recipe }) => (
+          <View key={slot.key} style={[styles.card, { borderLeftColor: slot.color }]}>
 
             {/* Slot badge */}
-            <View style={styles.mealCardHeader}>
-              <View style={[styles.slotBadge, { backgroundColor: slot.color }]}>
-                <Text style={styles.slotIcon}>{slot.icon}</Text>
-                <Text style={styles.slotLabel}>{slot.label}</Text>
-              </View>
+            <View style={[styles.badge, { backgroundColor: slot.color }]}>
+              <Text style={styles.badgeIcon}>{slot.icon}</Text>
+              <Text style={styles.badgeLabel}>{slot.label}</Text>
             </View>
 
-            {status === 'loading' ? (
-              /* Per-slot skeleton */
-              <View style={styles.skeleton}>
-                <ActivityIndicator color={slot.color} size="small" />
-                <Text style={[styles.skeletonText, { color: slot.color }]}>
-                  Търсим рецепта…
-                </Text>
-              </View>
-            ) : (
-              <>
-                {/* Recipe name */}
-                <Text style={styles.mealName}>
-                  {recipeName || `Рецепта с ${products.map(cleanName).join(', ')}`}
-                </Text>
+            {/* Recipe name */}
+            <Text style={styles.recipeTitle}>{recipe.title}</Text>
 
-                {/* Product pills */}
-                <View style={styles.productsBox}>
-                  <Text style={styles.productsLabel}>Основни продукти:</Text>
-                  <View style={styles.productsList}>
-                    {products.map((p) => (
-                      <View key={p.id} style={[styles.productPill, { borderColor: slot.color }]}>
-                        <Text style={styles.productPillIcon}>{getCategoryIcon(p.category)}</Text>
-                        <Text style={[styles.productPillText, { color: slot.color }]}>
-                          {cleanName(p.name)}
-                        </Text>
-                      </View>
-                    ))}
-                  </View>
+            {/* Matched products */}
+            {products.length > 0 && (
+              <View style={styles.productsBox}>
+                <Text style={styles.productsLabel}>Продукти от вашия списък:</Text>
+                <View style={styles.pills}>
+                  {products.map((p) => (
+                    <View key={p.id} style={[styles.pill, { borderColor: slot.color }]}>
+                      <Text style={styles.pillIcon}>{getCategoryIcon(p.category)}</Text>
+                      <Text style={[styles.pillText, { color: slot.color }]}>{cleanName(p.name)}</Text>
+                    </View>
+                  ))}
                 </View>
-
-                {/* Short description */}
-                {recipeDesc ? (
-                  <View style={styles.descBox}>
-                    <Text style={styles.descText}>{recipeDesc}</Text>
-                  </View>
-                ) : null}
-
-                {/* Link */}
-                <TouchableOpacity
-                  style={[styles.linkBtn, { backgroundColor: slot.color }]}
-                  onPress={() => Linking.openURL(recipeUrl).catch(() => {})}
-                >
-                  <Text style={styles.linkBtnText}>📖 Виж пълната рецепта</Text>
-                </TouchableOpacity>
-              </>
+              </View>
             )}
+
+            {/* Short description */}
+            <View style={styles.descBox}>
+              <Text style={styles.descText}>{recipe.desc}</Text>
+            </View>
+
+            {/* Link */}
+            <TouchableOpacity
+              style={[styles.linkBtn, { backgroundColor: slot.color }]}
+              onPress={() => Linking.openURL(recipe.url).catch(() => {})}
+            >
+              <Text style={styles.linkBtnText}>📖 Виж пълната рецепта</Text>
+            </TouchableOpacity>
+
           </View>
         ))}
 
@@ -313,7 +236,7 @@ export default function MealsScreen({ route, navigation }) {
   );
 }
 
-// ─── Styles ───────────────────────────────────────────────────────────────────
+// ─── Styles ──────────────────────────────────────────────────────────────────
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F7F8FC' },
@@ -333,55 +256,37 @@ const styles = StyleSheet.create({
     letterSpacing: 1, textTransform: 'uppercase', marginBottom: 12,
   },
 
-  mealCard: {
+  card: {
     backgroundColor: '#fff', borderRadius: 16,
     padding: 16, marginBottom: 16, borderLeftWidth: 5,
     shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 8, elevation: 2,
   },
-  mealCardHeader: { marginBottom: 12 },
-  slotBadge: {
+  badge: {
     flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-start',
-    borderRadius: 20, paddingHorizontal: 12, paddingVertical: 5, gap: 5,
+    borderRadius: 20, paddingHorizontal: 12, paddingVertical: 5,
+    gap: 5, marginBottom: 12,
   },
-  slotIcon:  { fontSize: 13 },
-  slotLabel: { color: '#fff', fontWeight: '700', fontSize: 13 },
+  badgeIcon:  { fontSize: 13 },
+  badgeLabel: { color: '#fff', fontWeight: '700', fontSize: 13 },
 
-  /* Per-slot skeleton */
-  skeleton: {
-    flexDirection: 'row', alignItems: 'center', gap: 10,
-    paddingVertical: 12,
-  },
-  skeletonText: { fontSize: 14, fontWeight: '600' },
-
-  mealName: {
-    fontSize: 18, fontWeight: '800', color: '#1A1A2E',
-    marginBottom: 12, lineHeight: 24,
-  },
+  recipeTitle: { fontSize: 18, fontWeight: '800', color: '#1A1A2E', marginBottom: 12, lineHeight: 24 },
 
   productsBox:   { marginBottom: 12 },
   productsLabel: { fontSize: 11, color: '#aaa', fontWeight: '700', marginBottom: 8 },
-  productsList:  { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  productPill: {
+  pills: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  pill: {
     flexDirection: 'row', alignItems: 'center',
-    backgroundColor: '#fff', borderWidth: 1.5,
-    borderRadius: 20, paddingHorizontal: 10, paddingVertical: 4, gap: 5,
+    backgroundColor: '#fff', borderWidth: 1.5, borderRadius: 20,
+    paddingHorizontal: 10, paddingVertical: 4, gap: 5,
   },
-  productPillIcon: { fontSize: 14 },
-  productPillText: { fontSize: 12, fontWeight: '700' },
+  pillIcon: { fontSize: 14 },
+  pillText: { fontSize: 12, fontWeight: '700' },
 
-  descBox: {
-    backgroundColor: '#FFFBEA', borderRadius: 10,
-    padding: 12, marginBottom: 12,
-  },
+  descBox: { backgroundColor: '#FFFBEA', borderRadius: 10, padding: 12, marginBottom: 12 },
   descText: { fontSize: 13, color: '#7d6608', lineHeight: 20 },
 
-  linkBtn: {
-    borderRadius: 12, paddingVertical: 13, alignItems: 'center',
-  },
+  linkBtn: { borderRadius: 12, paddingVertical: 13, alignItems: 'center' },
   linkBtnText: { color: '#fff', fontWeight: '700', fontSize: 14 },
-
-  emptyBox: { alignItems: 'center', gap: 12, paddingVertical: 40 },
-  emptyText: { fontSize: 14, color: '#aaa' },
 
   footer: {
     flexDirection: 'row', padding: 16, gap: 12,
