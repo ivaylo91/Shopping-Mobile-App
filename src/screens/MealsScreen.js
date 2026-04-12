@@ -3,6 +3,8 @@ import {
   ScrollView, Linking,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useMemo } from 'react';
+import { getCategoryIcon } from '../utils/ui';
 
 // ─── Recipes with ingredient keys for matching ────────────────────────────────
 // keys[] = Bulgarian word stems of main ingredients (4-6 chars, lowercase)
@@ -314,23 +316,12 @@ function pickRecipe(slotKey, allProducts, usedTitles) {
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
-const CATEGORY_ICONS = {
-  meat: '🥩', dairy: '🥛', vegetables: '🥦', fruit: '🍎',
-  grains: '🌾', snacks: '🍪', drinks: '🥤', fish: '🐟',
-  eggs: '🥚', legumes: '🫘', bakery: '🍞', frozen: '🧊',
-  protein: '💪', organic: '🌿', oils: '🫙', canned: '🥫',
-};
-
 const MEAL_SLOTS = [
   { key: 'breakfast', label: 'Закуска', icon: '🌅', color: '#f39c12' },
   { key: 'lunch',     label: 'Обяд',    icon: '☀️',  color: '#6C63FF' },
   { key: 'dinner',    label: 'Вечеря',  icon: '🌙',  color: '#2ecc71' },
   { key: 'snack',     label: 'Снак',    icon: '⚡',   color: '#e74c3c' },
 ];
-
-function getCategoryIcon(cat) {
-  return CATEGORY_ICONS[cat?.toLowerCase()] || '🛒';
-}
 
 function cleanName(raw) {
   return raw
@@ -350,14 +341,15 @@ export default function MealsScreen({ route, navigation }) {
   const { list } = route.params || {};
   const allProducts = list || [];
 
-  const usedTitles = new Set();
-
-  const slots = MEAL_SLOTS.map((slot) => {
-    const recipe = pickRecipe(slot.key, allProducts, usedTitles);
-    usedTitles.add(recipe.title);
-    const featured = matchedProducts(recipe, allProducts);
-    return { slot, recipe, featured };
-  });
+  const slots = useMemo(() => {
+    const usedTitles = new Set();
+    return MEAL_SLOTS.map((slot) => {
+      const recipe = pickRecipe(slot.key, allProducts, usedTitles);
+      usedTitles.add(recipe.title);
+      const featured = matchedProducts(recipe, allProducts);
+      return { slot, recipe, featured };
+    });
+  }, [allProducts]);
 
   return (
     <SafeAreaView style={styles.container}>

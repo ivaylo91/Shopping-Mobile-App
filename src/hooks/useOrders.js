@@ -15,6 +15,7 @@ export function useOrders() {
   const { user } = useAuth();
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     if (!user) {
@@ -29,16 +30,25 @@ export function useOrders() {
       orderBy('createdAt', 'desc')
     );
 
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      setOrders(snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })));
-      setLoading(false);
-    });
+    const unsubscribe = onSnapshot(
+      q,
+      (snapshot) => {
+        setOrders(snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })));
+        setLoading(false);
+        setError(null);
+      },
+      (err) => {
+        console.error('useOrders snapshot error:', err);
+        setError(err.message);
+        setLoading(false);
+      }
+    );
 
     return unsubscribe;
   }, [user]);
 
   const placeOrder = async (cart, total, goal = null, store = null) => {
-    if (!user) throw new Error('Must be logged in to place an order');
+    if (!user) throw new Error('Трябва да сте влезли в профила си');
     await addDoc(collection(db, 'orders'), {
       userId: user.uid,
       items: cart,
@@ -50,5 +60,5 @@ export function useOrders() {
     });
   };
 
-  return { orders, loading, placeOrder };
+  return { orders, loading, error, placeOrder };
 }

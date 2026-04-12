@@ -18,7 +18,7 @@ export default function CartScreen({ navigation }) {
 
   const handleCheckout = async () => {
     if (cart.length === 0) return;
-    Alert.alert('Confirm Order', `Total: $${total.toFixed(2)}`, [
+    Alert.alert('Потвърди поръчка', `Общо: ${total.toFixed(2)} €`, [
       { text: 'Cancel', style: 'cancel' },
       {
         text: 'Place Order',
@@ -45,7 +45,7 @@ export default function CartScreen({ navigation }) {
     <View style={styles.item}>
       <View style={styles.itemInfo}>
         <Text style={styles.itemName} numberOfLines={1}>{item.name}</Text>
-        <Text style={styles.itemPrice}>${(item.price * item.quantity).toFixed(2)}</Text>
+        <Text style={styles.itemPrice}>{(item.price * item.quantity).toFixed(2)} €</Text>
       </View>
       <View style={styles.itemControls}>
         <TouchableOpacity
@@ -92,7 +92,7 @@ export default function CartScreen({ navigation }) {
         contentContainerStyle={styles.list}
       />
       <View style={styles.footer}>
-        <Text style={styles.total}>Total: ${total.toFixed(2)}</Text>
+        <Text style={styles.total}>Общо: {total.toFixed(2)} €</Text>
         <TouchableOpacity
           style={[styles.checkoutBtn, loading && styles.disabled]}
           onPress={handleCheckout}

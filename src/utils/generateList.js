@@ -5,7 +5,7 @@
  * {
  *   id: string,
  *   name: string,
- *   price: number,          // price per unit (BGN)
+ *   price: number,          // price per unit (EUR)
  *   unit: string,           // e.g. "kg", "piece", "500g"
  *   store: string,          // "Lidl" | "Kaufland" | "Billa" | "Any"
  *   category: string,       // "meat" | "dairy" | "vegetables" | "fruit" | "grains" | "snacks" | ...
@@ -49,6 +49,7 @@ function buildCheapestList(products, budget) {
   }
 
   // Second pass: fill remaining budget with cheapest items (add quantity)
+  // Re-uses the already-sorted array — no double sort
   for (const p of sorted) {
     const remaining = budget - spent;
     if (remaining <= 0) break;
@@ -76,9 +77,14 @@ function buildHealthyList(products, budget) {
   const healthy = products.filter((p) => p.isHealthy);
   const fallback = products.filter((p) => !p.isHealthy);
 
-  // Sort healthy items: low calorie per BGN first (value health)
+  // Sort healthy items: low calorie first (value health); cache for second pass
+  const healthySortedByCalories = [...healthy].sort(
+    (a, b) => (a.calories || 999) - (b.calories || 999)
+  );
+  const healthySortedByPrice = [...healthy].sort((a, b) => a.price - b.price);
+
   const sorted = [
-    ...healthy.sort((a, b) => (a.calories || 999) - (b.calories || 999)),
+    ...healthySortedByCalories,
     ...fallback.sort((a, b) => a.price - b.price),
   ];
 
@@ -95,8 +101,8 @@ function buildHealthyList(products, budget) {
     }
   }
 
-  // Fill remaining with healthy extras
-  for (const p of healthy.sort((a, b) => a.price - b.price)) {
+  // Fill remaining with healthy extras — reuse cached sorted array
+  for (const p of healthySortedByPrice) {
     const remaining = budget - spent;
     if (remaining <= 0) break;
     const existing = result.find((r) => r.id === p.id);
@@ -116,19 +122,20 @@ function buildHealthyList(products, budget) {
 
 /**
  * HIGH PROTEIN goal:
- * Sort by protein-per-BGN ratio (most protein per money spent).
+ * Sort by protein-per-EUR ratio (most protein per money spent).
  * Fill budget greedily.
  */
 function buildHighProteinList(products, budget) {
-  // Only consider products with meaningful protein (>= 5g per 100g)
   const proteinProducts = products.filter((p) => (p.protein || 0) >= 5);
   const others = products.filter((p) => (p.protein || 0) < 5);
 
-  // protein per BGN = protein / price
+  // Cache sort by protein/price ratio for reuse in second pass
+  const proteinSortedByRatio = [...proteinProducts].sort(
+    (a, b) => b.protein / b.price - a.protein / a.price
+  );
+
   const sorted = [
-    ...proteinProducts.sort(
-      (a, b) => b.protein / b.price - a.protein / a.price
-    ),
+    ...proteinSortedByRatio,
     ...others.sort((a, b) => a.price - b.price),
   ];
 
@@ -145,10 +152,8 @@ function buildHighProteinList(products, budget) {
     }
   }
 
-  // Add more high-protein items with remaining budget
-  for (const p of proteinProducts.sort(
-    (a, b) => b.protein / b.price - a.protein / a.price
-  )) {
+  // Add more high-protein items — reuse cached sorted array
+  for (const p of proteinSortedByRatio) {
     const remaining = budget - spent;
     if (remaining <= 0) break;
     const extraQty = Math.floor(remaining / p.price);

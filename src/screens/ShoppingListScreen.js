@@ -7,48 +7,74 @@ import {
   Alert,
   ActivityIndicator,
   Share,
-  SafeAreaView,
 } from 'react-native';
-import { useState } from 'react';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { useState, useMemo, useCallback, memo } from 'react';
 import { useOrders } from '../hooks/useOrders';
+import { getCategoryIcon, GOAL_META } from '../utils/ui';
 
-const GOAL_META = {
-  cheapest: { label: 'Най-евтино', icon: '💰', color: '#f39c12' },
-  healthy: { label: 'Здравословно', icon: '🥗', color: '#2ecc71' },
-  high_protein: { label: 'Богато на протеин', icon: '💪', color: '#e74c3c' },
-};
+// ─── Memoized list item ───────────────────────────────────────────────────────
 
-const CATEGORY_ICONS = {
-  meat: '🥩',
-  dairy: '🥛',
-  vegetables: '🥦',
-  fruit: '🍎',
-  grains: '🌾',
-  snacks: '🍪',
-  drinks: '🥤',
-  fish: '🐟',
-  eggs: '🥚',
-  legumes: '🫘',
-  bakery: '🍞',
-  frozen: '🧊',
-};
+const ShoppingItem = memo(function ShoppingItem({ item, isChecked, onToggle, store }) {
+  return (
+    <TouchableOpacity
+      style={[styles.item, isChecked && styles.itemChecked]}
+      onPress={() => onToggle(item.id)}
+      activeOpacity={0.75}
+    >
+      <Text style={styles.checkIcon}>{isChecked ? '✅' : '⬜'}</Text>
+      <View style={styles.itemIconWrap}>
+        <Text style={styles.categoryIcon}>{getCategoryIcon(item.category)}</Text>
+      </View>
+      <View style={styles.itemBody}>
+        <Text style={[styles.itemName, isChecked && styles.itemNameChecked]}>
+          {item.name}
+        </Text>
+        <View style={styles.itemMeta}>
+          <Text style={styles.itemStore}>
+            {item.store && item.store !== 'Any'
+              ? item.store
+              : store !== 'any'
+              ? store
+              : 'Всеки магазин'}
+          </Text>
+          {(item.protein || 0) > 0 && (
+            <Text style={styles.itemProtein}>💪 {item.protein}г протеин</Text>
+          )}
+        </View>
+      </View>
+      <View style={styles.itemRight}>
+        <Text style={styles.itemQty}>×{item.quantity}</Text>
+        <Text style={styles.itemPrice}>{item.subtotal.toFixed(2)} €</Text>
+        <Text style={styles.itemUnit}>{item.price.toFixed(2)} €/{item.unit || 'бр.'}</Text>
+      </View>
+    </TouchableOpacity>
+  );
+});
 
-function getCategoryIcon(category) {
-  return CATEGORY_ICONS[category?.toLowerCase()] || '🛒';
-}
+// ─── Screen ───────────────────────────────────────────────────────────────────
 
 export default function ShoppingListScreen({ route, navigation }) {
-  const { list, budget, goal, store } = route.params;
+  const { list, budget, goal, store, readOnly = false } = route.params;
   const { placeOrder } = useOrders();
   const [saving, setSaving] = useState(false);
   const [checked, setChecked] = useState({});
 
   const meta = GOAL_META[goal] || GOAL_META.cheapest;
-  const total = list.reduce((sum, i) => sum + i.subtotal, 0);
-  const remaining = budget - total;
-  const totalProtein = list.reduce((sum, i) => sum + (i.protein || 0) * i.quantity, 0);
 
-  const toggleCheck = (id) => setChecked((prev) => ({ ...prev, [id]: !prev[id] }));
+  const { total, remaining, totalProtein } = useMemo(() => {
+    const t = list.reduce((sum, i) => sum + i.subtotal, 0);
+    return {
+      total: t,
+      remaining: budget - t,
+      totalProtein: list.reduce((sum, i) => sum + (i.protein || 0) * i.quantity, 0),
+    };
+  }, [list, budget]);
+
+  const toggleCheck = useCallback(
+    (id) => setChecked((prev) => ({ ...prev, [id]: !prev[id] })),
+    []
+  );
 
   const handleSave = async () => {
     Alert.alert('Запази списъка', 'Искате ли да запазите този списък в историята?', [
@@ -63,7 +89,7 @@ export default function ShoppingListScreen({ route, navigation }) {
               { text: 'OK', onPress: () => navigation.navigate('Orders') },
             ]);
           } catch (err) {
-            Alert.alert('Грешка', err.message);
+            Alert.alert('Грешка', err?.message || 'Неуспешно запазване');
           } finally {
             setSaving(false);
           }
@@ -86,44 +112,24 @@ export default function ShoppingListScreen({ route, navigation }) {
       `Обща сума: ${total.toFixed(2)} €`,
       `Оставащо: ${remaining.toFixed(2)} €`,
     ].join('\n');
-    await Share.share({ message: text });
+    try {
+      await Share.share({ message: text });
+    } catch {
+      Alert.alert('Грешка', 'Споделянето е неуспешно.');
+    }
   };
 
-  const handleRegenerate = () => navigation.goBack();
-
-  const renderItem = ({ item }) => {
-    const isChecked = checked[item.id];
-    return (
-      <TouchableOpacity
-        style={[styles.item, isChecked && styles.itemChecked]}
-        onPress={() => toggleCheck(item.id)}
-        activeOpacity={0.75}
-      >
-        <Text style={styles.checkIcon}>{isChecked ? '✅' : '⬜'}</Text>
-        <View style={styles.itemIconWrap}>
-          <Text style={styles.categoryIcon}>{getCategoryIcon(item.category)}</Text>
-        </View>
-        <View style={styles.itemBody}>
-          <Text style={[styles.itemName, isChecked && styles.itemNameChecked]}>
-            {item.name}
-          </Text>
-          <View style={styles.itemMeta}>
-            <Text style={styles.itemStore}>
-              {item.store && item.store !== 'Any' ? item.store : store !== 'any' ? store : 'Всеки магазин'}
-            </Text>
-            {(item.protein || 0) > 0 && (
-              <Text style={styles.itemProtein}>💪 {item.protein}г протеин</Text>
-            )}
-          </View>
-        </View>
-        <View style={styles.itemRight}>
-          <Text style={styles.itemQty}>×{item.quantity}</Text>
-          <Text style={styles.itemPrice}>{item.subtotal.toFixed(2)} €</Text>
-          <Text style={styles.itemUnit}>{item.price.toFixed(2)} €/{item.unit || 'бр.'}</Text>
-        </View>
-      </TouchableOpacity>
-    );
-  };
+  const renderItem = useCallback(
+    ({ item }) => (
+      <ShoppingItem
+        item={item}
+        isChecked={!!checked[item.id]}
+        onToggle={toggleCheck}
+        store={store}
+      />
+    ),
+    [checked, toggleCheck, store]
+  );
 
   return (
     <SafeAreaView style={styles.container}>
@@ -149,6 +155,9 @@ export default function ShoppingListScreen({ route, navigation }) {
         renderItem={renderItem}
         contentContainerStyle={styles.list}
         showsVerticalScrollIndicator={false}
+        removeClippedSubviews
+        maxToRenderPerBatch={10}
+        windowSize={5}
       />
 
       {/* ── Totals ── */}
@@ -182,24 +191,28 @@ export default function ShoppingListScreen({ route, navigation }) {
 
       {/* ── Action Buttons ── */}
       <View style={styles.actions}>
-        <TouchableOpacity style={styles.btnSecondary} onPress={handleRegenerate}>
-          <Text style={styles.btnSecondaryText}>🔄 Генерирай{'\n'}отново</Text>
-        </TouchableOpacity>
+        {!readOnly && (
+          <TouchableOpacity style={styles.btnSecondary} onPress={() => navigation.goBack()}>
+            <Text style={styles.btnSecondaryText}>🔄 Генерирай{'\n'}отново</Text>
+          </TouchableOpacity>
+        )}
+
+        {!readOnly && (
+          <TouchableOpacity
+            style={[styles.btnPrimary, saving && styles.btnDisabled]}
+            onPress={handleSave}
+            disabled={saving}
+          >
+            {saving ? (
+              <ActivityIndicator color="#fff" size="small" />
+            ) : (
+              <Text style={styles.btnPrimaryText}>💾 Запази{'\n'}списъка</Text>
+            )}
+          </TouchableOpacity>
+        )}
 
         <TouchableOpacity
-          style={[styles.btnPrimary, saving && styles.btnDisabled]}
-          onPress={handleSave}
-          disabled={saving}
-        >
-          {saving ? (
-            <ActivityIndicator color="#fff" size="small" />
-          ) : (
-            <Text style={styles.btnPrimaryText}>💾 Запази{'\n'}списъка</Text>
-          )}
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.btnMeals}
+          style={[styles.btnMeals, readOnly && styles.btnMealsFull]}
           onPress={() => navigation.navigate('Meals', { list, goal })}
         >
           <Text style={styles.btnMealsText}>🍽️ Виж{'\n'}ястията</Text>
@@ -333,5 +346,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  btnMealsFull: { flex: 3 },
   btnMealsText: { color: '#fff', fontWeight: '700', fontSize: 13, textAlign: 'center' },
 });
