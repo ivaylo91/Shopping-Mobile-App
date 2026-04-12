@@ -67,7 +67,7 @@ const RECIPES = {
     },
     {
       title: 'Сьомга със сос от синьо сирене и гъби',
-      keys: ['сьомга', 'сирен', 'гъб', 'масл'],
+      keys: ['сьомга', 'сирен', 'гъб', 'печурк', 'масл'],
       url: 'https://recepti.gotvach.bg/r-288255-Сьомга_със_сос_от_синьо_сирене_и_гъби',
       desc: 'Сьомга, изпечена на тиган и поднесена с кремообразен сос от сирене и гъби.',
     },
@@ -95,7 +95,7 @@ const RECIPES = {
   soup: [
     {
       title: 'Перфектната крем супа от леща',
-      keys: ['леща', 'лещен', 'морков', 'лук'],
+      keys: ['леща', 'лещен', 'червена', 'морков', 'лук'],
       url: 'https://recepti.gotvach.bg/r-288374-Перфектната_крем_супа_от_леща',
       desc: 'Кадифена крем супа от червена леща с лук, морков и подправки.',
     },
@@ -107,7 +107,7 @@ const RECIPES = {
     },
     {
       title: 'Нежна крем супа с праз и гъби',
-      keys: ['гъб', 'праз', 'лук', 'картоф'],
+      keys: ['гъб', 'печурк', 'праз', 'лук', 'картоф'],
       url: 'https://recepti.gotvach.bg/r-287367-Нежна_крем_супа_с_праз_и_гъби',
       desc: 'Праз и гъби, задушени с масло и пасирани до копринена текстура.',
     },
@@ -119,7 +119,7 @@ const RECIPES = {
     },
     {
       title: 'Боб чорба по старобългарски',
-      keys: ['боб', 'лук', 'морков', 'чушк', 'домат'],
+      keys: ['боб', 'лук', 'морков', 'чушк', 'домат', 'едър'],
       url: 'https://recepti.gotvach.bg/r-285000-Боб_чорба_по_старобългарски',
       desc: 'Традиционна боб чорба с морков, лук и чушки — класика на българската кухня.',
     },
@@ -141,19 +141,19 @@ const RECIPES = {
     },
     {
       title: 'Салата с нахут, сирене и авокадо',
-      keys: ['нахут', 'сирен', 'фета', 'домат', 'краставиц'],
+      keys: ['нахут', 'сирен', 'фета', 'домат', 'краставиц', 'маслин'],
       url: 'https://recepti.gotvach.bg/r-287964-Салата_с_нахут,_сирене_и_авокадо',
       desc: 'Нахут, фета сирене и авокадо с лимонов дресинг.',
     },
     {
       title: 'Пълнени гъби със спанак, галета и сирене',
-      keys: ['гъб', 'спанак', 'сирен', 'кашкав'],
+      keys: ['гъб', 'печурк', 'спанак', 'сирен', 'кашкав'],
       url: 'https://recepti.gotvach.bg/r-287965-Пълнени_гъби_със_спанак,_галета_и_сирене',
       desc: 'Гъбени шапки, пълнени с ароматна смес от спанак и сирене.',
     },
     {
       title: 'Шопска салата',
-      keys: ['домат', 'краставиц', 'чушк', 'сирен', 'фета', 'лук'],
+      keys: ['домат', 'краставиц', 'чушк', 'сирен', 'фета', 'лук', 'маслин'],
       url: 'https://recepti.gotvach.bg/r-280000-Шопска_салата',
       desc: 'Класическа шопска салата с домати, краставици, чушки и бяло сирене.',
     },
@@ -169,7 +169,7 @@ const RECIPES = {
   bulgarian: [
     {
       title: 'Меки като облак златисти палачинки',
-      keys: ['яйц', 'мляко', 'млечн', 'брашн'],
+      keys: ['яйц', 'мляко', 'млечн', 'кисело', 'краве', 'брашн', 'хляб', 'земел'],
       url: 'https://recepti.gotvach.bg/r-287947-Меки_като_облак_златисти_палачинки',
       desc: 'Пухкави палачинки с мляко и яйца — класическа закуска за цялото семейство.',
     },
@@ -187,13 +187,13 @@ const RECIPES = {
     },
     {
       title: 'Мусака с картофи и кайма',
-      keys: ['кайма', 'картоф', 'яйц', 'мляко', 'лук'],
+      keys: ['кайма', 'картоф', 'яйц', 'мляко', 'кисело', 'лук'],
       url: 'https://recepti.gotvach.bg/r-281000-Мусака_с_картофи_и_кайма',
       desc: 'Класическа мусака с кайма, картофи и коричка от яйца и мляко.',
     },
     {
       title: 'Баница със сирене',
-      keys: ['сирен', 'фета', 'яйц', 'масл'],
+      keys: ['сирен', 'фета', 'яйц', 'масл', 'хляб', 'тутманик'],
       url: 'https://recepti.gotvach.bg/r-280500-Баница_със_сирене',
       desc: 'Домашна баница с бяло сирене и яйца — хрупкава и вкусна закуска.',
     },
@@ -258,7 +258,7 @@ const RECIPES = {
 
 // ─── Matching logic ───────────────────────────────────────────────────────────
 
-// Extract meaningful tokens from a product name (strip weights, numbers, abbreviations)
+// Extract meaningful tokens from a product name
 function tokenize(name) {
   return name
     .toLowerCase()
@@ -268,19 +268,17 @@ function tokenize(name) {
     .filter((w) => w.length > 2);
 }
 
-// Score a recipe by how many of its keys appear in the product tokens
+// Score a recipe against a list of products
 function scoreRecipe(recipe, products) {
   const allTokens = products.flatMap((p) => tokenize(p.name));
   let score = 0;
   for (const key of recipe.keys) {
-    if (allTokens.some((t) => t.startsWith(key) || key.startsWith(t))) {
-      score++;
-    }
+    if (allTokens.some((t) => t.startsWith(key) || key.startsWith(t))) score++;
   }
   return score;
 }
 
-// Which product names actually match a recipe (for display)
+// Products that actually match a recipe's ingredient keys (for display)
 function matchedProducts(recipe, products, max = 3) {
   return products
     .filter((p) => {
@@ -290,12 +288,22 @@ function matchedProducts(recipe, products, max = 3) {
     .slice(0, max);
 }
 
-// Slot → candidate pools (ordered by preference)
+// Slot → candidate recipe pools (ordered by preference)
 const SLOT_POOLS = {
   breakfast: ['bulgarian', 'salad', 'dessert'],
-  lunch:     ['meat', 'fish', 'soup', 'bulgarian', 'veg'],
+  lunch:     ['meat', 'fish', 'soup', 'veg', 'bulgarian'],
   dinner:    ['meat', 'fish', 'veg', 'bulgarian', 'soup'],
   snack:     ['salad', 'dessert', 'veg'],
+};
+
+// Products categories relevant to each meal slot
+// Used to score recipes against slot-appropriate products only,
+// so e.g. breakfast doesn't pick a meat recipe just because meat is in the list
+const SLOT_CATS = {
+  breakfast: ['eggs', 'dairy', 'bakery', 'grains', 'fruit'],
+  lunch:     ['meat', 'fish', 'vegetables', 'legumes', 'grains', 'canned'],
+  dinner:    ['meat', 'fish', 'dairy', 'vegetables', 'eggs', 'grains', 'frozen'],
+  snack:     ['fruit', 'snacks', 'dairy', 'bakery', 'frozen'],
 };
 
 function pickRecipe(slotKey, allProducts, usedTitles) {
@@ -304,14 +312,21 @@ function pickRecipe(slotKey, allProducts, usedTitles) {
   const available = candidates.filter((r) => !usedTitles.has(r.title));
   const pool = available.length ? available : candidates;
 
+  // Score only against products relevant to this slot (avoids breakfast picking meat recipes)
+  const slotCats = SLOT_CATS[slotKey];
+  const slotProducts = allProducts.filter((p) => slotCats.includes(p.category?.toLowerCase()));
+  const scoringProducts = slotProducts.length > 0 ? slotProducts : allProducts;
+
   const scored = pool
-    .map((r) => ({ recipe: r, score: scoreRecipe(r, allProducts) }))
+    .map((r) => ({ recipe: r, score: scoreRecipe(r, scoringProducts) }))
     .sort((a, b) => b.score - a.score);
 
-  // If best score > 0 use it; otherwise rotate deterministically for variety
+  // Use best match if any ingredient overlaps
   if (scored[0].score > 0) return scored[0].recipe;
-  const seed = (allProducts[0]?.id?.charCodeAt?.(0) || 0) % pool.length;
-  return pool[seed] || pool[0];
+
+  // Fallback: first recipe from the primary pool that isn't used yet
+  const primary = (RECIPES[poolKeys[0]] || []).filter((r) => !usedTitles.has(r.title));
+  return primary[0] || pool[0];
 }
 
 // ─── Constants ───────────────────────────────────────────────────────────────
