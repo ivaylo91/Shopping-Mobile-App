@@ -59,6 +59,91 @@ function toSearchTerm(product) {
   return fallbacks[product.category?.toLowerCase()] || 'chicken';
 }
 
+// Translate English ingredient name to Bulgarian
+const ING_BG = {
+  // Proteins
+  'chicken': 'пиле', 'chicken breast': 'пилешки гърди', 'chicken thighs': 'пилешки бутчета',
+  'chicken legs': 'пилешки крачета', 'chicken wings': 'пилешки крилца',
+  'beef': 'говеждо', 'ground beef': 'говежда кайма', 'beef mince': 'говежда кайма',
+  'steak': 'стек', 'pork': 'свинско', 'pork belly': 'свински корем',
+  'bacon': 'бекон', 'ham': 'шунка', 'sausage': 'наденица', 'chorizo': 'чоризо',
+  'lamb': 'агнешко', 'turkey': 'пуешко', 'duck': 'патешко',
+  'salmon': 'сьомга', 'tuna': 'риба тон', 'shrimp': 'скариди', 'prawns': 'скариди',
+  'mussels': 'миди', 'squid': 'калмари', 'cod': 'треска', 'sea bass': 'лаврак',
+  'eggs': 'яйца', 'egg': 'яйце',
+  // Dairy
+  'cheese': 'сирене', 'parmesan': 'пармезан', 'mozzarella': 'моцарела',
+  'feta': 'фета', 'cheddar': 'чедър', 'cream cheese': 'крем сирене',
+  'ricotta': 'рикота', 'goat cheese': 'козе сирене',
+  'milk': 'мляко', 'yogurt': 'кисело мляко', 'butter': 'масло',
+  'cream': 'сметана', 'double cream': 'тежка сметана', 'sour cream': 'заквасена сметана',
+  // Vegetables
+  'tomatoes': 'домати', 'tomato': 'домат', 'cherry tomatoes': 'чери домати',
+  'onion': 'лук', 'red onion': 'червен лук', 'spring onions': 'пресен лук',
+  'garlic': 'чесън', 'garlic cloves': 'скилидки чесън',
+  'spinach': 'спанак', 'mushrooms': 'гъби', 'mushroom': 'гъба',
+  'pepper': 'пипер', 'bell pepper': 'чушка', 'red pepper': 'червена чушка',
+  'green pepper': 'зелена чушка', 'yellow pepper': 'жълта чушка',
+  'courgette': 'тиквичка', 'zucchini': 'тиквичка', 'aubergine': 'патладжан',
+  'eggplant': 'патладжан', 'broccoli': 'броколи', 'cauliflower': 'карфиол',
+  'carrot': 'морков', 'carrots': 'моркови', 'celery': 'целина',
+  'cucumber': 'краставица', 'leek': 'праз лук', 'asparagus': 'аспержи',
+  'peas': 'грах', 'sweetcorn': 'царевица', 'corn': 'царевица',
+  'potato': 'картоф', 'potatoes': 'картофи', 'sweet potato': 'сладък картоф',
+  'lettuce': 'маруля', 'rocket': 'рукола', 'kale': 'кейл',
+  'olives': 'маслини', 'capers': 'каперси', 'artichoke': 'артишок',
+  // Grains & Pasta
+  'pasta': 'паста', 'spaghetti': 'спагети', 'penne': 'пене',
+  'tagliatelle': 'талятеле', 'lasagne sheets': 'листи за лазаня',
+  'rice': 'ориз', 'basmati rice': 'басмати ориз', 'risotto rice': 'ризото ориз',
+  'bread': 'хляб', 'breadcrumbs': 'галета', 'flour': 'брашно',
+  'plain flour': 'бяло брашно', 'self-raising flour': 'набухващо брашно',
+  'oats': 'овесени ядки', 'couscous': 'кус-кус', 'quinoa': 'киноа',
+  'lentils': 'леща', 'red lentils': 'червена леща', 'green lentils': 'зелена леща',
+  'beans': 'боб', 'chickpeas': 'нахут', 'kidney beans': 'фасул',
+  'black beans': 'черен боб',
+  // Herbs & Spices
+  'salt': 'сол', 'pepper': 'черен пипер', 'black pepper': 'черен пипер',
+  'paprika': 'червен пипер', 'cumin': 'кимион', 'coriander': 'кориандър',
+  'turmeric': 'куркума', 'oregano': 'риган', 'basil': 'босилек',
+  'thyme': 'мащерка', 'rosemary': 'розмарин', 'parsley': 'магданоз',
+  'bay leaves': 'дафинови листа', 'chilli': 'люта чушка', 'chili': 'чили',
+  'chilli flakes': 'люспи чили', 'cayenne pepper': 'кайен',
+  'cinnamon': 'канела', 'nutmeg': 'индийско орехче', 'ginger': 'джинджифил',
+  'curry powder': 'къри', 'garam masala': 'гарам масала',
+  // Sauces & Oils
+  'olive oil': 'зехтин', 'vegetable oil': 'растително масло',
+  'sunflower oil': 'слънчогледово масло', 'sesame oil': 'сусамово масло',
+  'soy sauce': 'соев сос', 'worcestershire sauce': 'уорчестър сос',
+  'tomato puree': 'доматено пюре', 'tomato paste': 'доматена паста',
+  'passata': 'доматен сок', 'stock': 'бульон', 'chicken stock': 'пилешки бульон',
+  'beef stock': 'телешки бульон', 'vegetable stock': 'зеленчуков бульон',
+  'vinegar': 'оцет', 'balsamic vinegar': 'балсамов оцет',
+  'lemon': 'лимон', 'lemon juice': 'лимонов сок', 'lime': 'лайм',
+  'honey': 'мед', 'sugar': 'захар', 'brown sugar': 'кафява захар',
+  'mustard': 'горчица', 'mayonnaise': 'майонеза', 'tahini': 'тахан',
+  // Fruits & Nuts
+  'strawberries': 'ягоди', 'blueberries': 'боровинки', 'raspberries': 'малини',
+  'avocado': 'авокадо', 'mango': 'манго', 'banana': 'банан',
+  'apple': 'ябълка', 'lemon zest': 'лимонова кора',
+  'almonds': 'бадеми', 'walnuts': 'орехи', 'pine nuts': 'кедрови ядки',
+  'cashews': 'кашу', 'peanuts': 'фъстъци', 'coconut milk': 'кокосово мляко',
+  // Other
+  'water': 'вода', 'white wine': 'бяло вино', 'red wine': 'червено вино',
+  'stock cube': 'кубче бульон', 'egg yolks': 'жълтъци', 'egg whites': 'белтъци',
+};
+
+function translateIngredient(raw) {
+  const lower = raw.toLowerCase().trim();
+  // Try full match first
+  if (ING_BG[lower]) return ING_BG[lower];
+  // Try matching just the ingredient part (without measure)
+  for (const [en, bg] of Object.entries(ING_BG)) {
+    if (lower.endsWith(en) || lower.includes(` ${en}`)) return raw.replace(new RegExp(en, 'i'), bg);
+  }
+  return raw; // fallback: keep original if no translation found
+}
+
 // Fetch one recipe from TheMealDB by ingredient, return simplified object
 async function fetchRecipe(ingredient) {
   try {
@@ -84,7 +169,7 @@ async function fetchRecipe(ingredient) {
     for (let i = 1; i <= 20; i++) {
       const ing = m[`strIngredient${i}`];
       const meas = m[`strMeasure${i}`];
-      if (ing?.trim()) ingredients.push(`${meas?.trim() || ''} ${ing}`.trim());
+      if (ing?.trim()) ingredients.push(translateIngredient(`${meas?.trim() || ''} ${ing}`.trim()));
       if (ingredients.length >= 5) break;
     }
 
