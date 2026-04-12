@@ -1,4 +1,3 @@
-import { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -6,7 +5,6 @@ import {
   TouchableOpacity,
   SafeAreaView,
   ScrollView,
-  ActivityIndicator,
   Linking,
 } from 'react-native';
 
@@ -21,261 +19,281 @@ function getCategoryIcon(cat) {
   return CATEGORY_ICONS[cat?.toLowerCase()] || '🛒';
 }
 
-// Map a product to a TheMealDB ingredient search term (English)
-function toSearchTerm(product) {
-  if (!product) return null;
-  const n = product.name.toLowerCase();
-
-  if (n.includes('пилешк'))                          return 'chicken';
-  if (n.includes('говежд') || n.includes('телешк') || n.includes('ръмп стек')) return 'beef';
-  if (n.includes('свинск'))                          return 'pork';
-  if (n.includes('сьомга'))                          return 'salmon';
-  if (n.includes('риба тон'))                        return 'tuna';
-  if (n.includes('скариди'))                         return 'shrimp';
-  if (n.includes('миди'))                            return 'mussels';
-  if (n.includes('калмари'))                         return 'squid';
-  if (n.includes('спанак'))                          return 'spinach';
-  if (n.includes('домат'))                           return 'tomatoes';
-  if (n.includes('гъби') || n.includes('печурки'))   return 'mushrooms';
-  if (n.includes('краставиц'))                       return 'cucumber';
-  if (n.includes('яйц'))                             return 'eggs';
-  if (n.includes('кисело мляко') || n.includes('йогурт') || n.includes('скир')) return 'yogurt';
-  if (n.includes('сирен') || n.includes('фета') || n.includes('халуми') || n.includes('кашкавал')) return 'cheese';
-  if (n.includes('паста') || n.includes('пене'))     return 'pasta';
-  if (n.includes('леща'))                            return 'lentils';
-  if (n.includes('боб'))                             return 'beans';
-  if (n.includes('ягод'))                            return 'strawberries';
-  if (n.includes('авокадо'))                         return 'avocado';
-  if (n.includes('манго'))                           return 'mango';
-  if (n.includes('бадем'))                           return 'almonds';
-  if (n.includes('масло') && n.includes('маслин'))   return 'olive oil';
-
-  const fallbacks = {
-    meat: 'chicken', fish: 'salmon', dairy: 'cheese',
-    vegetables: 'tomatoes', grains: 'pasta', eggs: 'eggs',
-    fruit: 'strawberries', legumes: 'lentils', bakery: 'bread',
-    snacks: 'almonds', protein: 'chicken', organic: 'spinach',
-  };
-  return fallbacks[product.category?.toLowerCase()] || 'chicken';
-}
-
-// Translate English ingredient name to Bulgarian
-const ING_BG = {
-  // Proteins
-  'chicken': 'пиле', 'chicken breast': 'пилешки гърди', 'chicken thighs': 'пилешки бутчета',
-  'chicken legs': 'пилешки крачета', 'chicken wings': 'пилешки крилца',
-  'beef': 'говеждо', 'ground beef': 'говежда кайма', 'beef mince': 'говежда кайма',
-  'steak': 'стек', 'pork': 'свинско', 'pork belly': 'свински корем',
-  'bacon': 'бекон', 'ham': 'шунка', 'sausage': 'наденица', 'chorizo': 'чоризо',
-  'lamb': 'агнешко', 'turkey': 'пуешко', 'duck': 'патешко',
-  'salmon': 'сьомга', 'tuna': 'риба тон', 'shrimp': 'скариди', 'prawns': 'скариди',
-  'mussels': 'миди', 'squid': 'калмари', 'cod': 'треска', 'sea bass': 'лаврак',
-  'eggs': 'яйца', 'egg': 'яйце',
-  // Dairy
-  'cheese': 'сирене', 'parmesan': 'пармезан', 'mozzarella': 'моцарела',
-  'feta': 'фета', 'cheddar': 'чедър', 'cream cheese': 'крем сирене',
-  'ricotta': 'рикота', 'goat cheese': 'козе сирене',
-  'milk': 'мляко', 'yogurt': 'кисело мляко', 'butter': 'масло',
-  'cream': 'сметана', 'double cream': 'тежка сметана', 'sour cream': 'заквасена сметана',
-  // Vegetables
-  'tomatoes': 'домати', 'tomato': 'домат', 'cherry tomatoes': 'чери домати',
-  'onion': 'лук', 'red onion': 'червен лук', 'spring onions': 'пресен лук',
-  'garlic': 'чесън', 'garlic cloves': 'скилидки чесън',
-  'spinach': 'спанак', 'mushrooms': 'гъби', 'mushroom': 'гъба',
-  'pepper': 'пипер', 'bell pepper': 'чушка', 'red pepper': 'червена чушка',
-  'green pepper': 'зелена чушка', 'yellow pepper': 'жълта чушка',
-  'courgette': 'тиквичка', 'zucchini': 'тиквичка', 'aubergine': 'патладжан',
-  'eggplant': 'патладжан', 'broccoli': 'броколи', 'cauliflower': 'карфиол',
-  'carrot': 'морков', 'carrots': 'моркови', 'celery': 'целина',
-  'cucumber': 'краставица', 'leek': 'праз лук', 'asparagus': 'аспержи',
-  'peas': 'грах', 'sweetcorn': 'царевица', 'corn': 'царевица',
-  'potato': 'картоф', 'potatoes': 'картофи', 'sweet potato': 'сладък картоф',
-  'lettuce': 'маруля', 'rocket': 'рукола', 'kale': 'кейл',
-  'olives': 'маслини', 'capers': 'каперси', 'artichoke': 'артишок',
-  // Grains & Pasta
-  'pasta': 'паста', 'spaghetti': 'спагети', 'penne': 'пене',
-  'tagliatelle': 'талятеле', 'lasagne sheets': 'листи за лазаня',
-  'rice': 'ориз', 'basmati rice': 'басмати ориз', 'risotto rice': 'ризото ориз',
-  'bread': 'хляб', 'breadcrumbs': 'галета', 'flour': 'брашно',
-  'plain flour': 'бяло брашно', 'self-raising flour': 'набухващо брашно',
-  'oats': 'овесени ядки', 'couscous': 'кус-кус', 'quinoa': 'киноа',
-  'lentils': 'леща', 'red lentils': 'червена леща', 'green lentils': 'зелена леща',
-  'beans': 'боб', 'chickpeas': 'нахут', 'kidney beans': 'фасул',
-  'black beans': 'черен боб',
-  // Herbs & Spices
-  'salt': 'сол', 'pepper': 'черен пипер', 'black pepper': 'черен пипер',
-  'paprika': 'червен пипер', 'cumin': 'кимион', 'coriander': 'кориандър',
-  'turmeric': 'куркума', 'oregano': 'риган', 'basil': 'босилек',
-  'thyme': 'мащерка', 'rosemary': 'розмарин', 'parsley': 'магданоз',
-  'bay leaves': 'дафинови листа', 'chilli': 'люта чушка', 'chili': 'чили',
-  'chilli flakes': 'люспи чили', 'cayenne pepper': 'кайен',
-  'cinnamon': 'канела', 'nutmeg': 'индийско орехче', 'ginger': 'джинджифил',
-  'curry powder': 'къри', 'garam masala': 'гарам масала',
-  // Sauces & Oils
-  'olive oil': 'зехтин', 'vegetable oil': 'растително масло',
-  'sunflower oil': 'слънчогледово масло', 'sesame oil': 'сусамово масло',
-  'soy sauce': 'соев сос', 'worcestershire sauce': 'уорчестър сос',
-  'tomato puree': 'доматено пюре', 'tomato paste': 'доматена паста',
-  'passata': 'доматен сок', 'stock': 'бульон', 'chicken stock': 'пилешки бульон',
-  'beef stock': 'телешки бульон', 'vegetable stock': 'зеленчуков бульон',
-  'vinegar': 'оцет', 'balsamic vinegar': 'балсамов оцет',
-  'lemon': 'лимон', 'lemon juice': 'лимонов сок', 'lime': 'лайм',
-  'honey': 'мед', 'sugar': 'захар', 'brown sugar': 'кафява захар',
-  'mustard': 'горчица', 'mayonnaise': 'майонеза', 'tahini': 'тахан',
-  // Fruits & Nuts
-  'strawberries': 'ягоди', 'blueberries': 'боровинки', 'raspberries': 'малини',
-  'avocado': 'авокадо', 'mango': 'манго', 'banana': 'банан',
-  'apple': 'ябълка', 'lemon zest': 'лимонова кора',
-  'almonds': 'бадеми', 'walnuts': 'орехи', 'pine nuts': 'кедрови ядки',
-  'cashews': 'кашу', 'peanuts': 'фъстъци', 'coconut milk': 'кокосово мляко',
-  // Other
-  'water': 'вода', 'white wine': 'бяло вино', 'red wine': 'червено вино',
-  'stock cube': 'кубче бульон', 'egg yolks': 'жълтъци', 'egg whites': 'белтъци',
-};
-
-function translateIngredient(raw) {
-  const lower = raw.toLowerCase().trim();
-  // Try full match first
-  if (ING_BG[lower]) return ING_BG[lower];
-  // Try matching just the ingredient part (without measure)
-  for (const [en, bg] of Object.entries(ING_BG)) {
-    if (lower.endsWith(en) || lower.includes(` ${en}`)) return raw.replace(new RegExp(en, 'i'), bg);
-  }
-  return raw; // fallback: keep original if no translation found
-}
-
-// Fetch one recipe from TheMealDB by ingredient, return simplified object
-async function fetchRecipe(ingredient) {
-  try {
-    const filterRes = await fetch(
-      `https://www.themealdb.com/api/json/v1/1/filter.php?i=${encodeURIComponent(ingredient)}`
-    );
-    const filterData = await filterRes.json();
-    const meals = filterData.meals;
-    if (!meals?.length) return null;
-
-    // Pick randomly from first 5 results for variety
-    const pick = meals[Math.floor(Math.random() * Math.min(meals.length, 5))];
-
-    const detailRes = await fetch(
-      `https://www.themealdb.com/api/json/v1/1/lookup.php?i=${pick.idMeal}`
-    );
-    const detailData = await detailRes.json();
-    const m = detailData.meals?.[0];
-    if (!m) return null;
-
-    // Collect up to 5 ingredients from the meal
-    const ingredients = [];
-    for (let i = 1; i <= 20; i++) {
-      const ing = m[`strIngredient${i}`];
-      const meas = m[`strMeasure${i}`];
-      if (ing?.trim()) ingredients.push(translateIngredient(`${meas?.trim() || ''} ${ing}`.trim()));
-      if (ingredients.length >= 5) break;
-    }
-
-    return {
-      name: m.strMeal,
-      category: m.strCategory,
-      area: m.strArea,
-      instructions: m.strInstructions?.slice(0, 200) + '…',
-      ingredients,
-      url: m.strSource || `https://www.themealdb.com/meal/${m.idMeal}`,
-      youtube: m.strYoutube || null,
-      thumb: m.strMealThumb,
-    };
-  } catch {
-    return null;
-  }
-}
-
-// Slot definitions: which product categories to look for, in priority order
-const MEAL_SLOTS = [
+// Real Bulgarian recipes, matched by product category priority.
+// searchTerm is used to build a gotvach.bg search link.
+const BG_RECIPES = [
+  // ── ЗАКУСКА ──
   {
-    key: 'breakfast',
-    label: 'Закуска',
-    icon: '🌅',
-    color: '#f39c12',
-    cats: ['eggs', 'dairy', 'bakery', 'grains', 'fruit'],
+    slot: 'breakfast',
+    name: 'Баница с яйца и сирене',
+    cats: ['eggs', 'dairy'],
+    kcal: '350 ккал',
+    time: '40 мин',
+    tip: 'Разбийте яйцата, натрошете сиренето и наредете с кори. Печете на 180°C до зачервяване.',
+    search: 'баница яйца сирене',
   },
   {
-    key: 'lunch',
-    label: 'Обяд',
-    icon: '☀️',
-    color: '#6C63FF',
-    cats: ['meat', 'fish', 'vegetables', 'legumes', 'grains'],
+    slot: 'breakfast',
+    name: 'Тутманик',
+    cats: ['dairy', 'bakery'],
+    kcal: '280 ккал',
+    time: '50 мин',
+    tip: 'Замесете тесто с кисело мляко и масло, добавете сирене и изпечете.',
+    search: 'тутманик',
   },
   {
-    key: 'dinner',
-    label: 'Вечеря',
-    icon: '🌙',
-    color: '#2ecc71',
-    cats: ['meat', 'fish', 'grains', 'dairy', 'vegetables'],
+    slot: 'breakfast',
+    name: 'Кисело мляко с мед',
+    cats: ['dairy'],
+    kcal: '180 ккал',
+    time: '2 мин',
+    tip: 'Изсипете кисело мляко в купичка, добавете мед и орехи по желание.',
+    search: 'кисело мляко мед орехи',
   },
   {
-    key: 'snack',
-    label: 'Снак',
-    icon: '⚡',
-    color: '#e74c3c',
-    cats: ['fruit', 'snacks', 'dairy', 'protein'],
+    slot: 'breakfast',
+    name: 'Овесена каша с пресни плодове',
+    cats: ['grains', 'fruit'],
+    kcal: '310 ккал',
+    time: '10 мин',
+    tip: 'Сварете овесените ядки с мляко, добавете нарязани плодове и мед.',
+    search: 'овесена каша плодове',
+  },
+  {
+    slot: 'breakfast',
+    name: 'Скир с плодове',
+    cats: ['protein', 'dairy', 'fruit'],
+    kcal: '160 ккал',
+    time: '2 мин',
+    tip: 'Изсипете скира в купичка, наредете нарязани плодове отгоре.',
+    search: 'скир плодове закуска',
+  },
+
+  // ── ОБЯД ──
+  {
+    slot: 'lunch',
+    name: 'Пилешка супа с зеленчуци',
+    cats: ['meat', 'vegetables'],
+    kcal: '280 ккал',
+    time: '50 мин',
+    tip: 'Сварете пилешкото с моркови, целина и лук. Добавете фиде и магданоз накрая.',
+    search: 'пилешка супа зеленчуци',
+  },
+  {
+    slot: 'lunch',
+    name: 'Мусака',
+    cats: ['meat', 'vegetables'],
+    kcal: '480 ккал',
+    time: '70 мин',
+    tip: 'Запържете кайма с лук, наредете с картофи на пластове и залейте с яйца и мляко.',
+    search: 'мусака рецепта',
+  },
+  {
+    slot: 'lunch',
+    name: 'Шопска салата',
+    cats: ['vegetables', 'dairy'],
+    kcal: '180 ккал',
+    time: '10 мин',
+    tip: 'Нарежете домати, краставици и чушки. Добавете маслини и поръсете с настъргано сирене.',
+    search: 'шопска салата',
+  },
+  {
+    slot: 'lunch',
+    name: 'Таратор',
+    cats: ['dairy', 'vegetables'],
+    kcal: '140 ккал',
+    time: '10 мин',
+    tip: 'Разредете кисело мляко с вода, добавете настъргана краставица, чесън и копър.',
+    search: 'таратор рецепта',
+  },
+  {
+    slot: 'lunch',
+    name: 'Рибена чорба',
+    cats: ['fish', 'vegetables'],
+    kcal: '220 ккал',
+    time: '40 мин',
+    tip: 'Сварете рибата с домати, лук и моркови. Подправете с магданоз и лимон.',
+    search: 'рибена чорба рецепта',
+  },
+  {
+    slot: 'lunch',
+    name: 'Гювеч с месо и зеленчуци',
+    cats: ['meat', 'vegetables'],
+    kcal: '430 ккал',
+    time: '70 мин',
+    tip: 'Запържете месото, добавете нарязани зеленчуци и изпечете в тава на 180°C.',
+    search: 'гювеч месо зеленчуци',
+  },
+  {
+    slot: 'lunch',
+    name: 'Боб чорба',
+    cats: ['legumes', 'vegetables'],
+    kcal: '300 ккал',
+    time: '90 мин',
+    tip: 'Накиснете боба от предната вечер. Сварете с лук, морков и подправки. Добавете джоджен.',
+    search: 'боб чорба рецепта',
+  },
+
+  // ── ВЕЧЕРЯ ──
+  {
+    slot: 'dinner',
+    name: 'Кебапчета на скара',
+    cats: ['meat'],
+    kcal: '380 ккал',
+    time: '20 мин',
+    tip: 'Смесете каймата с подправки, оформете кебапчета и изпечете на загрята скара.',
+    search: 'кебапчета скара рецепта',
+  },
+  {
+    slot: 'dinner',
+    name: 'Пълнени чушки с кайма и ориз',
+    cats: ['meat', 'vegetables'],
+    kcal: '450 ккал',
+    time: '60 мин',
+    tip: 'Напълнете чушките с кайма, ориз и подправки. Залейте с доматен сос и изпечете.',
+    search: 'пълнени чушки кайма ориз',
+  },
+  {
+    slot: 'dinner',
+    name: 'Риба на фурна с лимон',
+    cats: ['fish'],
+    kcal: '290 ккал',
+    time: '35 мин',
+    tip: 'Наредете рибата в тава, полейте с лимонов сок и зехтин. Печете на 200°C.',
+    search: 'риба фурна лимон',
+  },
+  {
+    slot: 'dinner',
+    name: 'Картофена мусака с яйца',
+    cats: ['eggs', 'vegetables'],
+    kcal: '370 ккал',
+    time: '50 мин',
+    tip: 'Наредете варени картофи, залейте с разбити яйца и кисело мляко. Изпечете до зачервяване.',
+    search: 'картофена мусака яйца',
+  },
+  {
+    slot: 'dinner',
+    name: 'Леща яхния',
+    cats: ['legumes', 'grains'],
+    kcal: '320 ккал',
+    time: '40 мин',
+    tip: 'Задушете лук и моркови, добавете червена леща и варете 20 мин с подправки.',
+    search: 'леща яхния рецепта',
+  },
+  {
+    slot: 'dinner',
+    name: 'Лека салата с кисело мляко',
+    cats: ['dairy', 'vegetables'],
+    kcal: '170 ккал',
+    time: '10 мин',
+    tip: 'Нарежете краставица и домати, залейте с кисело мляко, чесън и сол.',
+    search: 'салата кисело мляко краставица',
+  },
+
+  // ── СНАК ──
+  {
+    slot: 'snack',
+    name: 'Кисело мляко с пресни плодове',
+    cats: ['dairy', 'fruit'],
+    kcal: '130 ккал',
+    time: '2 мин',
+    tip: 'Изсипете кисело мляко, наредете нарязани плодове и добавете малко мед.',
+    search: 'кисело мляко плодове снак',
+  },
+  {
+    slot: 'snack',
+    name: 'Халва с бадеми',
+    cats: ['snacks'],
+    kcal: '200 ккал',
+    time: '1 мин',
+    tip: 'Нарежете халвата на малки парчета и поднесете с шепа бадеми.',
+    search: 'халва бадеми',
+  },
+  {
+    slot: 'snack',
+    name: 'Плодова чиния',
+    cats: ['fruit'],
+    kcal: '100 ккал',
+    time: '3 мин',
+    tip: 'Нарежете сезонни плодове — ягоди, манго или грозде — и поднесете свежо.',
+    search: 'плодова чиния рецепта',
+  },
+  {
+    slot: 'snack',
+    name: 'Протеинов йогурт с плодове',
+    cats: ['protein'],
+    kcal: '170 ккал',
+    time: '2 мин',
+    tip: 'Смесете протеинов йогурт с нарязани плодове за бърз снак след тренировка.',
+    search: 'протеинов йогурт плодове',
   },
 ];
 
-export default function MealsScreen({ route, navigation }) {
-  const { list, goal } = route.params;
-  const [recipes, setRecipes] = useState({});
-  const [loading, setLoading] = useState(true);
+const MEAL_SLOTS = [
+  { key: 'breakfast', label: 'Закуска', icon: '🌅', color: '#f39c12' },
+  { key: 'lunch',     label: 'Обяд',    icon: '☀️',  color: '#6C63FF' },
+  { key: 'dinner',    label: 'Вечеря',  icon: '🌙',  color: '#2ecc71' },
+  { key: 'snack',     label: 'Снак',    icon: '⚡',   color: '#e74c3c' },
+];
 
-  useEffect(() => {
-    async function load() {
-      const byCategory = {};
-      list.forEach((item) => {
-        const cat = item.category?.toLowerCase() || 'other';
-        if (!byCategory[cat]) byCategory[cat] = [];
-        byCategory[cat].push(item);
-      });
+function buildPlan(list, goal) {
+  const byCategory = {};
+  list.forEach((item) => {
+    const cat = item.category?.toLowerCase() || 'other';
+    if (!byCategory[cat]) byCategory[cat] = [];
+    byCategory[cat].push(item);
+  });
 
-      const results = {};
-      const usedIds = new Set(); // avoid duplicate recipes across slots
+  const plan = {};
 
-      for (const slot of MEAL_SLOTS) {
-        // Find the first product matching this slot's preferred categories
-        let product = null;
-        for (const cat of slot.cats) {
-          if (byCategory[cat]?.length) {
-            // For dinner, prefer a different meat than lunch used
-            const candidates = byCategory[cat];
-            product = candidates.find((p) => !usedIds.has(p.id)) || candidates[0];
-            break;
-          }
-        }
+  for (const slot of MEAL_SLOTS) {
+    // Find all recipes for this slot
+    const candidates = BG_RECIPES.filter((r) => r.slot === slot.key);
 
-        if (!product) continue;
+    // Score each recipe by how many of its cats are present in the user's list
+    const scored = candidates
+      .map((r) => ({
+        recipe: r,
+        score: r.cats.filter((c) => byCategory[c]?.length).length,
+      }))
+      .filter((s) => s.score > 0)
+      .sort((a, b) => b.score - a.score);
 
-        // high_protein goal: override snack slot with a protein product
-        if (goal === 'high_protein' && slot.key === 'snack') {
-          const hiPro = list.find((i) => (i.protein || 0) >= 15 && !usedIds.has(i.id));
-          if (hiPro) product = hiPro;
-        }
-
-        const term = toSearchTerm(product);
-        if (!term) continue;
-
-        const recipe = await fetchRecipe(term);
-        if (recipe) {
-          results[slot.key] = { ...recipe, sourceProduct: product.name };
-          usedIds.add(product.id);
-        }
-      }
-
-      setRecipes(results);
-      setLoading(false);
+    // high_protein goal: boost protein-cat recipes for snack slot
+    if (goal === 'high_protein' && slot.key === 'snack') {
+      const hiPro = candidates.find((r) => r.cats.includes('protein') && byCategory['protein']?.length);
+      if (hiPro) { plan[slot.key] = hiPro; continue; }
     }
 
-    load();
-  }, []);
+    if (!scored.length) continue;
 
-  const openLink = (url) => {
-    if (url) Linking.openURL(url).catch(() => {});
+    const chosen = scored[0].recipe;
+
+    // Pick up to 3 matching products from the user's list to show as ingredients
+    const matchedProducts = chosen.cats
+      .flatMap((c) => byCategory[c] || [])
+      .slice(0, 3)
+      .map((p) => p.name);
+
+    plan[slot.key] = { ...chosen, matchedProducts };
+  }
+
+  return plan;
+}
+
+export default function MealsScreen({ route, navigation }) {
+  const { list, goal } = route.params;
+  const plan = buildPlan(list, goal);
+
+  const totalKcal = MEAL_SLOTS.reduce((sum, slot) => {
+    const meal = plan[slot.key];
+    if (!meal) return sum;
+    return sum + (parseInt(meal.kcal) || 0);
+  }, 0);
+
+  const openRecipe = (searchTerm) => {
+    const url = `https://gotvach.bg/search?term=${encodeURIComponent(searchTerm)}`;
+    Linking.openURL(url).catch(() => {});
   };
 
   return (
@@ -284,103 +302,86 @@ export default function MealsScreen({ route, navigation }) {
       {/* Header */}
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Идеи за ястия 🍽️</Text>
-        <Text style={styles.headerSub}>Реални рецепти, базирани на вашия списък</Text>
+        <Text style={styles.headerSub}>Български рецепти по вашия списък</Text>
+        <View style={styles.kcalBadge}>
+          <Text style={styles.kcalText}>🔥 ~{totalKcal} ккал общо</Text>
+        </View>
       </View>
 
-      {loading ? (
-        <View style={styles.loadingBox}>
-          <ActivityIndicator size="large" color="#6C63FF" />
-          <Text style={styles.loadingText}>Търсим рецепти…</Text>
-        </View>
-      ) : (
-        <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
 
-          {/* Product chips */}
-          <View style={styles.section}>
-            <Text style={styles.sectionLabel}>Вашите продукти</Text>
-            <View style={styles.chipsRow}>
-              {list.map((item) => (
-                <View key={item.id} style={styles.chip}>
-                  <Text style={styles.chipIcon}>{getCategoryIcon(item.category)}</Text>
-                  <Text style={styles.chipText}>{item.name}</Text>
-                </View>
-              ))}
-            </View>
-          </View>
-
-          {/* Meal cards */}
-          <Text style={styles.sectionLabel}>Дневен план</Text>
-          {MEAL_SLOTS.map((slot) => {
-            const recipe = recipes[slot.key];
-            if (!recipe) return null;
-            return (
-              <View key={slot.key} style={[styles.mealCard, { borderLeftColor: slot.color }]}>
-
-                {/* Slot badge + meta */}
-                <View style={styles.mealCardHeader}>
-                  <View style={[styles.slotBadge, { backgroundColor: slot.color }]}>
-                    <Text style={styles.slotIcon}>{slot.icon}</Text>
-                    <Text style={styles.slotLabel}>{slot.label}</Text>
-                  </View>
-                  <View style={styles.metaRow}>
-                    {recipe.area ? <Text style={styles.metaTag}>{recipe.area}</Text> : null}
-                    {recipe.category ? <Text style={styles.metaTag}>{recipe.category}</Text> : null}
-                  </View>
-                </View>
-
-                {/* Recipe name */}
-                <Text style={styles.mealName}>{recipe.name}</Text>
-                <Text style={styles.sourceProduct}>
-                  На база: <Text style={{ fontWeight: '700' }}>{recipe.sourceProduct}</Text>
-                </Text>
-
-                {/* Ingredients */}
-                <View style={styles.ingredientsBox}>
-                  <Text style={styles.ingredientsLabel}>Съставки (основни):</Text>
-                  {recipe.ingredients.map((ing, idx) => (
-                    <Text key={idx} style={styles.ingredientItem}>• {ing}</Text>
-                  ))}
-                </View>
-
-                {/* Instructions preview */}
-                <View style={styles.instructionsBox}>
-                  <Text style={styles.instructionsLabel}>Приготвяне:</Text>
-                  <Text style={styles.instructionsText}>{recipe.instructions}</Text>
-                </View>
-
-                {/* Links */}
-                <View style={styles.linksRow}>
-                  {recipe.url ? (
-                    <TouchableOpacity
-                      style={[styles.linkBtn, { backgroundColor: slot.color }]}
-                      onPress={() => openLink(recipe.url)}
-                    >
-                      <Text style={styles.linkBtnText}>📖 Пълна рецепта</Text>
-                    </TouchableOpacity>
-                  ) : null}
-                  {recipe.youtube ? (
-                    <TouchableOpacity
-                      style={[styles.linkBtn, { backgroundColor: '#e74c3c' }]}
-                      onPress={() => openLink(recipe.youtube)}
-                    >
-                      <Text style={styles.linkBtnText}>▶ YouTube</Text>
-                    </TouchableOpacity>
-                  ) : null}
-                </View>
-
+        {/* Product chips */}
+        <View style={styles.section}>
+          <Text style={styles.sectionLabel}>Вашите продукти</Text>
+          <View style={styles.chipsRow}>
+            {list.map((item) => (
+              <View key={item.id} style={styles.chip}>
+                <Text style={styles.chipIcon}>{getCategoryIcon(item.category)}</Text>
+                <Text style={styles.chipText}>{item.name}</Text>
               </View>
-            );
-          })}
+            ))}
+          </View>
+        </View>
 
-          {Object.keys(recipes).length === 0 && (
-            <View style={styles.emptyBox}>
-              <Text style={styles.emptyText}>Не намерихме рецепти за вашите продукти. Добавете повече продукти в списъка.</Text>
+        {/* Meal cards */}
+        <Text style={styles.sectionLabel}>Дневен план</Text>
+
+        {MEAL_SLOTS.map((slot) => {
+          const meal = plan[slot.key];
+          if (!meal) return null;
+          return (
+            <View key={slot.key} style={[styles.mealCard, { borderLeftColor: slot.color }]}>
+
+              {/* Slot badge */}
+              <View style={styles.mealCardHeader}>
+                <View style={[styles.slotBadge, { backgroundColor: slot.color }]}>
+                  <Text style={styles.slotIcon}>{slot.icon}</Text>
+                  <Text style={styles.slotLabel}>{slot.label}</Text>
+                </View>
+                <View style={styles.mealMeta}>
+                  <Text style={styles.mealMetaText}>⏱ {meal.time}</Text>
+                  <Text style={styles.mealMetaText}>🔥 {meal.kcal}</Text>
+                </View>
+              </View>
+
+              {/* Name */}
+              <Text style={styles.mealName}>{meal.name}</Text>
+
+              {/* Matched products from list */}
+              <View style={styles.ingredientsBox}>
+                <Text style={styles.ingredientsLabel}>Продукти от вашия списък:</Text>
+                {meal.matchedProducts.map((p, i) => (
+                  <Text key={i} style={styles.ingredientItem}>• {p}</Text>
+                ))}
+              </View>
+
+              {/* Tip */}
+              <View style={styles.tipBox}>
+                <Text style={styles.tipText}>💡 {meal.tip}</Text>
+              </View>
+
+              {/* Recipe link */}
+              <TouchableOpacity
+                style={[styles.linkBtn, { backgroundColor: slot.color }]}
+                onPress={() => openRecipe(meal.search)}
+              >
+                <Text style={styles.linkBtnText}>📖 Виж рецептата в gotvach.bg</Text>
+              </TouchableOpacity>
+
             </View>
-          )}
+          );
+        })}
 
-          <View style={{ height: 16 }} />
-        </ScrollView>
-      )}
+        {Object.keys(plan).length === 0 && (
+          <View style={styles.emptyBox}>
+            <Text style={styles.emptyText}>
+              Не намерихме подходящи рецепти. Добавете повече продукти в списъка си.
+            </Text>
+          </View>
+        )}
+
+        <View style={{ height: 16 }} />
+      </ScrollView>
 
       {/* Footer */}
       <View style={styles.footer}>
@@ -408,10 +409,15 @@ const styles = StyleSheet.create({
     borderBottomColor: '#eee',
   },
   headerTitle: { fontSize: 24, fontWeight: '800', color: '#1A1A2E', marginBottom: 2 },
-  headerSub: { fontSize: 13, color: '#999' },
-
-  loadingBox: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: 14 },
-  loadingText: { fontSize: 15, color: '#888', marginTop: 8 },
+  headerSub: { fontSize: 13, color: '#999', marginBottom: 10 },
+  kcalBadge: {
+    alignSelf: 'flex-start',
+    backgroundColor: '#FFF3E0',
+    borderRadius: 20,
+    paddingHorizontal: 14,
+    paddingVertical: 5,
+  },
+  kcalText: { color: '#f39c12', fontWeight: '700', fontSize: 13 },
 
   scroll: { padding: 16 },
 
@@ -445,34 +451,26 @@ const styles = StyleSheet.create({
   },
   slotIcon: { fontSize: 13 },
   slotLabel: { color: '#fff', fontWeight: '700', fontSize: 13 },
-  metaRow: { flexDirection: 'row', gap: 6 },
-  metaTag: {
-    backgroundColor: '#F0EEFF', color: '#6C63FF',
-    fontSize: 11, fontWeight: '700', borderRadius: 10,
-    paddingHorizontal: 8, paddingVertical: 3,
-  },
+  mealMeta: { alignItems: 'flex-end', gap: 3 },
+  mealMetaText: { fontSize: 12, color: '#aaa', fontWeight: '600' },
 
-  mealName: { fontSize: 20, fontWeight: '800', color: '#1A1A2E', marginBottom: 4 },
-  sourceProduct: { fontSize: 12, color: '#aaa', marginBottom: 12 },
+  mealName: { fontSize: 20, fontWeight: '800', color: '#1A1A2E', marginBottom: 12 },
 
   ingredientsBox: {
     backgroundColor: '#F7F8FC', borderRadius: 10, padding: 10, marginBottom: 10,
   },
   ingredientsLabel: { fontSize: 11, color: '#aaa', fontWeight: '700', marginBottom: 4 },
-  ingredientItem: { fontSize: 13, color: '#444', lineHeight: 20 },
+  ingredientItem: { fontSize: 13, color: '#444', lineHeight: 22 },
 
-  instructionsBox: {
+  tipBox: {
     backgroundColor: '#FFFBEA', borderRadius: 10, padding: 10, marginBottom: 12,
   },
-  instructionsLabel: { fontSize: 11, color: '#b7950b', fontWeight: '700', marginBottom: 4 },
-  instructionsText: { fontSize: 12, color: '#555', lineHeight: 18 },
+  tipText: { fontSize: 12, color: '#b7950b', fontWeight: '600', lineHeight: 18 },
 
-  linksRow: { flexDirection: 'row', gap: 10 },
   linkBtn: {
-    flex: 1, borderRadius: 12, paddingVertical: 10,
-    alignItems: 'center',
+    borderRadius: 12, paddingVertical: 12, alignItems: 'center',
   },
-  linkBtnText: { color: '#fff', fontWeight: '700', fontSize: 13 },
+  linkBtnText: { color: '#fff', fontWeight: '700', fontSize: 14 },
 
   emptyBox: { padding: 24, alignItems: 'center' },
   emptyText: { fontSize: 14, color: '#aaa', textAlign: 'center', lineHeight: 22 },
