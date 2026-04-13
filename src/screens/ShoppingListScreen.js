@@ -4,14 +4,42 @@ import {
   FlatList,
   StyleSheet,
   TouchableOpacity,
-  Alert,
   ActivityIndicator,
   Share,
+  Animated,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useState, useMemo, useCallback, memo } from 'react';
+import { useState, useMemo, useCallback, memo, useRef } from 'react';
+import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
 import { useOrders } from '../hooks/useOrders';
+import { useToast } from '../context/ToastContext';
 import { getCategoryIcon, GOAL_META } from '../utils/ui';
+
+// ─── Animated Pressable ───────────────────────────────────────────────────────
+
+function AnimatedPressable({ onPress, style, children, disabled }) {
+  const scale = useRef(new Animated.Value(1)).current;
+
+  const handlePressIn = () =>
+    Animated.spring(scale, { toValue: 0.97, useNativeDriver: true, tension: 200, friction: 10 }).start();
+  const handlePressOut = () =>
+    Animated.spring(scale, { toValue: 1, useNativeDriver: true, tension: 200, friction: 10 }).start();
+
+  return (
+    <TouchableOpacity
+      onPress={onPress}
+      onPressIn={handlePressIn}
+      onPressOut={handlePressOut}
+      disabled={disabled}
+      activeOpacity={1}
+    >
+      <Animated.View style={[style, { transform: [{ scale }] }]}>
+        {children}
+      </Animated.View>
+    </TouchableOpacity>
+  );
+}
 
 // ─── Memoized list item ───────────────────────────────────────────────────────
 
@@ -22,7 +50,12 @@ const ShoppingItem = memo(function ShoppingItem({ item, isChecked, onToggle, sto
       onPress={() => onToggle(item.id)}
       activeOpacity={0.75}
     >
-      <Text style={styles.checkIcon}>{isChecked ? '✅' : '⬜'}</Text>
+      <View style={styles.checkBox}>
+        {isChecked
+          ? <Ionicons name="checkmark-circle" size={22} color="#6C63FF" />
+          : <Ionicons name="ellipse-outline" size={22} color="#ddd" />
+        }
+      </View>
       <View style={styles.itemIconWrap}>
         <Text style={styles.categoryIcon}>{getCategoryIcon(item.category)}</Text>
       </View>
@@ -39,7 +72,7 @@ const ShoppingItem = memo(function ShoppingItem({ item, isChecked, onToggle, sto
               : 'Всеки магазин'}
           </Text>
           {(item.protein || 0) > 0 && (
-            <Text style={styles.itemProtein}>💪 {item.protein}г протеин</Text>
+            <Text style={styles.itemProtein}>💪 {item.protein}г</Text>
           )}
         </View>
       </View>
@@ -57,48 +90,45 @@ const ShoppingItem = memo(function ShoppingItem({ item, isChecked, onToggle, sto
 export default function ShoppingListScreen({ route, navigation }) {
   const { list, budget, goal, store, readOnly = false } = route.params;
   const { placeOrder } = useOrders();
+  const { show: showToast } = useToast();
   const [saving, setSaving] = useState(false);
   const [checked, setChecked] = useState({});
 
   const meta = GOAL_META[goal] || GOAL_META.cheapest;
 
-  const { total, remaining, totalProtein } = useMemo(() => {
+  const { total, remaining, totalProtein, checkedCount } = useMemo(() => {
     const t = list.reduce((sum, i) => sum + i.subtotal, 0);
     return {
       total: t,
       remaining: budget - t,
       totalProtein: list.reduce((sum, i) => sum + (i.protein || 0) * i.quantity, 0),
+      checkedCount: Object.values(checked).filter(Boolean).length,
     };
-  }, [list, budget]);
+  }, [list, budget, checked]);
 
-  const toggleCheck = useCallback(
-    (id) => setChecked((prev) => ({ ...prev, [id]: !prev[id] })),
-    []
-  );
+  const toggleCheck = useCallback((id) => {
+    Haptics.selectionAsync();
+    setChecked((prev) => ({ ...prev, [id]: !prev[id] }));
+  }, []);
 
   const handleSave = async () => {
-    Alert.alert('Запази списъка', 'Искате ли да запазите този списък в историята?', [
-      { text: 'Отказ', style: 'cancel' },
-      {
-        text: 'Запази',
-        onPress: async () => {
-          setSaving(true);
-          try {
-            await placeOrder(list, total, goal, store);
-            Alert.alert('Запазено!', 'Списъкът е добавен в историята на поръчките.', [
-              { text: 'OK', onPress: () => navigation.navigate('Orders') },
-            ]);
-          } catch (err) {
-            Alert.alert('Грешка', err?.message || 'Неуспешно запазване');
-          } finally {
-            setSaving(false);
-          }
-        },
-      },
-    ]);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    setSaving(true);
+    try {
+      await placeOrder(list, total, goal, store);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      showToast('Списъкът е запазен успешно!', 'success');
+      setTimeout(() => navigation.navigate('SavedLists'), 1200);
+    } catch (err) {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      showToast(err?.message || 'Неуспешно запазване', 'error');
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleShare = async () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     const lines = list.map(
       (i) => `• ${i.name} x${i.quantity} — ${i.subtotal.toFixed(2)} €`
     );
@@ -115,7 +145,7 @@ export default function ShoppingListScreen({ route, navigation }) {
     try {
       await Share.share({ message: text });
     } catch {
-      Alert.alert('Грешка', 'Споделянето е неуспешно.');
+      showToast('Споделянето е неуспешно', 'error');
     }
   };
 
@@ -136,16 +166,30 @@ export default function ShoppingListScreen({ route, navigation }) {
 
       {/* ── Header ── */}
       <View style={styles.header}>
-        <View style={[styles.headerBadge, { backgroundColor: meta.color }]}>
-          <Text style={styles.headerBadgeText}>{meta.icon} {meta.label}</Text>
+        <View style={styles.headerTop}>
+          <View style={[styles.headerBadge, { backgroundColor: meta.color }]}>
+            <Text style={styles.headerBadgeText}>{meta.icon} {meta.label}</Text>
+          </View>
+          <TouchableOpacity
+            style={styles.shareBtn}
+            onPress={handleShare}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          >
+            <Ionicons name="share-outline" size={18} color="#6C63FF" />
+            <Text style={styles.shareBtnText}>Сподели</Text>
+          </TouchableOpacity>
         </View>
         <Text style={styles.headerTitle}>В рамките на бюджета</Text>
-        <Text style={styles.headerSub}>
-          {store === 'any' ? 'Всички магазини' : store} · {list.length} продукта
-        </Text>
-        <TouchableOpacity style={styles.shareBtn} onPress={handleShare}>
-          <Text style={styles.shareBtnText}>Сподели ↗</Text>
-        </TouchableOpacity>
+        <View style={styles.headerStats}>
+          <Text style={styles.headerSub}>
+            {store === 'any' ? 'Всички магазини' : store} · {list.length} продукта
+          </Text>
+          {checkedCount > 0 && (
+            <View style={styles.progressPill}>
+              <Text style={styles.progressText}>{checkedCount}/{list.length} отметнати</Text>
+            </View>
+          )}
+        </View>
       </View>
 
       {/* ── Grocery List ── */}
@@ -169,10 +213,7 @@ export default function ShoppingListScreen({ route, navigation }) {
         <View style={styles.divider} />
         <View style={styles.totalRow}>
           <Text style={styles.totalLabel}>Оставащо</Text>
-          <Text style={[
-            styles.totalValue,
-            { color: remaining >= 0 ? '#2ecc71' : '#e74c3c' }
-          ]}>
+          <Text style={[styles.totalValue, { color: remaining >= 0 ? '#2ecc71' : '#e74c3c' }]}>
             {remaining >= 0 ? '+' : ''}{remaining.toFixed(2)} €
           </Text>
         </View>
@@ -192,13 +233,20 @@ export default function ShoppingListScreen({ route, navigation }) {
       {/* ── Action Buttons ── */}
       <View style={styles.actions}>
         {!readOnly && (
-          <TouchableOpacity style={styles.btnSecondary} onPress={() => navigation.goBack()}>
-            <Text style={styles.btnSecondaryText}>🔄 Генерирай{'\n'}отново</Text>
-          </TouchableOpacity>
+          <AnimatedPressable
+            style={styles.btnSecondary}
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              navigation.goBack();
+            }}
+          >
+            <Ionicons name="refresh" size={16} color="#6C63FF" />
+            <Text style={styles.btnSecondaryText}>Генерирай{'\n'}отново</Text>
+          </AnimatedPressable>
         )}
 
         {!readOnly && (
-          <TouchableOpacity
+          <AnimatedPressable
             style={[styles.btnPrimary, saving && styles.btnDisabled]}
             onPress={handleSave}
             disabled={saving}
@@ -206,17 +254,24 @@ export default function ShoppingListScreen({ route, navigation }) {
             {saving ? (
               <ActivityIndicator color="#fff" size="small" />
             ) : (
-              <Text style={styles.btnPrimaryText}>💾 Запази{'\n'}списъка</Text>
+              <>
+                <Ionicons name="bookmark-outline" size={16} color="#fff" />
+                <Text style={styles.btnPrimaryText}>Запази{'\n'}списъка</Text>
+              </>
             )}
-          </TouchableOpacity>
+          </AnimatedPressable>
         )}
 
-        <TouchableOpacity
+        <AnimatedPressable
           style={[styles.btnMeals, readOnly && styles.btnMealsFull]}
-          onPress={() => navigation.navigate('Meals', { list, goal })}
+          onPress={() => {
+            Haptics.selectionAsync();
+            navigation.navigate('Meals', { list, goal });
+          }}
         >
-          <Text style={styles.btnMealsText}>🍽️ Виж{'\n'}ястията</Text>
-        </TouchableOpacity>
+          <Text style={styles.btnMealsIcon}>🍽️</Text>
+          <Text style={styles.btnMealsText}>Виж{'\n'}ястията</Text>
+        </AnimatedPressable>
       </View>
 
     </SafeAreaView>
@@ -235,18 +290,35 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#eee',
   },
+  headerTop: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
   headerBadge: {
     alignSelf: 'flex-start',
     borderRadius: 20,
     paddingHorizontal: 12,
     paddingVertical: 4,
-    marginBottom: 8,
   },
   headerBadgeText: { color: '#fff', fontWeight: '700', fontSize: 12 },
-  headerTitle: { fontSize: 24, fontWeight: '800', color: '#1A1A2E', marginBottom: 2 },
-  headerSub: { fontSize: 13, color: '#999', marginBottom: 10 },
-  shareBtn: { alignSelf: 'flex-start' },
+  shareBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
   shareBtnText: { color: '#6C63FF', fontWeight: '700', fontSize: 13 },
+  headerTitle: { fontSize: 24, fontWeight: '800', color: '#1A1A2E', marginBottom: 6 },
+  headerStats: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  headerSub: { fontSize: 13, color: '#999' },
+  progressPill: {
+    backgroundColor: '#F0EEFF',
+    borderRadius: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+  },
+  progressText: { fontSize: 11, color: '#6C63FF', fontWeight: '700' },
 
   /* List */
   list: { padding: 14, paddingBottom: 4 },
@@ -263,7 +335,7 @@ const styles = StyleSheet.create({
     elevation: 1,
   },
   itemChecked: { opacity: 0.45 },
-  checkIcon: { fontSize: 18, marginRight: 8 },
+  checkBox: { marginRight: 10 },
   itemIconWrap: {
     width: 38,
     height: 38,
@@ -321,8 +393,9 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     alignItems: 'center',
     justifyContent: 'center',
+    gap: 4,
   },
-  btnSecondaryText: { color: '#6C63FF', fontWeight: '700', fontSize: 13, textAlign: 'center' },
+  btnSecondaryText: { color: '#6C63FF', fontWeight: '700', fontSize: 12, textAlign: 'center' },
   btnPrimary: {
     flex: 1,
     backgroundColor: '#6C63FF',
@@ -330,13 +403,14 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     alignItems: 'center',
     justifyContent: 'center',
+    gap: 4,
     shadowColor: '#6C63FF',
     shadowOpacity: 0.35,
     shadowRadius: 8,
     shadowOffset: { width: 0, height: 4 },
     elevation: 4,
   },
-  btnPrimaryText: { color: '#fff', fontWeight: '700', fontSize: 13, textAlign: 'center' },
+  btnPrimaryText: { color: '#fff', fontWeight: '700', fontSize: 12, textAlign: 'center' },
   btnDisabled: { opacity: 0.6, shadowOpacity: 0 },
   btnMeals: {
     flex: 1,
@@ -345,7 +419,9 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     alignItems: 'center',
     justifyContent: 'center',
+    gap: 4,
   },
   btnMealsFull: { flex: 3 },
-  btnMealsText: { color: '#fff', fontWeight: '700', fontSize: 13, textAlign: 'center' },
+  btnMealsIcon: { fontSize: 18 },
+  btnMealsText: { color: '#fff', fontWeight: '700', fontSize: 12, textAlign: 'center' },
 });

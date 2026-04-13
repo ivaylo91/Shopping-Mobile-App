@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -9,27 +9,55 @@ import {
   Alert,
   ActivityIndicator,
   StatusBar,
+  Animated,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
 import { useAuth } from '../context/AuthContext';
 import { useProducts } from '../hooks/useProducts';
+import { useToast } from '../context/ToastContext';
 import { generateList } from '../utils/generateList';
 
 const GOALS = [
-  { id: 'cheapest', label: 'Най-евтино', icon: '💰', desc: 'Максимална стойност' },
-  { id: 'healthy', label: 'Здравословно', icon: '🥗', desc: 'Балансирано хранене' },
-  { id: 'high_protein', label: 'Протеин', icon: '💪', desc: 'Богато на протеин' },
+  { id: 'cheapest',    label: 'Най-евтино',  icon: '💰', desc: 'Максимална стойност' },
+  { id: 'healthy',     label: 'Здравословно', icon: '🥗', desc: 'Балансирано хранене' },
+  { id: 'high_protein', label: 'Протеин',    icon: '💪', desc: 'Богато на протеин' },
 ];
 
 const STORES = [
-  { id: 'any', label: 'Всички' },
-  { id: 'Lidl', label: 'Lidl' },
+  { id: 'any',      label: 'Всички' },
+  { id: 'Lidl',     label: 'Lidl' },
   { id: 'Kaufland', label: 'Kaufland' },
-  { id: 'Billa', label: 'Billa' },
+  { id: 'Billa',    label: 'Billa' },
 ];
+
+function AnimatedPressable({ onPress, style, children, ...rest }) {
+  const scale = useRef(new Animated.Value(1)).current;
+
+  const handlePressIn = () =>
+    Animated.spring(scale, { toValue: 0.96, useNativeDriver: true, tension: 200, friction: 10 }).start();
+  const handlePressOut = () =>
+    Animated.spring(scale, { toValue: 1, useNativeDriver: true, tension: 200, friction: 10 }).start();
+
+  return (
+    <TouchableOpacity
+      onPress={onPress}
+      onPressIn={handlePressIn}
+      onPressOut={handlePressOut}
+      activeOpacity={1}
+      {...rest}
+    >
+      <Animated.View style={[style, { transform: [{ scale }] }]}>
+        {children}
+      </Animated.View>
+    </TouchableOpacity>
+  );
+}
 
 export default function HomeScreen({ navigation }) {
   const { logout, user } = useAuth();
   const { products, loading: productsLoading } = useProducts();
+  const { show: showToast } = useToast();
 
   const [budget, setBudget] = useState('');
   const [selectedGoal, setSelectedGoal] = useState(null);
@@ -38,14 +66,17 @@ export default function HomeScreen({ navigation }) {
 
   const handleGenerate = async () => {
     if (!budget || isNaN(parseFloat(budget)) || parseFloat(budget) <= 0) {
-      Alert.alert('Невалиден бюджет', 'Моля въведете валидна сума.');
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+      showToast('Моля въведете валиден бюджет', 'warning');
       return;
     }
     if (!selectedGoal) {
-      Alert.alert('Изберете цел', 'Моля изберете цел за пазаруване.');
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+      showToast('Моля изберете цел на пазаруването', 'warning');
       return;
     }
 
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     setGenerating(true);
     try {
       const list = generateList({
@@ -56,13 +87,12 @@ export default function HomeScreen({ navigation }) {
       });
 
       if (list.length === 0) {
-        Alert.alert(
-          'Няма резултати',
-          'Не са намерени продукти. Опитайте с друг магазин или по-висок бюджет.'
-        );
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+        showToast('Няма продукти. Опитайте с друг магазин или бюджет.', 'warning');
         return;
       }
 
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       navigation.navigate('ShoppingList', {
         list,
         budget: parseFloat(budget),
@@ -74,11 +104,22 @@ export default function HomeScreen({ navigation }) {
     }
   };
 
+  const selectGoal = (goalId) => {
+    Haptics.selectionAsync();
+    setSelectedGoal(goalId);
+  };
+
+  const selectStore = (storeId) => {
+    Haptics.selectionAsync();
+    setSelectedStore(storeId);
+  };
+
   return (
     <ScrollView
       style={styles.container}
       contentContainerStyle={styles.content}
       keyboardShouldPersistTaps="handled"
+      showsVerticalScrollIndicator={false}
     >
       <StatusBar barStyle="dark-content" />
 
@@ -88,7 +129,14 @@ export default function HomeScreen({ navigation }) {
           <Text style={styles.greeting}>Здравей, {user?.email?.split('@')[0]} 👋</Text>
           <Text style={styles.title}>Умно{'\n'}Пазаруване</Text>
         </View>
-        <TouchableOpacity style={styles.logoutBtn} onPress={logout}>
+        <TouchableOpacity
+          style={styles.logoutBtn}
+          onPress={() => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            logout();
+          }}
+        >
+          <Ionicons name="log-out-outline" size={16} color="#666" />
           <Text style={styles.logoutText}>Изход</Text>
         </TouchableOpacity>
       </View>
@@ -115,30 +163,19 @@ export default function HomeScreen({ navigation }) {
         <Text style={styles.sectionLabel}>Цел на пазаруването</Text>
         <View style={styles.goalsRow}>
           {GOALS.map((goal) => (
-            <TouchableOpacity
+            <AnimatedPressable
               key={goal.id}
               style={[styles.goalCard, selectedGoal === goal.id && styles.goalCardActive]}
-              onPress={() => setSelectedGoal(goal.id)}
-              activeOpacity={0.8}
+              onPress={() => selectGoal(goal.id)}
             >
               <Text style={styles.goalIcon}>{goal.icon}</Text>
-              <Text
-                style={[
-                  styles.goalLabel,
-                  selectedGoal === goal.id && styles.goalLabelActive,
-                ]}
-              >
+              <Text style={[styles.goalLabel, selectedGoal === goal.id && styles.goalLabelActive]}>
                 {goal.label}
               </Text>
-              <Text
-                style={[
-                  styles.goalDesc,
-                  selectedGoal === goal.id && styles.goalDescActive,
-                ]}
-              >
+              <Text style={[styles.goalDesc, selectedGoal === goal.id && styles.goalDescActive]}>
                 {goal.desc}
               </Text>
-            </TouchableOpacity>
+            </AnimatedPressable>
           ))}
         </View>
       </View>
@@ -150,19 +187,11 @@ export default function HomeScreen({ navigation }) {
           {STORES.map((store) => (
             <TouchableOpacity
               key={store.id}
-              style={[
-                styles.storeChip,
-                selectedStore === store.id && styles.storeChipActive,
-              ]}
-              onPress={() => setSelectedStore(store.id)}
+              style={[styles.storeChip, selectedStore === store.id && styles.storeChipActive]}
+              onPress={() => selectStore(store.id)}
               activeOpacity={0.8}
             >
-              <Text
-                style={[
-                  styles.storeLabel,
-                  selectedStore === store.id && styles.storeLabelActive,
-                ]}
-              >
+              <Text style={[styles.storeLabel, selectedStore === store.id && styles.storeLabelActive]}>
                 {store.label}
               </Text>
             </TouchableOpacity>
@@ -171,32 +200,23 @@ export default function HomeScreen({ navigation }) {
       </View>
 
       {/* Generate Button */}
-      <TouchableOpacity
+      <AnimatedPressable
         style={[
           styles.generateBtn,
           (generating || productsLoading) && styles.generateBtnDisabled,
         ]}
         onPress={handleGenerate}
         disabled={generating || productsLoading}
-        activeOpacity={0.85}
       >
         {generating || productsLoading ? (
           <ActivityIndicator color="#fff" />
         ) : (
           <>
             <Text style={styles.generateBtnText}>Генерирай списък</Text>
-            <Text style={styles.generateBtnArrow}>→</Text>
+            <Ionicons name="arrow-forward" size={20} color="#fff" style={{ marginLeft: 10 }} />
           </>
         )}
-      </TouchableOpacity>
-
-      {/* My Orders shortcut */}
-      <TouchableOpacity
-        style={styles.ordersLink}
-        onPress={() => navigation.navigate('SavedLists')}
-      >
-        <Text style={styles.ordersLinkText}>📋 Запазени списъци</Text>
-      </TouchableOpacity>
+      </AnimatedPressable>
     </ScrollView>
   );
 }
@@ -215,6 +235,9 @@ const styles = StyleSheet.create({
   greeting: { fontSize: 14, color: '#999', marginBottom: 4 },
   title: { fontSize: 30, fontWeight: '800', color: '#1A1A2E', lineHeight: 36 },
   logoutBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
     backgroundColor: '#eee',
     paddingHorizontal: 14,
     paddingVertical: 8,
@@ -268,10 +291,7 @@ const styles = StyleSheet.create({
     shadowRadius: 6,
     elevation: 1,
   },
-  goalCardActive: {
-    borderColor: '#6C63FF',
-    backgroundColor: '#F0EEFF',
-  },
+  goalCardActive: { borderColor: '#6C63FF', backgroundColor: '#F0EEFF' },
   goalIcon: { fontSize: 26, marginBottom: 6 },
   goalLabel: { fontSize: 13, fontWeight: '700', color: '#333', marginBottom: 2 },
   goalLabelActive: { color: '#6C63FF' },
@@ -291,10 +311,7 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 1,
   },
-  storeChipActive: {
-    backgroundColor: '#6C63FF',
-    borderColor: '#6C63FF',
-  },
+  storeChipActive: { backgroundColor: '#6C63FF', borderColor: '#6C63FF' },
   storeLabel: { fontSize: 14, fontWeight: '600', color: '#555' },
   storeLabelActive: { color: '#fff' },
 
@@ -306,7 +323,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 16,
     shadowColor: '#6C63FF',
     shadowOpacity: 0.4,
     shadowRadius: 12,
@@ -315,8 +331,4 @@ const styles = StyleSheet.create({
   },
   generateBtnDisabled: { opacity: 0.6, shadowOpacity: 0 },
   generateBtnText: { color: '#fff', fontWeight: '800', fontSize: 18 },
-  generateBtnArrow: { color: '#fff', fontSize: 20, marginLeft: 10 },
-
-  ordersLink: { alignItems: 'center', paddingVertical: 8 },
-  ordersLinkText: { color: '#9b96d4', fontSize: 14, fontWeight: '600' },
 });

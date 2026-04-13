@@ -6,13 +6,18 @@ import {
   TouchableOpacity,
   Alert,
   ActivityIndicator,
+  RefreshControl,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useState, useCallback, memo } from 'react';
 import { doc, deleteDoc } from 'firebase/firestore';
+import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
 import { db } from '../config/firebase';
 import { useOrders } from '../hooks/useOrders';
+import { useToast } from '../context/ToastContext';
 import { getCategoryIcon, GOAL_META } from '../utils/ui';
+import { OrderCardSkeleton } from '../components/Skeleton';
 
 function formatDate(timestamp) {
   if (!timestamp?.toDate) return '—';
@@ -45,7 +50,7 @@ const OrderCard = memo(function OrderCard({ item, isDeleting, onDelete, onView }
         >
           {isDeleting
             ? <ActivityIndicator size="small" color="#e74c3c" />
-            : <Text style={styles.deleteBtn}>🗑️</Text>
+            : <Ionicons name="trash-outline" size={20} color="#e74c3c" />
           }
         </TouchableOpacity>
       </View>
@@ -53,10 +58,13 @@ const OrderCard = memo(function OrderCard({ item, isDeleting, onDelete, onView }
       {/* Date & store */}
       <Text style={styles.dateText}>{formatDate(item.createdAt)}</Text>
       {item.store && item.store !== 'any' && (
-        <Text style={styles.storeText}>📍 {item.store}</Text>
+        <View style={styles.storeRow}>
+          <Ionicons name="location-outline" size={12} color="#aaa" />
+          <Text style={styles.storeText}>{item.store}</Text>
+        </View>
       )}
 
-      {/* Product chips — use stable composite key */}
+      {/* Product chips */}
       <View style={styles.chipsRow}>
         {(item.items || []).slice(0, 6).map((p) => (
           <View key={`${item.id}-${p.id}`} style={styles.chip}>
@@ -78,8 +86,9 @@ const OrderCard = memo(function OrderCard({ item, isDeleting, onDelete, onView }
           <Text style={styles.totalLabel}>Обща сума</Text>
           <Text style={styles.totalValue}>{item.total?.toFixed(2)} €</Text>
         </View>
-        <TouchableOpacity style={styles.viewBtn} onPress={onView}>
-          <Text style={styles.viewBtnText}>Виж списъка →</Text>
+        <TouchableOpacity style={styles.viewBtn} onPress={onView} activeOpacity={0.85}>
+          <Text style={styles.viewBtnText}>Виж</Text>
+          <Ionicons name="arrow-forward" size={14} color="#fff" />
         </TouchableOpacity>
       </View>
     </View>
@@ -90,9 +99,19 @@ const OrderCard = memo(function OrderCard({ item, isDeleting, onDelete, onView }
 
 export default function SavedListsScreen({ navigation }) {
   const { orders, loading, error } = useOrders();
+  const { show: showToast } = useToast();
   const [deleting, setDeleting] = useState(null);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const handleRefresh = useCallback(() => {
+    Haptics.selectionAsync();
+    setRefreshing(true);
+    // Real-time listener updates automatically; brief visual feedback only
+    setTimeout(() => setRefreshing(false), 800);
+  }, []);
 
   const handleDelete = useCallback((order) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     Alert.alert(
       'Изтрий списъка',
       'Сигурни ли сте, че искате да изтриете този списък?',
@@ -105,8 +124,10 @@ export default function SavedListsScreen({ navigation }) {
             setDeleting(order.id);
             try {
               await deleteDoc(doc(db, 'orders', order.id));
+              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+              showToast('Списъкът е изтрит', 'info');
             } catch (err) {
-              Alert.alert('Грешка', err?.message || 'Неуспешно изтриване');
+              showToast(err?.message || 'Неуспешно изтриване', 'error');
             } finally {
               setDeleting(null);
             }
@@ -114,9 +135,10 @@ export default function SavedListsScreen({ navigation }) {
         },
       ]
     );
-  }, []);
+  }, [showToast]);
 
   const handleViewList = useCallback((order) => {
+    Haptics.selectionAsync();
     navigation.navigate('ShoppingList', {
       list: order.items,
       budget: order.total,
@@ -135,19 +157,33 @@ export default function SavedListsScreen({ navigation }) {
     />
   ), [deleting, handleDelete, handleViewList]);
 
+  const renderSkeletons = () => (
+    <View style={{ padding: 16 }}>
+      {[0, 1, 2].map(i => <OrderCardSkeleton key={i} />)}
+    </View>
+  );
+
   if (loading) {
     return (
-      <View style={styles.centered}>
-        <ActivityIndicator size="large" color="#6C63FF" />
-      </View>
+      <SafeAreaView style={styles.container}>
+        <View style={styles.header}>
+          <Text style={styles.headerTitle}>Запазени списъци</Text>
+          <Text style={styles.headerSub}>Зарежда се…</Text>
+        </View>
+        {renderSkeletons()}
+      </SafeAreaView>
     );
   }
 
   if (error) {
     return (
-      <View style={styles.centered}>
-        <Text style={styles.errorText}>Грешка при зареждане на списъците.</Text>
-      </View>
+      <SafeAreaView style={styles.container}>
+        <View style={styles.centered}>
+          <Ionicons name="cloud-offline-outline" size={56} color="#E0E0EA" />
+          <Text style={styles.errorText}>Грешка при зареждане</Text>
+          <Text style={styles.errorSub}>{error}</Text>
+        </View>
+      </SafeAreaView>
     );
   }
 
@@ -155,17 +191,17 @@ export default function SavedListsScreen({ navigation }) {
     <SafeAreaView style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Запазени списъци 📋</Text>
+        <Text style={styles.headerTitle}>Запазени списъци</Text>
         <Text style={styles.headerSub}>
           {orders.length > 0
-            ? `${orders.length} запазени списъка`
-            : 'Все още нямате запазени списъци'}
+            ? `${orders.length} запазени`
+            : 'Все още нямате списъци'}
         </Text>
       </View>
 
       {orders.length === 0 ? (
         <View style={styles.emptyState}>
-          <Text style={styles.emptyIcon}>🛒</Text>
+          <Ionicons name="receipt-outline" size={72} color="#E0E0EA" />
           <Text style={styles.emptyTitle}>Няма запазени списъци</Text>
           <Text style={styles.emptyDesc}>
             Генерирайте списък и го запазете, за да се появи тук.
@@ -173,7 +209,9 @@ export default function SavedListsScreen({ navigation }) {
           <TouchableOpacity
             style={styles.emptyBtn}
             onPress={() => navigation.navigate('Home')}
+            activeOpacity={0.85}
           >
+            <Ionicons name="add" size={18} color="#fff" />
             <Text style={styles.emptyBtnText}>Генерирай списък</Text>
           </TouchableOpacity>
         </View>
@@ -187,6 +225,14 @@ export default function SavedListsScreen({ navigation }) {
           removeClippedSubviews
           maxToRenderPerBatch={8}
           windowSize={5}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={handleRefresh}
+              tintColor="#6C63FF"
+              colors={['#6C63FF']}
+            />
+          }
         />
       )}
     </SafeAreaView>
@@ -195,8 +241,9 @@ export default function SavedListsScreen({ navigation }) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F7F8FC' },
-  centered: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 },
-  errorText: { fontSize: 16, color: '#e74c3c', textAlign: 'center' },
+  centered: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20, gap: 8 },
+  errorText: { fontSize: 16, color: '#e74c3c', fontWeight: '700', marginTop: 12 },
+  errorSub: { fontSize: 13, color: '#aaa', textAlign: 'center' },
 
   header: {
     backgroundColor: '#fff',
@@ -221,7 +268,6 @@ const styles = StyleSheet.create({
     shadowRadius: 10,
     elevation: 3,
   },
-
   cardHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -230,10 +276,10 @@ const styles = StyleSheet.create({
   },
   goalBadge: { borderRadius: 20, paddingHorizontal: 12, paddingVertical: 4 },
   goalBadgeText: { color: '#fff', fontWeight: '700', fontSize: 12 },
-  deleteBtn: { fontSize: 20 },
 
-  dateText: { fontSize: 12, color: '#bbb', marginBottom: 2 },
-  storeText: { fontSize: 12, color: '#aaa', fontWeight: '600', marginBottom: 10 },
+  dateText: { fontSize: 12, color: '#bbb', marginBottom: 4 },
+  storeRow: { flexDirection: 'row', alignItems: 'center', gap: 3, marginBottom: 10 },
+  storeText: { fontSize: 12, color: '#aaa', fontWeight: '600' },
 
   chipsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 14 },
   chip: {
@@ -260,13 +306,16 @@ const styles = StyleSheet.create({
     borderTopColor: '#f0f0f0',
     paddingTop: 12,
   },
-  totalLabel: { fontSize: 11, color: '#aaa', fontWeight: '600' },
+  totalLabel: { fontSize: 11, color: '#aaa', fontWeight: '600', marginBottom: 2 },
   totalValue: { fontSize: 20, fontWeight: '800', color: '#1A1A2E' },
   viewBtn: {
     backgroundColor: '#6C63FF',
     borderRadius: 12,
-    paddingHorizontal: 18,
+    paddingHorizontal: 16,
     paddingVertical: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
   },
   viewBtnText: { color: '#fff', fontWeight: '700', fontSize: 14 },
 
@@ -276,14 +325,20 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 40,
   },
-  emptyIcon: { fontSize: 64, marginBottom: 16 },
-  emptyTitle: { fontSize: 20, fontWeight: '800', color: '#1A1A2E', marginBottom: 8 },
-  emptyDesc: { fontSize: 14, color: '#aaa', textAlign: 'center', marginBottom: 24, lineHeight: 20 },
+  emptyTitle: { fontSize: 20, fontWeight: '800', color: '#1A1A2E', marginBottom: 8, marginTop: 16 },
+  emptyDesc: { fontSize: 14, color: '#aaa', textAlign: 'center', marginBottom: 28, lineHeight: 20 },
   emptyBtn: {
     backgroundColor: '#6C63FF',
     borderRadius: 16,
-    paddingHorizontal: 28,
+    paddingHorizontal: 24,
     paddingVertical: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    shadowColor: '#6C63FF',
+    shadowOpacity: 0.35,
+    shadowRadius: 10,
+    elevation: 5,
   },
   emptyBtnText: { color: '#fff', fontWeight: '700', fontSize: 15 },
 });
