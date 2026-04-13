@@ -31,26 +31,22 @@ const STORES = [
   { id: 'Billa',    label: 'Billa' },
 ];
 
-function AnimatedPressable({ onPress, style, children, ...rest }) {
+const AnimatedTouchable = Animated.createAnimatedComponent(TouchableOpacity);
+
+function AnimatedPressable({ onPress, style, children, disabled }) {
   const scale = useRef(new Animated.Value(1)).current;
 
-  const handlePressIn = () =>
-    Animated.spring(scale, { toValue: 0.96, useNativeDriver: true, tension: 200, friction: 10 }).start();
-  const handlePressOut = () =>
-    Animated.spring(scale, { toValue: 1, useNativeDriver: true, tension: 200, friction: 10 }).start();
-
   return (
-    <TouchableOpacity
+    <AnimatedTouchable
       onPress={onPress}
-      onPressIn={handlePressIn}
-      onPressOut={handlePressOut}
-      activeOpacity={1}
-      {...rest}
+      onPressIn={() => Animated.spring(scale, { toValue: 0.96, useNativeDriver: true, tension: 200, friction: 10 }).start()}
+      onPressOut={() => Animated.spring(scale, { toValue: 1, useNativeDriver: true, tension: 200, friction: 10 }).start()}
+      disabled={disabled}
+      activeOpacity={0.9}
+      style={[style, { transform: [{ scale }] }]}
     >
-      <Animated.View style={[style, { transform: [{ scale }] }]}>
-        {children}
-      </Animated.View>
-    </TouchableOpacity>
+      {children}
+    </AnimatedTouchable>
   );
 }
 
