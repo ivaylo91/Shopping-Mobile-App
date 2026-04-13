@@ -4,7 +4,7 @@
  */
 
 const { initializeApp } = require('firebase/app');
-const { getFirestore, collection, addDoc, serverTimestamp } = require('firebase/firestore');
+const { getFirestore, collection, writeBatch, doc, serverTimestamp } = require('firebase/firestore');
 
 const firebaseConfig = {
   apiKey: "AIzaSyC4_qUPhiEPFmBYWoL6g_zjASpJSPJQrIM",
@@ -229,17 +229,27 @@ const products = [
   { name: 'Био зърнесто прясно сирене 200г',   price: 1.68,  unit: 'бр.', store: 'Lidl', category: 'dairy',     protein: 11, calories: 100, isHealthy: true  },
 ];
 
+const BATCH_SIZE = 499; // Firestore max is 500 operations per batch
+
 async function seed() {
-  console.log(`Добавяне на ${products.length} продукта от Lidl брошура 13.04–19.04.2026...`);
+  console.log(`Добавяне на ${products.length} продукта с batch writes...`);
+  const ts = serverTimestamp();
   let count = 0;
-  for (const product of products) {
-    await addDoc(collection(db, 'products'), {
-      ...product,
-      createdAt: serverTimestamp(),
+
+  for (let i = 0; i < products.length; i += BATCH_SIZE) {
+    const batch = writeBatch(db);
+    const chunk = products.slice(i, i + BATCH_SIZE);
+
+    chunk.forEach((product) => {
+      const ref = doc(collection(db, 'products'));
+      batch.set(ref, { ...product, createdAt: ts });
     });
-    count++;
-    console.log(`✅ ${count}. ${product.name} (${product.store}) — €${product.price}`);
+
+    await batch.commit();
+    count += chunk.length;
+    console.log(`✅ Добавени ${count}/${products.length} продукта...`);
   }
+
   console.log(`\n🎉 Готово! Добавени ${count} продукта.`);
   process.exit(0);
 }

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { collection, onSnapshot, query, orderBy } from 'firebase/firestore';
+import { collection, onSnapshot } from 'firebase/firestore';
 import { db } from '../config/firebase';
 
 export function useProducts() {
@@ -8,13 +8,15 @@ export function useProducts() {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    const q = query(collection(db, 'products'), orderBy('createdAt', 'desc'));
+    // No orderBy — generateList sorts client-side by price/protein/calories.
+    // Removing the sort eliminates a Firestore single-field index read and
+    // speeds up the initial query.
     const unsubscribe = onSnapshot(
-      q,
+      collection(db, 'products'),
       (snapshot) => {
-        const items = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
-        setProducts(items);
+        setProducts(snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })));
         setLoading(false);
+        setError(null);
       },
       (err) => {
         setError(err.message);

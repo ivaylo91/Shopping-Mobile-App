@@ -1,18 +1,22 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
-import { getFirestore } from 'firebase/firestore';
+import { initializeFirestore, memoryLocalCache } from 'firebase/firestore';
 
 const firebaseConfig = {
-  apiKey:            'AIzaSyC4_qUPhiEPFmBYWoL6g_zjASpJSPJQrIM',
-  authDomain:        'shopping-mobile-app-dab8c.firebaseapp.com',
-  projectId:         'shopping-mobile-app-dab8c',
-  storageBucket:     'shopping-mobile-app-dab8c.firebasestorage.app',
-  messagingSenderId: '384501943393',
-  appId:             '1:384501943393:web:9ee10939a61a653151ee20',
-  measurementId:     'G-EJ3YXSE3PN',
+  apiKey:            process.env.EXPO_PUBLIC_FIREBASE_API_KEY,
+  authDomain:        process.env.EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN,
+  projectId:         process.env.EXPO_PUBLIC_FIREBASE_PROJECT_ID,
+  storageBucket:     process.env.EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+  appId:             process.env.EXPO_PUBLIC_FIREBASE_APP_ID,
 };
 
 const app = initializeApp(firebaseConfig);
 
 export const auth = getAuth(app);
-export const db = getFirestore(app);
+
+// memoryLocalCache: serves cached data instantly on re-renders,
+// then reconciles with Firestore — cuts redundant round-trips.
+export const db = initializeFirestore(app, {
+  localCache: memoryLocalCache(),
+});
