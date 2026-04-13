@@ -6,7 +6,6 @@ import {
   TouchableOpacity,
   StyleSheet,
   ScrollView,
-  Alert,
   ActivityIndicator,
   StatusBar,
   Animated,
@@ -157,22 +156,32 @@ export default function HomeScreen({ navigation }) {
       {/* Goal Selection */}
       <View style={styles.section}>
         <Text style={styles.sectionLabel}>Цел на пазаруването</Text>
-        <View style={styles.goalsRow}>
-          {GOALS.map((goal) => (
-            <AnimatedPressable
-              key={goal.id}
-              style={[styles.goalCard, selectedGoal === goal.id && styles.goalCardActive]}
-              onPress={() => selectGoal(goal.id)}
-            >
-              <Text style={styles.goalIcon}>{goal.icon}</Text>
-              <Text style={[styles.goalLabel, selectedGoal === goal.id && styles.goalLabelActive]}>
-                {goal.label}
-              </Text>
-              <Text style={[styles.goalDesc, selectedGoal === goal.id && styles.goalDescActive]}>
-                {goal.desc}
-              </Text>
-            </AnimatedPressable>
-          ))}
+        <View style={styles.goalsCol}>
+          {GOALS.map((goal) => {
+            const active = selectedGoal === goal.id;
+            return (
+              <AnimatedPressable
+                key={goal.id}
+                style={[styles.goalCard, active && styles.goalCardActive]}
+                onPress={() => selectGoal(goal.id)}
+              >
+                <View style={[styles.goalIconWrap, active && styles.goalIconWrapActive]}>
+                  <Text style={styles.goalIcon}>{goal.icon}</Text>
+                </View>
+                <View style={styles.goalTextWrap}>
+                  <Text style={[styles.goalLabel, active && styles.goalLabelActive]}>
+                    {goal.label}
+                  </Text>
+                  <Text style={[styles.goalDesc, active && styles.goalDescActive]}>
+                    {goal.desc}
+                  </Text>
+                </View>
+                {active && (
+                  <Ionicons name="checkmark-circle" size={22} color="#6C63FF" />
+                )}
+              </AnimatedPressable>
+            );
+          })}
         </View>
       </View>
 
@@ -273,13 +282,14 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
   },
 
-  goalsRow: { flexDirection: 'row', gap: 10 },
+  goalsCol: { gap: 8 },
   goalCard: {
-    flex: 1,
     backgroundColor: '#fff',
     borderRadius: 16,
     padding: 14,
+    flexDirection: 'row',
     alignItems: 'center',
+    gap: 14,
     borderWidth: 2,
     borderColor: 'transparent',
     shadowColor: '#000',
@@ -288,10 +298,20 @@ const styles = StyleSheet.create({
     elevation: 1,
   },
   goalCardActive: { borderColor: '#6C63FF', backgroundColor: '#F0EEFF' },
-  goalIcon: { fontSize: 26, marginBottom: 6 },
-  goalLabel: { fontSize: 13, fontWeight: '700', color: '#333', marginBottom: 2 },
+  goalIconWrap: {
+    width: 46,
+    height: 46,
+    borderRadius: 14,
+    backgroundColor: '#F7F8FC',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  goalIconWrapActive: { backgroundColor: '#E4E0FF' },
+  goalIcon: { fontSize: 24 },
+  goalTextWrap: { flex: 1 },
+  goalLabel: { fontSize: 15, fontWeight: '700', color: '#1A1A2E', marginBottom: 2 },
   goalLabelActive: { color: '#6C63FF' },
-  goalDesc: { fontSize: 10, color: '#aaa', textAlign: 'center' },
+  goalDesc: { fontSize: 12, color: '#aaa' },
   goalDescActive: { color: '#9b96d4' },
 
   storesRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
