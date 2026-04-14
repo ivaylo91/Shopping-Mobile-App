@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useState } from 'react';
 import {
   View,
   Text,
@@ -8,7 +8,6 @@ import {
   ScrollView,
   ActivityIndicator,
   StatusBar,
-  Animated,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
@@ -16,6 +15,7 @@ import { useAuth } from '../context/AuthContext';
 import { useProducts } from '../hooks/useProducts';
 import { useToast } from '../context/ToastContext';
 import { generateList } from '../utils/generateList';
+import AnimatedPressable from '../components/AnimatedPressable';
 
 const GOALS = [
   { id: 'cheapest',    label: 'Най-евтино',  icon: '💰', desc: 'Максимална стойност' },
@@ -30,24 +30,6 @@ const STORES = [
   { id: 'Billa',    label: 'Billa' },
 ];
 
-const AnimatedTouchable = Animated.createAnimatedComponent(TouchableOpacity);
-
-function AnimatedPressable({ onPress, style, children, disabled }) {
-  const scale = useRef(new Animated.Value(1)).current;
-
-  return (
-    <AnimatedTouchable
-      onPress={onPress}
-      onPressIn={() => Animated.spring(scale, { toValue: 0.96, useNativeDriver: true, tension: 200, friction: 10 }).start()}
-      onPressOut={() => Animated.spring(scale, { toValue: 1, useNativeDriver: true, tension: 200, friction: 10 }).start()}
-      disabled={disabled}
-      activeOpacity={0.9}
-      style={[style, { transform: [{ scale }] }]}
-    >
-      {children}
-    </AnimatedTouchable>
-  );
-}
 
 export default function HomeScreen({ navigation }) {
   const { logout, user } = useAuth();

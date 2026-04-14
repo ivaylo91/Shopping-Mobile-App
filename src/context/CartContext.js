@@ -1,52 +1,26 @@
-import { createContext, useContext, useReducer } from 'react';
+/**
+ * CartContext — thin compatibility shim over the Zustand cart store.
+ *
+ * All components still import `useCart` from here — nothing else changes.
+ * The CartProvider is kept so App.js doesn't need to be touched for this layer,
+ * but it's now a no-op wrapper (Zustand needs no Provider).
+ */
+import { useCartStore, selectTotal, selectItemCount } from '../store/cartStore';
 
-const CartContext = createContext(null);
-
-function cartReducer(state, action) {
-  switch (action.type) {
-    case 'ADD_ITEM': {
-      const existing = state.find((i) => i.id === action.item.id);
-      if (existing) {
-        return state.map((i) =>
-          i.id === action.item.id ? { ...i, quantity: i.quantity + 1 } : i
-        );
-      }
-      return [...state, { ...action.item, quantity: 1 }];
-    }
-    case 'REMOVE_ITEM':
-      return state.filter((i) => i.id !== action.id);
-    case 'UPDATE_QUANTITY':
-      return state.map((i) =>
-        i.id === action.id ? { ...i, quantity: action.quantity } : i
-      );
-    case 'CLEAR_CART':
-      return [];
-    default:
-      return state;
-  }
-}
-
+// No-op provider — Zustand is global, no context tree needed.
 export function CartProvider({ children }) {
-  const [cart, dispatch] = useReducer(cartReducer, []);
-
-  const addItem = (item) => dispatch({ type: 'ADD_ITEM', item });
-  const removeItem = (id) => dispatch({ type: 'REMOVE_ITEM', id });
-  const updateQuantity = (id, quantity) =>
-    dispatch({ type: 'UPDATE_QUANTITY', id, quantity });
-  const clearCart = () => dispatch({ type: 'CLEAR_CART' });
-
-  const total = cart.reduce((sum, i) => sum + i.price * i.quantity, 0);
-  const itemCount = cart.reduce((sum, i) => sum + i.quantity, 0);
-
-  return (
-    <CartContext.Provider
-      value={{ cart, total, itemCount, addItem, removeItem, updateQuantity, clearCart }}
-    >
-      {children}
-    </CartContext.Provider>
-  );
+  return children;
 }
 
+// Drop-in replacement for the old useCart() hook.
 export function useCart() {
-  return useContext(CartContext);
+  const cart = useCartStore((s) => s.cart);
+  const addItem = useCartStore((s) => s.addItem);
+  const removeItem = useCartStore((s) => s.removeItem);
+  const updateQuantity = useCartStore((s) => s.updateQuantity);
+  const clearCart = useCartStore((s) => s.clearCart);
+  const total = useCartStore(selectTotal);
+  const itemCount = useCartStore(selectItemCount);
+
+  return { cart, total, itemCount, addItem, removeItem, updateQuantity, clearCart };
 }

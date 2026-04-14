@@ -10,20 +10,35 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
+import { useForm, Controller } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../context/AuthContext';
+
+const loginSchema = z.object({
+  email: z
+    .string()
+    .min(1, 'Имейлът е задължителен')
+    .email('Невалиден имейл адрес'),
+  password: z.string().min(6, 'Паролата трябва да е поне 6 символа'),
+});
 
 export default function LoginScreen({ navigation }) {
   const { login, loginAsGuest } = useAuth();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
-  const handleLogin = async () => {
-    if (!email || !password) {
-      Alert.alert('Грешка', 'Моля попълнете всички полета');
-      return;
-    }
+  const {
+    control,
+    handleSubmit,
+    formState: { errors },
+  } = useForm({
+    resolver: zodResolver(loginSchema),
+    defaultValues: { email: '', password: '' },
+  });
+
+  const onSubmit = async ({ email, password }) => {
     setLoading(true);
     try {
       await login(email.trim(), password);
@@ -43,41 +58,71 @@ export default function LoginScreen({ navigation }) {
       <Text style={styles.title}>Добре дошли 👋</Text>
 
       {/* Email */}
-      <View style={styles.fieldWrap}>
-        <Text style={styles.label}>Имейл адрес</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="вашият@имейл.com"
-          placeholderTextColor="#A0A0B0"
-          value={email}
-          onChangeText={setEmail}
-          autoCapitalize="none"
-          keyboardType="email-address"
-        />
-      </View>
+      <Controller
+        control={control}
+        name="email"
+        render={({ field: { onChange, value } }) => (
+          <View style={styles.fieldWrap}>
+            <Text style={styles.label}>Имейл адрес</Text>
+            <TextInput
+              style={[styles.input, errors.email && styles.inputError]}
+              placeholder="вашият@имейл.com"
+              placeholderTextColor="#A0A0B0"
+              value={value}
+              onChangeText={onChange}
+              autoCapitalize="none"
+              keyboardType="email-address"
+              autoComplete="email"
+            />
+            {errors.email && (
+              <Text style={styles.errorText}>{errors.email.message}</Text>
+            )}
+          </View>
+        )}
+      />
 
       {/* Password */}
-      <View style={styles.fieldWrap}>
-        <Text style={styles.label}>Парола</Text>
-        <View style={styles.passwordRow}>
-          <TextInput
-            style={styles.passwordInput}
-            placeholder="Въведете паролата си"
-            placeholderTextColor="#A0A0B0"
-            value={password}
-            onChangeText={setPassword}
-            secureTextEntry={!showPassword}
-          />
-          <TouchableOpacity
-            style={styles.eyeBtn}
-            onPress={() => setShowPassword((v) => !v)}
-          >
-            <Text style={styles.eyeIcon}>{showPassword ? '🙈' : '👁️'}</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
+      <Controller
+        control={control}
+        name="password"
+        render={({ field: { onChange, value } }) => (
+          <View style={styles.fieldWrap}>
+            <Text style={styles.label}>Парола</Text>
+            <View style={[styles.passwordRow, errors.password && styles.passwordRowError]}>
+              <TextInput
+                style={styles.passwordInput}
+                placeholder="Въведете паролата си"
+                placeholderTextColor="#A0A0B0"
+                value={value}
+                onChangeText={onChange}
+                secureTextEntry={!showPassword}
+                autoComplete="password"
+              />
+              <TouchableOpacity
+                style={styles.eyeBtn}
+                onPress={() => setShowPassword((v) => !v)}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              >
+                <Ionicons
+                  name={showPassword ? 'eye-off-outline' : 'eye-outline'}
+                  size={20}
+                  color="#A0A0B0"
+                />
+              </TouchableOpacity>
+            </View>
+            {errors.password && (
+              <Text style={styles.errorText}>{errors.password.message}</Text>
+            )}
+          </View>
+        )}
+      />
 
-      <TouchableOpacity style={styles.button} onPress={handleLogin} disabled={loading}>
+      <TouchableOpacity
+        style={[styles.button, loading && styles.buttonDisabled]}
+        onPress={handleSubmit(onSubmit)}
+        disabled={loading}
+        activeOpacity={0.85}
+      >
         {loading ? (
           <ActivityIndicator color="#fff" />
         ) : (
@@ -86,7 +131,10 @@ export default function LoginScreen({ navigation }) {
       </TouchableOpacity>
 
       <TouchableOpacity onPress={() => navigation.navigate('Register')}>
-        <Text style={styles.link}>Нямате акаунт? <Text style={styles.linkBold}>Регистрирай се</Text></Text>
+        <Text style={styles.link}>
+          Нямате акаунт?{' '}
+          <Text style={styles.linkBold}>Регистрирай се</Text>
+        </Text>
       </TouchableOpacity>
 
       <TouchableOpacity style={styles.guestBtn} onPress={loginAsGuest}>
@@ -98,11 +146,26 @@ export default function LoginScreen({ navigation }) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, justifyContent: 'center', padding: 28, backgroundColor: '#fff' },
-  subtitle: { fontSize: 13, fontWeight: '700', color: '#6C63FF', textAlign: 'center', letterSpacing: 1, textTransform: 'uppercase', marginBottom: 6 },
-  title: { fontSize: 30, fontWeight: '800', color: '#1A1A2E', marginBottom: 36, textAlign: 'center' },
+  subtitle: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#6C63FF',
+    textAlign: 'center',
+    letterSpacing: 1,
+    textTransform: 'uppercase',
+    marginBottom: 6,
+  },
+  title: {
+    fontSize: 30,
+    fontWeight: '800',
+    color: '#1A1A2E',
+    marginBottom: 36,
+    textAlign: 'center',
+  },
 
   fieldWrap: { marginBottom: 18 },
   label: { fontSize: 13, fontWeight: '700', color: '#444', marginBottom: 7 },
+
   input: {
     borderWidth: 1.5,
     borderColor: '#E0E0F0',
@@ -113,6 +176,8 @@ const styles = StyleSheet.create({
     color: '#1A1A2E',
     backgroundColor: '#FAFAFA',
   },
+  inputError: { borderColor: '#e74c3c' },
+
   passwordRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -121,6 +186,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     backgroundColor: '#FAFAFA',
   },
+  passwordRowError: { borderColor: '#e74c3c' },
   passwordInput: {
     flex: 1,
     paddingHorizontal: 16,
@@ -129,7 +195,8 @@ const styles = StyleSheet.create({
     color: '#1A1A2E',
   },
   eyeBtn: { paddingHorizontal: 14 },
-  eyeIcon: { fontSize: 18 },
+
+  errorText: { fontSize: 12, color: '#e74c3c', marginTop: 5, marginLeft: 4 },
 
   button: {
     backgroundColor: '#6C63FF',
@@ -144,9 +211,12 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 5 },
     elevation: 5,
   },
+  buttonDisabled: { opacity: 0.6, shadowOpacity: 0 },
   buttonText: { color: '#fff', fontWeight: '800', fontSize: 17 },
+
   link: { color: '#999', textAlign: 'center', fontSize: 14 },
   linkBold: { color: '#6C63FF', fontWeight: '700' },
+
   guestBtn: { marginTop: 24, alignItems: 'center' },
   guestText: { color: '#bbb', fontSize: 13, fontWeight: '600' },
 });

@@ -6,36 +6,15 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Share,
-  Animated,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useState, useMemo, useCallback, memo, useRef } from 'react';
+import { useState, useMemo, useCallback, memo } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useOrders } from '../hooks/useOrders';
 import { useToast } from '../context/ToastContext';
 import { getCategoryIcon, GOAL_META } from '../utils/ui';
-
-// ─── Animated Pressable ───────────────────────────────────────────────────────
-
-const AnimatedTouchable = Animated.createAnimatedComponent(TouchableOpacity);
-
-function AnimatedPressable({ onPress, style, children, disabled }) {
-  const scale = useRef(new Animated.Value(1)).current;
-
-  return (
-    <AnimatedTouchable
-      onPress={onPress}
-      onPressIn={() => Animated.spring(scale, { toValue: 0.96, useNativeDriver: true, tension: 200, friction: 10 }).start()}
-      onPressOut={() => Animated.spring(scale, { toValue: 1, useNativeDriver: true, tension: 200, friction: 10 }).start()}
-      disabled={disabled}
-      activeOpacity={0.9}
-      style={[style, { transform: [{ scale }] }]}
-    >
-      {children}
-    </AnimatedTouchable>
-  );
-}
+import AnimatedPressable from '../components/AnimatedPressable';
 
 // ─── Memoized list item ───────────────────────────────────────────────────────
 
