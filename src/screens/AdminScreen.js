@@ -24,11 +24,13 @@ import {
   deleteDoc,
   doc,
   serverTimestamp,
+  writeBatch,
 } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { useProducts } from '../hooks/useProducts';
 import { useToast } from '../context/ToastContext';
 import { getCategoryIcon, CATEGORY_ICONS } from '../utils/ui';
+import { KAUFLAND_PRODUCTS } from '../utils/kauflandProducts';
 
 const CATEGORIES = Object.keys(CATEGORY_ICONS);
 const STORES = ['Lidl', 'Kaufland', 'Billa'];
@@ -285,6 +287,44 @@ export default function AdminScreen() {
   const [modalVisible, setModalVisible] = useState(false);
   const [editTarget, setEditTarget] = useState(null); // null = add mode
   const [saving, setSaving] = useState(false);
+  const [importing, setImporting] = useState(false);
+
+  const handleImportKaufland = () => {
+    Alert.alert(
+      'Импорт от Kaufland',
+      `Ще бъдат добавени ${KAUFLAND_PRODUCTS.length} продукта от брошурата (13–19.04.2026). Продължаване?`,
+      [
+        { text: 'Отказ', style: 'cancel' },
+        {
+          text: 'Импортирай',
+          onPress: async () => {
+            setImporting(true);
+            try {
+              const col = collection(db, 'products');
+              const now = serverTimestamp();
+              // Firestore allows up to 500 writes per batch; our list is well under that
+              // Firestore allows max 500 writes per batch
+              const CHUNK = 499;
+              for (let i = 0; i < KAUFLAND_PRODUCTS.length; i += CHUNK) {
+                const batch = writeBatch(db);
+                for (const p of KAUFLAND_PRODUCTS.slice(i, i + CHUNK)) {
+                  batch.set(doc(col), { ...p, store: 'Kaufland', createdAt: now });
+                }
+                await batch.commit();
+              }
+              await batch.commit();
+              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+              showToast(`${KAUFLAND_PRODUCTS.length} продукта добавени`, 'success');
+            } catch (err) {
+              showToast(err?.message || 'Неуспешен импорт', 'error');
+            } finally {
+              setImporting(false);
+            }
+          },
+        },
+      ]
+    );
+  };
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -386,10 +426,23 @@ export default function AdminScreen() {
             {loading ? 'Зарежда се…' : `${products.length} продукта`}
           </Text>
         </View>
-        <TouchableOpacity style={styles.addBtn} onPress={openAdd} activeOpacity={0.85}>
-          <Ionicons name="add" size={22} color="#fff" />
-          <Text style={styles.addBtnText}>Добави</Text>
-        </TouchableOpacity>
+        <View style={{ flexDirection: 'row', gap: 8 }}>
+          <TouchableOpacity
+            style={[styles.addBtn, { backgroundColor: '#E8A020' }]}
+            onPress={handleImportKaufland}
+            activeOpacity={0.85}
+            disabled={importing}
+          >
+            {importing
+              ? <ActivityIndicator size="small" color="#fff" />
+              : <Ionicons name="cloud-download-outline" size={20} color="#fff" />}
+            <Text style={styles.addBtnText}>Kaufland</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.addBtn} onPress={openAdd} activeOpacity={0.85}>
+            <Ionicons name="add" size={22} color="#fff" />
+            <Text style={styles.addBtnText}>Добави</Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       {/* Search */}

@@ -12,8 +12,6 @@ import HomeScreen from '../screens/HomeScreen';
 import ShoppingListScreen from '../screens/ShoppingListScreen';
 import MealsScreen from '../screens/MealsScreen';
 import SavedListsScreen from '../screens/SavedListsScreen';
-import OrdersScreen from '../screens/OrdersScreen';
-import CartScreen from '../screens/CartScreen';
 import AdminScreen from '../screens/AdminScreen';
 
 const Stack = createStackNavigator();
@@ -21,9 +19,7 @@ const Tab = createBottomTabNavigator();
 
 const TAB_ICONS = {
   Home:       { focused: 'home',          outline: 'home-outline' },
-  SavedLists: { focused: 'list',          outline: 'list-outline' },
-  Orders:     { focused: 'receipt',       outline: 'receipt-outline' },
-  Cart:       { focused: 'cart',          outline: 'cart-outline' },
+  SavedLists: { focused: 'bookmark',      outline: 'bookmark-outline' },
   Admin:      { focused: 'settings',      outline: 'settings-outline' },
 };
 
@@ -42,22 +38,22 @@ function MainTabs({ isAdmin }) {
       screenOptions={({ route }) => ({
         headerShown: false,
         tabBarActiveTintColor: '#6C63FF',
-        tabBarInactiveTintColor: '#C4C4D4',
+        tabBarInactiveTintColor: '#B0B0C3',
         tabBarStyle: {
           backgroundColor: '#fff',
-          borderTopColor: '#f0f0f0',
+          borderTopColor: '#ECECF4',
           borderTopWidth: 1,
-          height: 62,
-          paddingBottom: 8,
-          paddingTop: 6,
+          height: 70,
+          paddingBottom: 10,
+          paddingTop: 8,
         },
-        tabBarLabelStyle: { fontSize: 11, fontWeight: '700' },
+        tabBarLabelStyle: { fontSize: 11, fontWeight: '700', letterSpacing: 0.2 },
         tabBarIcon: ({ focused, color }) => {
           const icons = TAB_ICONS[route.name];
           return (
             <Ionicons
               name={focused ? icons.focused : icons.outline}
-              size={23}
+              size={24}
               color={color}
             />
           );
@@ -72,17 +68,7 @@ function MainTabs({ isAdmin }) {
       <Tab.Screen
         name="SavedLists"
         component={SavedListsScreen}
-        options={{ tabBarLabel: 'Списъци' }}
-      />
-      <Tab.Screen
-        name="Orders"
-        component={OrdersScreen}
-        options={{ tabBarLabel: 'Поръчки' }}
-      />
-      <Tab.Screen
-        name="Cart"
-        component={CartScreen}
-        options={{ tabBarLabel: 'Кошница' }}
+        options={{ tabBarLabel: 'Запазени' }}
       />
       {isAdmin && (
         <Tab.Screen

@@ -201,7 +201,7 @@ export default function SavedListsScreen({ navigation }) {
 
       {orders.length === 0 ? (
         <View style={styles.emptyState}>
-          <Ionicons name="receipt-outline" size={72} color="#E0E0EA" />
+          <Ionicons name="bookmark-outline" size={72} color="#E0E0EA" />
           <Text style={styles.emptyTitle}>Няма запазени списъци</Text>
           <Text style={styles.emptyDesc}>
             Генерирайте списък и го запазете, за да се появи тук.
