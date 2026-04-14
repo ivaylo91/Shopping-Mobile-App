@@ -14,15 +14,17 @@ import MealsScreen from '../screens/MealsScreen';
 import SavedListsScreen from '../screens/SavedListsScreen';
 import OrdersScreen from '../screens/OrdersScreen';
 import CartScreen from '../screens/CartScreen';
+import AdminScreen from '../screens/AdminScreen';
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
 
 const TAB_ICONS = {
-  Home:       { focused: 'home',       outline: 'home-outline' },
-  SavedLists: { focused: 'list',       outline: 'list-outline' },
-  Orders:     { focused: 'receipt',    outline: 'receipt-outline' },
-  Cart:       { focused: 'cart',       outline: 'cart-outline' },
+  Home:       { focused: 'home',          outline: 'home-outline' },
+  SavedLists: { focused: 'list',          outline: 'list-outline' },
+  Orders:     { focused: 'receipt',       outline: 'receipt-outline' },
+  Cart:       { focused: 'cart',          outline: 'cart-outline' },
+  Admin:      { focused: 'settings',      outline: 'settings-outline' },
 };
 
 function AuthStack() {
@@ -34,7 +36,7 @@ function AuthStack() {
   );
 }
 
-function MainTabs() {
+function MainTabs({ isAdmin }) {
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
@@ -82,11 +84,19 @@ function MainTabs() {
         component={CartScreen}
         options={{ tabBarLabel: 'Кошница' }}
       />
+      {isAdmin && (
+        <Tab.Screen
+          name="Admin"
+          component={AdminScreen}
+          options={{ tabBarLabel: 'Админ' }}
+        />
+      )}
     </Tab.Navigator>
   );
 }
 
-function AppStack() {
+function AppStack({ isAdmin }) {
+  const Tabs = () => <MainTabs isAdmin={isAdmin} />;
   return (
     <Stack.Navigator
       screenOptions={{
@@ -96,7 +106,7 @@ function AppStack() {
         cardStyle: { backgroundColor: '#F7F8FC' },
       }}
     >
-      <Stack.Screen name="MainTabs" component={MainTabs} options={{ headerShown: false }} />
+      <Stack.Screen name="MainTabs" component={Tabs} options={{ headerShown: false }} />
       <Stack.Screen
         name="ShoppingList"
         component={ShoppingListScreen}
@@ -112,7 +122,7 @@ function AppStack() {
 }
 
 export default function AppNavigator() {
-  const { user, loading } = useAuth();
+  const { user, loading, isAdmin } = useAuth();
 
   if (loading) {
     return (
@@ -124,7 +134,7 @@ export default function AppNavigator() {
 
   return (
     <NavigationContainer>
-      {user ? <AppStack /> : <AuthStack />}
+      {user ? <AppStack isAdmin={isAdmin} /> : <AuthStack />}
     </NavigationContainer>
   );
 }

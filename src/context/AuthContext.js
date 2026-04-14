@@ -10,6 +10,7 @@ import { auth } from '../config/firebase';
 const AuthContext = createContext(null);
 
 const GUEST_USER = { uid: 'guest', email: 'guest@test.com', isGuest: true };
+const ADMIN_EMAILS = ['ipenev91@gmail.com'];
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
@@ -44,8 +45,10 @@ export function AuthProvider({ children }) {
 
   const loginAsGuest = () => setUser(GUEST_USER);
 
+  const isAdmin = !!user && !user.isGuest && ADMIN_EMAILS.includes(user.email);
+
   return (
-    <AuthContext.Provider value={{ user, loading, register, login, logout, loginAsGuest }}>
+    <AuthContext.Provider value={{ user, loading, register, login, logout, loginAsGuest, isAdmin }}>
       {children}
     </AuthContext.Provider>
   );
