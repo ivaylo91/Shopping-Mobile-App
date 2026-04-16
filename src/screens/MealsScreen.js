@@ -6,8 +6,11 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useState, useCallback, useEffect, useMemo } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
+import Animated, { FadeIn } from 'react-native-reanimated';
 import { getCategoryIcon } from '../utils/ui';
 import { generateMealPlan, generateSingleMeal, hasApiKey } from '../services/mealAI';
+import { SkeletonBox } from '../components/Skeleton';
+import { useToast } from '../context/ToastContext';
 
 // ─── Fallback recipes (used when no API key is configured) ────────────────────
 // Keeps the screen functional without an API key.
@@ -116,15 +119,15 @@ function RecipeCardSkeleton({ color }) {
   return (
     <View style={[styles.card, { borderLeftColor: color ?? '#ddd' }]}>
       <View style={styles.cardTopRow}>
-        <View style={[styles.skeletonChip, { backgroundColor: color + '40', width: 90, height: 30 }]} />
+        <SkeletonBox style={{ width: 90, height: 30, borderRadius: 20 }} />
         <View style={{ flexDirection: 'row', gap: 8 }}>
-          <View style={[styles.skeletonChip, { width: 60, height: 24 }]} />
-          <View style={[styles.skeletonChip, { width: 70, height: 24 }]} />
+          <SkeletonBox style={{ width: 60, height: 24, borderRadius: 12 }} />
+          <SkeletonBox style={{ width: 70, height: 24, borderRadius: 12 }} />
         </View>
       </View>
-      <View style={[styles.skeletonLine, { width: '80%', height: 18, marginBottom: 8 }]} />
-      <View style={[styles.skeletonLine, { width: '55%', height: 12, marginBottom: 16 }]} />
-      <View style={[styles.skeletonLine, { width: '100%', height: 56, borderRadius: 10 }]} />
+      <SkeletonBox style={{ width: '80%', height: 18, borderRadius: 8, marginBottom: 8 }} />
+      <SkeletonBox style={{ width: '55%', height: 12, borderRadius: 6, marginBottom: 16 }} />
+      <SkeletonBox style={{ width: '100%', height: 56, borderRadius: 10 }} />
     </View>
   );
 }
@@ -224,6 +227,8 @@ export default function MealsScreen({ route, navigation }) {
   const { list } = route.params || {};
   const allProducts = list || [];
 
+  const { show: showToast } = useToast();
+
   const [plan, setPlan]         = useState(null);      // null = loading
   const [planError, setPlanError] = useState(false);
   const [loadingSlot, setLoadingSlot] = useState(null); // key of slot being swapped
@@ -313,6 +318,7 @@ export default function MealsScreen({ route, navigation }) {
       setExcludedBySlot((prev) => ({ ...prev, [slotKey]: excluded }));
     } catch (err) {
       console.warn('generateSingleMeal failed:', err.message);
+      showToast('Неуспешна замяна на рецептата', 'error');
     } finally {
       setLoadingSlot(null);
     }
@@ -414,7 +420,7 @@ export default function MealsScreen({ route, navigation }) {
             }
 
             return (
-              <View key={key} style={[styles.card, { borderLeftColor: color }]}>
+              <Animated.View key={`${key}-${recipe.title}`} entering={FadeIn.duration(300)} style={[styles.card, { borderLeftColor: color }]}>
 
                 {/* Top row */}
                 <View style={styles.cardTopRow}>
@@ -500,7 +506,7 @@ export default function MealsScreen({ route, navigation }) {
                   </TouchableOpacity>
                 </View>
 
-              </View>
+              </Animated.View>
             );
           })}
         </View>
