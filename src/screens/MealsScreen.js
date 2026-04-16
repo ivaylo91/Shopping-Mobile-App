@@ -1,611 +1,47 @@
 import {
   View, Text, StyleSheet, TouchableOpacity,
-  ScrollView, Linking, FlatList,
+  ScrollView, FlatList, Modal, ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useMemo, useState, useCallback } from 'react';
+import { useState, useCallback, useEffect, useMemo } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { getCategoryIcon } from '../utils/ui';
+import { generateMealPlan, generateSingleMeal, hasApiKey } from '../services/mealAI';
 
-// ─── Recipes ──────────────────────────────────────────────────────────────────
-// ingredients: maps human-readable label → matching key stem used for product lookup
-// tags: 'vegetarian' | 'quick' (≤25 min) | 'high_protein' (protein ≥30g)
+// ─── Fallback recipes (used when no API key is configured) ────────────────────
+// Keeps the screen functional without an API key.
 
-const RECIPES = {
-  meat: [
-    {
-      title: 'Бързо пиле с аспержи на тиган',
-      keys: ['пиле', 'пилешк', 'аспержи', 'масл'],
-      ingredients: [
-        { label: 'Пилешко филе', key: 'пилешк' },
-        { label: 'Аспержи', key: 'аспержи' },
-        { label: 'Масло', key: 'масл' },
-        { label: 'Чесън', key: 'чесън' },
-      ],
-      calories: 320, protein: 35, carbs: 8, fat: 14, prepTime: 20,
-      tags: ['quick', 'high_protein'],
-      url: 'https://recepti.gotvach.bg/r-289518-Бързо_пиле_с_аспержи_на_тиган',
-      desc: 'Пилешкото филе се нарязва на малки хапки и се запържва в тиган с масло и подправки.',
-    },
-    {
-      title: 'Свинско контрафиле на тиган с хрупкави аспержи',
-      keys: ['свинск', 'контраф', 'аспержи'],
-      ingredients: [
-        { label: 'Свинско контрафиле', key: 'свинск' },
-        { label: 'Аспержи', key: 'аспержи' },
-        { label: 'Масло', key: 'масл' },
-      ],
-      calories: 420, protein: 32, carbs: 5, fat: 22, prepTime: 25,
-      tags: ['quick', 'high_protein'],
-      url: 'https://recepti.gotvach.bg/r-289553-Свинско_контрафиле_на_тиган_с_хрупкави_аспержи',
-      desc: 'Свинското контрафиле се изпича на тиган до хрупкава коричка и се поднася с аспержи.',
-    },
-    {
-      title: 'Крехко телешко с лук и домати',
-      keys: ['говежд', 'телешк', 'лук', 'домат'],
-      ingredients: [
-        { label: 'Телешко месо', key: 'телешк' },
-        { label: 'Лук', key: 'лук' },
-        { label: 'Домати', key: 'домат' },
-      ],
-      calories: 380, protein: 28, carbs: 12, fat: 18, prepTime: 60,
-      tags: [],
-      url: 'https://recepti.gotvach.bg/r-289493-Крехко_телешко_с_лук_и_домати_(Swiss_Steak)',
-      desc: 'Телешките пържоли се задушават с лук и домати до пълно омекване.',
-    },
-    {
-      title: 'Ароматно свинско печено с картофи и зеленчуци',
-      keys: ['свинск', 'картоф', 'морков', 'лук'],
-      ingredients: [
-        { label: 'Свинско месо', key: 'свинск' },
-        { label: 'Картофи', key: 'картоф' },
-        { label: 'Моркови', key: 'морков' },
-        { label: 'Лук', key: 'лук' },
-      ],
-      calories: 490, protein: 35, carbs: 30, fat: 20, prepTime: 90,
-      tags: ['high_protein'],
-      url: 'https://recepti.gotvach.bg/r-289479-Ароматно_свинско_печено_с_картофи_и_зеленчуци',
-      desc: 'Свинско месо, печено на фурна с картофи, моркови и подправки на 190°C.',
-    },
-    {
-      title: 'Агнешки джоланчета с картофи',
-      keys: ['агнешк', 'джолан', 'картоф', 'лук'],
-      ingredients: [
-        { label: 'Агнешко', key: 'агнешк' },
-        { label: 'Картофи', key: 'картоф' },
-        { label: 'Лук', key: 'лук' },
-      ],
-      calories: 510, protein: 40, carbs: 25, fat: 28, prepTime: 120,
-      tags: ['high_protein'],
-      url: 'https://recepti.gotvach.bg/r-288118-Агнешки_джоланчета_с_картофи',
-      desc: 'Агнешки джолани, бавно изпечени с картофи и ароматни подправки.',
-    },
-    {
-      title: 'Кайма с ориз и зеленчуци',
-      keys: ['кайма', 'ориз', 'домат', 'чушк', 'лук'],
-      ingredients: [
-        { label: 'Кайма', key: 'кайма' },
-        { label: 'Ориз', key: 'ориз' },
-        { label: 'Домати', key: 'домат' },
-        { label: 'Чушки', key: 'чушк' },
-      ],
-      calories: 410, protein: 25, carbs: 40, fat: 15, prepTime: 35,
-      tags: [],
-      url: 'https://recepti.gotvach.bg/r-288000-Кайма_с_ориз_и_зеленчуци',
-      desc: 'Телешка или смесена кайма задушена с ориз, домати и чушки.',
-    },
-    {
-      title: 'Пиле с картофи на фурна',
-      keys: ['пиле', 'пилешк', 'картоф', 'лук'],
-      ingredients: [
-        { label: 'Пиле', key: 'пилешк' },
-        { label: 'Картофи', key: 'картоф' },
-        { label: 'Лук', key: 'лук' },
-        { label: 'Масло', key: 'масл' },
-      ],
-      calories: 450, protein: 38, carbs: 35, fat: 16, prepTime: 60,
-      tags: ['high_protein'],
-      url: 'https://recepti.gotvach.bg/r-287000-Пиле_с_картофи_на_фурна',
-      desc: 'Класическо пиле с картофи, изпечено на фурна с масло и подправки.',
-    },
-  ],
-
-  fish: [
-    {
-      title: 'Лека рибна запеканка за вечеря',
-      keys: ['риба', 'рибн', 'рибно', 'лук', 'домат'],
-      ingredients: [
-        { label: 'Рибно филе', key: 'рибно' },
-        { label: 'Лук', key: 'лук' },
-        { label: 'Домати', key: 'домат' },
-      ],
-      calories: 290, protein: 22, carbs: 18, fat: 12, prepTime: 30,
-      tags: [],
-      url: 'https://recepti.gotvach.bg/r-289340-Лека_рибна_запеканка_за_вечеря',
-      desc: 'Рибно филе с хляб и зеленчуци, запечено на фурна за лека вечеря.',
-    },
-    {
-      title: 'Сьомга със сос от синьо сирене и гъби',
-      keys: ['сьомга', 'сирен', 'гъб', 'печурк', 'масл'],
-      ingredients: [
-        { label: 'Сьомга', key: 'сьомга' },
-        { label: 'Сирене', key: 'сирен' },
-        { label: 'Гъби', key: 'гъб' },
-        { label: 'Масло', key: 'масл' },
-      ],
-      calories: 370, protein: 28, carbs: 5, fat: 22, prepTime: 25,
-      tags: ['quick', 'high_protein'],
-      url: 'https://recepti.gotvach.bg/r-288255-Сьомга_със_сос_от_синьо_сирене_и_гъби',
-      desc: 'Сьомга, изпечена на тиган и поднесена с кремообразен сос от сирене и гъби.',
-    },
-    {
-      title: 'Скариди в чесново масло',
-      keys: ['скарид', 'масл', 'чесън'],
-      ingredients: [
-        { label: 'Скариди', key: 'скарид' },
-        { label: 'Масло', key: 'масл' },
-        { label: 'Чесън', key: 'чесън' },
-      ],
-      calories: 240, protein: 20, carbs: 2, fat: 14, prepTime: 10,
-      tags: ['quick'],
-      url: 'https://recepti.gotvach.bg/r-288260-Скариди_в_чесново_масло',
-      desc: 'Скаридите се запържват в масло с чесън и магданоз — готово за 10 минути.',
-    },
-    {
-      title: 'Кеджъри с пушена сьомга и ориз',
-      keys: ['сьомга', 'ориз', 'яйц'],
-      ingredients: [
-        { label: 'Пушена сьомга', key: 'сьомга' },
-        { label: 'Ориз', key: 'ориз' },
-        { label: 'Яйца', key: 'яйц' },
-      ],
-      calories: 420, protein: 24, carbs: 45, fat: 12, prepTime: 30,
-      tags: [],
-      url: 'https://recepti.gotvach.bg/r-288256-Кеджъри_с_пушена_сьомга_и_ориз',
-      desc: 'Класическо ястие с пушена сьомга, ориз и яйца — сити и ароматно.',
-    },
-    {
-      title: 'Печена риба със зеленчуци',
-      keys: ['риба', 'рибн', 'рибно', 'картоф', 'лук', 'домат'],
-      ingredients: [
-        { label: 'Риба', key: 'рибно' },
-        { label: 'Картофи', key: 'картоф' },
-        { label: 'Лук', key: 'лук' },
-      ],
-      calories: 310, protein: 25, carbs: 15, fat: 10, prepTime: 40,
-      tags: [],
-      url: 'https://recepti.gotvach.bg/r-288027-Печена_риба_със_зеленчуци_-_тип_пеперуда',
-      desc: 'Цяла риба, разгъната като пеперуда и изпечена с пресни зеленчуци.',
-    },
-  ],
-
-  soup: [
-    {
-      title: 'Перфектната крем супа от леща',
-      keys: ['леща', 'лещен', 'червена', 'морков', 'лук'],
-      ingredients: [
-        { label: 'Леща', key: 'леща' },
-        { label: 'Морков', key: 'морков' },
-        { label: 'Лук', key: 'лук' },
-      ],
-      calories: 220, protein: 12, carbs: 35, fat: 5, prepTime: 30,
-      tags: ['vegetarian'],
-      url: 'https://recepti.gotvach.bg/r-288374-Перфектната_крем_супа_от_леща',
-      desc: 'Кадифена крем супа от червена леща с лук, морков и подправки.',
-    },
-    {
-      title: 'Крем супа от спанак, батат и пащърнак',
-      keys: ['спанак', 'батат', 'морков'],
-      ingredients: [
-        { label: 'Спанак', key: 'спанак' },
-        { label: 'Батат', key: 'батат' },
-        { label: 'Морков', key: 'морков' },
-      ],
-      calories: 190, protein: 6, carbs: 28, fat: 6, prepTime: 25,
-      tags: ['vegetarian', 'quick'],
-      url: 'https://recepti.gotvach.bg/r-287955-Крем_супа_от_спанак,_батат_и_пащърнак',
-      desc: 'Богата крем супа от спанак и сладки картофи — здравословна и засища.',
-    },
-    {
-      title: 'Нежна крем супа с праз и гъби',
-      keys: ['гъб', 'печурк', 'праз', 'лук', 'картоф'],
-      ingredients: [
-        { label: 'Гъби', key: 'гъб' },
-        { label: 'Праз', key: 'праз' },
-        { label: 'Картофи', key: 'картоф' },
-      ],
-      calories: 210, protein: 5, carbs: 22, fat: 8, prepTime: 30,
-      tags: ['vegetarian'],
-      url: 'https://recepti.gotvach.bg/r-287367-Нежна_крем_супа_с_праз_и_гъби',
-      desc: 'Праз и гъби, задушени с масло и пасирани до копринена текстура.',
-    },
-    {
-      title: 'Пилешка супа с фиде',
-      keys: ['пиле', 'пилешк', 'морков', 'лук', 'целин'],
-      ingredients: [
-        { label: 'Пиле', key: 'пилешк' },
-        { label: 'Морков', key: 'морков' },
-        { label: 'Лук', key: 'лук' },
-      ],
-      calories: 260, protein: 20, carbs: 25, fat: 8, prepTime: 45,
-      tags: [],
-      url: 'https://recepti.gotvach.bg/r-286000-Пилешка_супа_с_фиде',
-      desc: 'Домашна пилешка супа с моркови, лук и фиде — топла и засищаща.',
-    },
-    {
-      title: 'Боб чорба по старобългарски',
-      keys: ['боб', 'лук', 'морков', 'чушк', 'домат'],
-      ingredients: [
-        { label: 'Боб', key: 'боб' },
-        { label: 'Лук', key: 'лук' },
-        { label: 'Морков', key: 'морков' },
-        { label: 'Чушки', key: 'чушк' },
-      ],
-      calories: 280, protein: 10, carbs: 45, fat: 4, prepTime: 60,
-      tags: ['vegetarian'],
-      url: 'https://recepti.gotvach.bg/r-285000-Боб_чорба_по_старобългарски',
-      desc: 'Традиционна боб чорба с морков, лук и чушки — класика на българската кухня.',
-    },
-    {
-      title: 'Картофена супа с кашкавал',
-      keys: ['картоф', 'сирен', 'кашкав', 'лук'],
-      ingredients: [
-        { label: 'Картофи', key: 'картоф' },
-        { label: 'Кашкавал', key: 'кашкав' },
-        { label: 'Лук', key: 'лук' },
-      ],
-      calories: 300, protein: 12, carbs: 40, fat: 14, prepTime: 35,
-      tags: ['vegetarian'],
-      url: 'https://recepti.gotvach.bg/r-287000-Картофена_супа_с_кашкавал',
-      desc: 'Гъста картофена супа с разтопен кашкавал и лук — сгряваща и вкусна.',
-    },
-  ],
-
-  salad: [
-    {
-      title: 'Класическа яйчена салата с грах',
-      keys: ['яйц', 'грах', 'майонез'],
-      ingredients: [
-        { label: 'Яйца', key: 'яйц' },
-        { label: 'Грах', key: 'грах' },
-        { label: 'Майонеза', key: 'майонез' },
-      ],
-      calories: 180, protein: 10, carbs: 12, fat: 12, prepTime: 15,
-      tags: ['vegetarian', 'quick'],
-      url: 'https://recepti.gotvach.bg/r-289505-Класическа_яйчена_салата_с_грах',
-      desc: 'Твърдо сварени яйца, грах и майонеза — бърза и вкусна салата.',
-    },
-    {
-      title: 'Салата с нахут, сирене и авокадо',
-      keys: ['нахут', 'сирен', 'фета', 'домат', 'краставиц', 'маслин'],
-      ingredients: [
-        { label: 'Нахут', key: 'нахут' },
-        { label: 'Сирене', key: 'сирен' },
-        { label: 'Домати', key: 'домат' },
-        { label: 'Авокадо', key: 'авокад' },
-      ],
-      calories: 310, protein: 14, carbs: 28, fat: 16, prepTime: 15,
-      tags: ['vegetarian', 'quick'],
-      url: 'https://recepti.gotvach.bg/r-287964-Салата_с_нахут,_сирене_и_авокадо',
-      desc: 'Нахут, фета сирене и авокадо с лимонов дресинг.',
-    },
-    {
-      title: 'Пълнени гъби със спанак, галета и сирене',
-      keys: ['гъб', 'печурк', 'спанак', 'сирен', 'кашкав'],
-      ingredients: [
-        { label: 'Гъби', key: 'гъб' },
-        { label: 'Спанак', key: 'спанак' },
-        { label: 'Сирене', key: 'сирен' },
-      ],
-      calories: 270, protein: 12, carbs: 15, fat: 14, prepTime: 30,
-      tags: ['vegetarian'],
-      url: 'https://recepti.gotvach.bg/r-287965-Пълнени_гъби_със_спанак,_галета_и_сирене',
-      desc: 'Гъбени шапки, пълнени с ароматна смес от спанак и сирене.',
-    },
-    {
-      title: 'Шопска салата',
-      keys: ['домат', 'краставиц', 'чушк', 'сирен', 'фета', 'лук', 'маслин'],
-      ingredients: [
-        { label: 'Домати', key: 'домат' },
-        { label: 'Краставица', key: 'краставиц' },
-        { label: 'Сирене', key: 'сирен' },
-        { label: 'Чушки', key: 'чушк' },
-      ],
-      calories: 150, protein: 8, carbs: 10, fat: 8, prepTime: 10,
-      tags: ['vegetarian', 'quick'],
-      url: 'https://recepti.gotvach.bg/r-280000-Шопска_салата',
-      desc: 'Класическа шопска салата с домати, краставици, чушки и бяло сирене.',
-    },
-    {
-      title: 'Салата с моркови и чесън',
-      keys: ['морков', 'чесън', 'лимон'],
-      ingredients: [
-        { label: 'Моркови', key: 'морков' },
-        { label: 'Чесън', key: 'чесън' },
-      ],
-      calories: 90, protein: 2, carbs: 12, fat: 2, prepTime: 10,
-      tags: ['vegetarian', 'quick'],
-      url: 'https://recepti.gotvach.bg/r-283000-Салата_от_моркови_с_чесън',
-      desc: 'Настъргани моркови с чесън и лимонов сок — лека и здравословна.',
-    },
-  ],
-
-  bulgarian: [
-    {
-      title: 'Меки като облак златисти палачинки',
-      keys: ['яйц', 'мляко', 'млечн', 'кисело', 'краве', 'брашн', 'хляб'],
-      ingredients: [
-        { label: 'Яйца', key: 'яйц' },
-        { label: 'Мляко', key: 'мляко' },
-        { label: 'Брашно', key: 'брашн' },
-      ],
-      calories: 340, protein: 12, carbs: 45, fat: 14, prepTime: 20,
-      tags: ['vegetarian', 'quick'],
-      url: 'https://recepti.gotvach.bg/r-287947-Меки_като_облак_златисти_палачинки',
-      desc: 'Пухкави палачинки с мляко и яйца — класическа закуска за цялото семейство.',
-    },
-    {
-      title: 'Панирани картофени кюфтета с пресен лук',
-      keys: ['картоф', 'лук', 'яйц', 'брашн'],
-      ingredients: [
-        { label: 'Картофи', key: 'картоф' },
-        { label: 'Лук', key: 'лук' },
-        { label: 'Яйца', key: 'яйц' },
-      ],
-      calories: 360, protein: 8, carbs: 40, fat: 18, prepTime: 30,
-      tags: ['vegetarian'],
-      url: 'https://recepti.gotvach.bg/r-289466-Панирани_картофени_кюфтета_с_пресен_лук',
-      desc: 'Картофени кюфтета с пресен лук, панирани и запържени до хрупкавост.',
-    },
-    {
-      title: 'Постни сарми от лапад',
-      keys: ['ориз', 'лук', 'морков', 'домат'],
-      ingredients: [
-        { label: 'Ориз', key: 'ориз' },
-        { label: 'Лук', key: 'лук' },
-        { label: 'Морков', key: 'морков' },
-      ],
-      calories: 290, protein: 8, carbs: 42, fat: 6, prepTime: 60,
-      tags: ['vegetarian'],
-      url: 'https://recepti.gotvach.bg/r-289416-Постни_сарми_от_лапад',
-      desc: 'Традиционни постни сарми, завити в листа от лапад с пълнеж от ориз и лук.',
-    },
-    {
-      title: 'Мусака с картофи и кайма',
-      keys: ['кайма', 'картоф', 'яйц', 'мляко', 'кисело', 'лук'],
-      ingredients: [
-        { label: 'Кайма', key: 'кайма' },
-        { label: 'Картофи', key: 'картоф' },
-        { label: 'Яйца', key: 'яйц' },
-        { label: 'Мляко', key: 'мляко' },
-      ],
-      calories: 480, protein: 25, carbs: 38, fat: 22, prepTime: 70,
-      tags: [],
-      url: 'https://recepti.gotvach.bg/r-281000-Мусака_с_картофи_и_кайма',
-      desc: 'Класическа мусака с кайма, картофи и коричка от яйца и мляко.',
-    },
-    {
-      title: 'Баница със сирене',
-      keys: ['сирен', 'фета', 'яйц', 'масл'],
-      ingredients: [
-        { label: 'Сирене', key: 'сирен' },
-        { label: 'Яйца', key: 'яйц' },
-        { label: 'Масло', key: 'масл' },
-      ],
-      calories: 410, protein: 15, carbs: 35, fat: 22, prepTime: 45,
-      tags: ['vegetarian'],
-      url: 'https://recepti.gotvach.bg/r-280500-Баница_със_сирене',
-      desc: 'Домашна баница с бяло сирене и яйца — хрупкава и вкусна закуска.',
-    },
-    {
-      title: 'Гювеч с телешко и зеленчуци',
-      keys: ['говежд', 'телешк', 'картоф', 'морков', 'чушк', 'домат', 'лук'],
-      ingredients: [
-        { label: 'Телешко', key: 'телешк' },
-        { label: 'Картофи', key: 'картоф' },
-        { label: 'Чушки', key: 'чушк' },
-        { label: 'Домати', key: 'домат' },
-      ],
-      calories: 430, protein: 30, carbs: 32, fat: 16, prepTime: 90,
-      tags: ['high_protein'],
-      url: 'https://recepti.gotvach.bg/r-282000-Гювеч_с_телешко_и_зеленчуци',
-      desc: 'Телешко месо задушено с картофи, моркови и чушки в гювеч.',
-    },
-  ],
-
-  dessert: [
-    {
-      title: 'Постна портокалова торта без захар и печене',
-      keys: ['портокал', 'бисквит'],
-      ingredients: [
-        { label: 'Портокали', key: 'портокал' },
-        { label: 'Бисквити', key: 'бисквит' },
-      ],
-      calories: 260, protein: 5, carbs: 42, fat: 8, prepTime: 20,
-      tags: ['vegetarian', 'quick'],
-      url: 'https://recepti.gotvach.bg/r-289315-Постна_портокалова_торта_без_захар_и_печене',
-      desc: 'Лесна торта с бисквити и портокалов крем — без печене и без захар.',
-    },
-    {
-      title: 'Бяла бисквитена торта с бананов крем',
-      keys: ['банан', 'мляко', 'млечн', 'бисквит'],
-      ingredients: [
-        { label: 'Банани', key: 'банан' },
-        { label: 'Мляко', key: 'мляко' },
-        { label: 'Бисквити', key: 'бисквит' },
-      ],
-      calories: 320, protein: 6, carbs: 48, fat: 12, prepTime: 25,
-      tags: ['vegetarian', 'quick'],
-      url: 'https://recepti.gotvach.bg/r-289509-Бяла_бисквитена_торта_с_бананов_крем',
-      desc: 'Бисквитена торта с копринен бананов крем — без фурна.',
-    },
-    {
-      title: 'Плодова салата с мед',
-      keys: ['ябълк', 'банан', 'портокал', 'мед'],
-      ingredients: [
-        { label: 'Ябълки', key: 'ябълк' },
-        { label: 'Банани', key: 'банан' },
-        { label: 'Мед', key: 'мед' },
-      ],
-      calories: 120, protein: 2, carbs: 28, fat: 1, prepTime: 10,
-      tags: ['vegetarian', 'quick'],
-      url: 'https://recepti.gotvach.bg/r-283000-Плодова_салата_с_мед',
-      desc: 'Свежа плодова салата с мед и лимон — лек и здравословен десерт.',
-    },
-  ],
-
-  veg: [
-    {
-      title: 'Хрупкави топчета от броколи',
-      keys: ['брокол', 'яйц', 'сирен', 'кашкав'],
-      ingredients: [
-        { label: 'Броколи', key: 'брокол' },
-        { label: 'Яйца', key: 'яйц' },
-        { label: 'Сирене', key: 'сирен' },
-      ],
-      calories: 230, protein: 14, carbs: 18, fat: 12, prepTime: 25,
-      tags: ['vegetarian', 'quick'],
-      url: 'https://recepti.gotvach.bg/r-287422-Хрупкави_топчета_от_броколи',
-      desc: 'Броколи, смесено с яйца и сирене, оформено на топчета и запечено.',
-    },
-    {
-      title: 'Домашна пица с левурда и моцарела',
-      keys: ['сирен', 'моцарел', 'кашкав', 'домат', 'брашн'],
-      ingredients: [
-        { label: 'Моцарела', key: 'моцарел' },
-        { label: 'Домати', key: 'домат' },
-        { label: 'Брашно', key: 'брашн' },
-      ],
-      calories: 520, protein: 16, carbs: 60, fat: 18, prepTime: 45,
-      tags: ['vegetarian'],
-      url: 'https://recepti.gotvach.bg/r-288552-Домашна_пица_с_левурда_и_моцарела',
-      desc: 'Домашна пица с тесто, левурда и разтопена моцарела.',
-    },
-    {
-      title: 'Пъстра яхния от зеленчуци',
-      keys: ['тиквич', 'чушк', 'домат', 'лук', 'морков', 'картоф'],
-      ingredients: [
-        { label: 'Тиквички', key: 'тиквич' },
-        { label: 'Чушки', key: 'чушк' },
-        { label: 'Домати', key: 'домат' },
-        { label: 'Морков', key: 'морков' },
-      ],
-      calories: 180, protein: 5, carbs: 25, fat: 6, prepTime: 30,
-      tags: ['vegetarian'],
-      url: 'https://recepti.gotvach.bg/r-286000-Пъстра_яхния_от_зеленчуци',
-      desc: 'Сезонни зеленчуци, задушени с домати и подправки до нежна яхния.',
-    },
-    {
-      title: 'Пържени тиквички с кисело мляко',
-      keys: ['тиквич', 'кисело', 'млечн', 'чесън', 'яйц'],
-      ingredients: [
-        { label: 'Тиквички', key: 'тиквич' },
-        { label: 'Кисело мляко', key: 'кисело' },
-        { label: 'Чесън', key: 'чесън' },
-      ],
-      calories: 200, protein: 8, carbs: 18, fat: 12, prepTime: 20,
-      tags: ['vegetarian', 'quick'],
-      url: 'https://recepti.gotvach.bg/r-284000-Пържени_тиквички_с_кисело_мляко',
-      desc: 'Хрупкави тиквички, поднесени с чеснов сос от кисело мляко.',
-    },
-  ],
+const FALLBACK = {
+  breakfast: {
+    title: 'Яйца на очи с хляб',
+    desc: 'Бърза закуска с яйца, масло и препечен хляб.',
+    fromList: [], extra: ['Яйца', 'Масло', 'Хляб'],
+    steps: ['Разтопете масло в тиган на среден огън.', 'Счупете яйцата внимателно в тигана.', 'Запечете до желана степен и поднесете с хляб.'],
+    calories: 310, protein: 14, carbs: 28, fat: 18, prepTime: 10,
+  },
+  lunch: {
+    title: 'Пилешко с ориз',
+    desc: 'Класическо пиле на тиган с гарнитура от ориз.',
+    fromList: [], extra: ['Пилешко филе', 'Ориз', 'Подправки'],
+    steps: ['Нарежете пилешкото на хапки и подправете.', 'Запържете на тиган с малко масло 8–10 минути.', 'Сварете ориза и поднесете заедно.'],
+    calories: 450, protein: 38, carbs: 42, fat: 14, prepTime: 25,
+  },
+  dinner: {
+    title: 'Зеленчукова яхния',
+    desc: 'Лека вечеря от сезонни зеленчуци.',
+    fromList: [], extra: ['Зеленчуци по избор', 'Домати', 'Лук', 'Олио'],
+    steps: ['Нарежете зеленчуците на парчета.', 'Задушете лука в олио, добавете зеленчуците.', 'Добавете домати и гответе 20 минути.'],
+    calories: 220, protein: 6, carbs: 32, fat: 8, prepTime: 30,
+  },
+  snack: {
+    title: 'Плодова салата',
+    desc: 'Свеж снак от пресни плодове с мед.',
+    fromList: [], extra: ['Плодове по избор', 'Мед', 'Лимонов сок'],
+    steps: ['Нарежете плодовете на хапки.', 'Полейте с мед и лимонов сок.', 'Разбъркайте и сервирайте веднага.'],
+    calories: 130, protein: 2, carbs: 30, fat: 1, prepTime: 10,
+  },
 };
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
-function tokenize(name) {
-  return name
-    .toLowerCase()
-    .replace(/\d+(\.\d+)?\s*(кг|г|л|мл|бр\.?|х|x)/g, '')
-    .replace(/[^а-яёa-z\s]/gi, ' ')
-    .split(/\s+/)
-    .filter((w) => w.length > 2);
-}
-
-function scoreRecipe(recipe, products) {
-  const allTokens = products.flatMap((p) => tokenize(p.name));
-  let score = 0;
-  for (const key of recipe.keys) {
-    if (allTokens.some((t) => t.startsWith(key) || key.startsWith(t))) score++;
-  }
-  return score;
-}
-
-function matchedProducts(recipe, products, max = 3) {
-  return products
-    .filter((p) => {
-      const tokens = tokenize(p.name);
-      return recipe.keys.some((key) =>
-        tokens.some((t) => t.startsWith(key) || key.startsWith(t))
-      );
-    })
-    .slice(0, max);
-}
-
-function getMissingIngredients(recipe, products) {
-  if (!recipe.ingredients?.length) return [];
-  const allTokens = products.flatMap((p) => tokenize(p.name));
-  return recipe.ingredients
-    .filter(
-      ({ key }) =>
-        !allTokens.some((t) => t.startsWith(key) || key.startsWith(t))
-    )
-    .map(({ label }) => label);
-}
-
-// Deterministic-ish shuffle using a numeric seed so useMemo stays stable
-function seededShuffle(arr, seed) {
-  const out = [...arr];
-  let s = Math.abs(seed * 9301 + 49297) % 233280;
-  for (let i = out.length - 1; i > 0; i--) {
-    s = (s * 9301 + 49297) % 233280;
-    const j = s % (i + 1);
-    [out[i], out[j]] = [out[j], out[i]];
-  }
-  return out;
-}
-
-const SLOT_POOLS = {
-  breakfast: ['bulgarian', 'salad', 'dessert'],
-  lunch:     ['meat', 'fish', 'soup', 'veg', 'bulgarian'],
-  dinner:    ['meat', 'fish', 'veg', 'bulgarian', 'soup'],
-  snack:     ['salad', 'dessert', 'veg'],
-};
-
-const SLOT_CATS = {
-  breakfast: ['eggs', 'dairy', 'bakery', 'grains', 'fruit'],
-  lunch:     ['meat', 'fish', 'vegetables', 'legumes', 'grains', 'canned'],
-  dinner:    ['meat', 'fish', 'dairy', 'vegetables', 'eggs', 'grains', 'frozen'],
-  snack:     ['fruit', 'snacks', 'dairy', 'bakery', 'frozen'],
-};
-
-function pickRecipe(slotKey, allProducts, excludedTitles, activeFilters, seed) {
-  const poolKeys = SLOT_POOLS[slotKey];
-  let candidates = poolKeys.flatMap((k) => RECIPES[k] || []);
-
-  // Apply active filters; fall back to unfiltered if no candidates survive
-  let filtered = candidates;
-  if (activeFilters.vegetarian) filtered = filtered.filter((r) => r.tags?.includes('vegetarian'));
-  if (activeFilters.quick)      filtered = filtered.filter((r) => r.tags?.includes('quick'));
-  if (activeFilters.highProtein) filtered = filtered.filter((r) => r.tags?.includes('high_protein'));
-  if (filtered.length > 0) candidates = filtered;
-
-  const available = candidates.filter((r) => !excludedTitles.has(r.title));
-  const pool = available.length ? available : candidates;
-
-  const slotCats = SLOT_CATS[slotKey];
-  const slotProducts = allProducts.filter((p) => slotCats.includes(p.category?.toLowerCase()));
-  const scoringProducts = slotProducts.length > 0 ? slotProducts : allProducts;
-
-  const shuffled = seededShuffle(pool, seed + slotKey.charCodeAt(0));
-  const scored = shuffled
-    .map((r) => ({ recipe: r, score: scoreRecipe(r, scoringProducts) }))
-    .sort((a, b) => b.score - a.score);
-
-  if (scored[0]?.score > 0) return scored[0].recipe;
-  return shuffled[0] || pool[0];
-}
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -617,21 +53,18 @@ const MEAL_SLOTS = [
 ];
 
 const FILTERS = [
-  { key: 'vegetarian',  label: 'Вегетарианско', icon: '🥦' },
-  { key: 'quick',       label: 'Бързо ≤25мин',  icon: '⚡' },
-  { key: 'highProtein', label: 'Много протеин',  icon: '💪' },
+  { key: 'vegetarian',  label: 'Вегет.',       icon: '🥦' },
+  { key: 'quick',       label: '≤25мин',        icon: '⚡' },
+  { key: 'highProtein', label: 'Протеин',       icon: '💪' },
 ];
 
-function cleanName(raw) {
+function cleanName(raw = '') {
   return raw
     .replace(/\s*(≈|~)?\d+(\.\d+)?(кг|г|л|мл)\b/gi, '')
     .replace(/\s*\d+x\d+[^\s]*/gi, '')
     .replace(/\bXXL\b|\bXL\b/gi, '')
-    .replace(/\s+/g, ' ')
-    .trim()
-    .split(' ')
-    .slice(0, 3)
-    .join(' ');
+    .replace(/\s+/g, ' ').trim()
+    .split(' ').slice(0, 3).join(' ');
 }
 
 function youtubeUrl(title) {
@@ -679,73 +112,240 @@ function MacroBar({ protein, carbs, fat, calories }) {
   );
 }
 
+function RecipeCardSkeleton({ color }) {
+  return (
+    <View style={[styles.card, { borderLeftColor: color ?? '#ddd' }]}>
+      <View style={styles.cardTopRow}>
+        <View style={[styles.skeletonChip, { backgroundColor: color + '40', width: 90, height: 30 }]} />
+        <View style={{ flexDirection: 'row', gap: 8 }}>
+          <View style={[styles.skeletonChip, { width: 60, height: 24 }]} />
+          <View style={[styles.skeletonChip, { width: 70, height: 24 }]} />
+        </View>
+      </View>
+      <View style={[styles.skeletonLine, { width: '80%', height: 18, marginBottom: 8 }]} />
+      <View style={[styles.skeletonLine, { width: '55%', height: 12, marginBottom: 16 }]} />
+      <View style={[styles.skeletonLine, { width: '100%', height: 56, borderRadius: 10 }]} />
+    </View>
+  );
+}
+
+// ─── Recipe detail modal ──────────────────────────────────────────────────────
+
+function RecipeModal({ recipe, slotColor, visible, onClose, onYouTube }) {
+  if (!recipe) return null;
+  return (
+    <Modal
+      visible={visible}
+      animationType="slide"
+      presentationStyle="pageSheet"
+      onRequestClose={onClose}
+    >
+      <SafeAreaView style={styles.modalContainer}>
+        {/* Header */}
+        <View style={styles.modalHeader}>
+          <TouchableOpacity style={styles.modalCloseBtn} onPress={onClose}>
+            <Ionicons name="close" size={22} color="#555" />
+          </TouchableOpacity>
+          <Text style={styles.modalTitle} numberOfLines={2}>{recipe.title}</Text>
+          <TouchableOpacity style={styles.ytSmallBtn} onPress={onYouTube}>
+            <Ionicons name="logo-youtube" size={20} color="#fff" />
+          </TouchableOpacity>
+        </View>
+
+        <ScrollView
+          style={styles.modalBody}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{ paddingBottom: 40 }}
+        >
+          {/* Quick info row */}
+          <View style={styles.modalInfoRow}>
+            <View style={styles.modalInfoChip}>
+              <Ionicons name="time-outline" size={14} color="#6C63FF" />
+              <Text style={styles.modalInfoText}>{recipe.prepTime} мин</Text>
+            </View>
+            <View style={styles.modalInfoChip}>
+              <Text style={styles.modalInfoText}>🔥 {recipe.calories} ккал</Text>
+            </View>
+            <View style={styles.modalInfoChip}>
+              <Text style={styles.modalInfoText}>💪 {recipe.protein}г</Text>
+            </View>
+          </View>
+
+          {/* Description */}
+          <Text style={styles.modalDesc}>{recipe.desc}</Text>
+
+          {/* Products from list */}
+          {recipe.fromList?.length > 0 && (
+            <View style={styles.modalSection}>
+              <Text style={styles.modalSectionTitle}>✓ От вашия списък</Text>
+              {recipe.fromList.map((ing, i) => (
+                <View key={i} style={styles.modalIngredientRow}>
+                  <View style={[styles.modalIngDot, { backgroundColor: slotColor }]} />
+                  <Text style={styles.modalIngText}>{ing}</Text>
+                </View>
+              ))}
+            </View>
+          )}
+
+          {/* Extra ingredients needed */}
+          {recipe.extra?.length > 0 && (
+            <View style={styles.modalSection}>
+              <Text style={[styles.modalSectionTitle, { color: '#f39c12' }]}>🛒 Допълнително нужни</Text>
+              {recipe.extra.map((ing, i) => (
+                <View key={i} style={styles.modalIngredientRow}>
+                  <View style={[styles.modalIngDot, { backgroundColor: '#f39c12' }]} />
+                  <Text style={styles.modalIngText}>{ing}</Text>
+                </View>
+              ))}
+            </View>
+          )}
+
+          {/* Steps */}
+          <View style={styles.modalSection}>
+            <Text style={styles.modalSectionTitle}>📋 Приготвяне</Text>
+            {recipe.steps?.map((step, i) => (
+              <View key={i} style={styles.modalStepRow}>
+                <View style={[styles.modalStepNum, { backgroundColor: slotColor }]}>
+                  <Text style={styles.modalStepNumText}>{i + 1}</Text>
+                </View>
+                <Text style={styles.modalStepText}>{step}</Text>
+              </View>
+            ))}
+          </View>
+        </ScrollView>
+      </SafeAreaView>
+    </Modal>
+  );
+}
+
 // ─── Screen ───────────────────────────────────────────────────────────────────
 
 export default function MealsScreen({ route, navigation }) {
   const { list } = route.params || {};
   const allProducts = list || [];
 
-  const [filters, setFilters] = useState({ vegetarian: false, quick: false, highProtein: false });
-  // excludedBySlot: { [slotKey]: Set<title> } — tracks swapped-out recipes per slot
+  const [plan, setPlan]         = useState(null);      // null = loading
+  const [planError, setPlanError] = useState(false);
+  const [loadingSlot, setLoadingSlot] = useState(null); // key of slot being swapped
+  const [filters, setFilters]   = useState({ vegetarian: false, quick: false, highProtein: false });
   const [excludedBySlot, setExcludedBySlot] = useState({});
-  // Increment to randomize the plan
-  const [planSeed, setPlanSeed] = useState(() => Date.now() % 10000);
+  const [selectedSlot, setSelectedSlot] = useState(null); // for modal
 
+  // ── Load plan ──────────────────────────────────────────────────────────────
+  const loadPlan = useCallback(async (currentFilters) => {
+    setPlan(null);
+    setPlanError(false);
+    try {
+      if (hasApiKey()) {
+        const result = await generateMealPlan(allProducts, currentFilters);
+        setPlan(result);
+      } else {
+        // No API key — use fallback immediately
+        setPlan(FALLBACK);
+      }
+    } catch (err) {
+      console.warn('generateMealPlan failed:', err.message);
+      setPlan(FALLBACK);
+      setPlanError(true);
+    }
+  }, [allProducts]);
+
+  useEffect(() => {
+    loadPlan(filters);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // only on mount; filter changes go through toggleFilter
+
+  // ── Derived ───────────────────────────────────────────────────────────────
   const productsSortedByCal = useMemo(
     () => [...allProducts].filter((p) => p.calories > 0).sort((a, b) => b.calories - a.calories),
     [allProducts]
   );
 
-  const slots = useMemo(() => {
-    const usedTitles = new Set();
-    return MEAL_SLOTS.map((slot) => {
-      const excluded = excludedBySlot[slot.key] || new Set();
-      const allExcluded = new Set([...usedTitles, ...excluded]);
-      const recipe = pickRecipe(slot.key, allProducts, allExcluded, filters, planSeed);
-      usedTitles.add(recipe.title);
-      const featured = matchedProducts(recipe, allProducts);
-      const missing = getMissingIngredients(recipe, allProducts);
-      return { slot, recipe, featured, missing };
-    });
-  }, [allProducts, excludedBySlot, filters, planSeed]);
+  const totals = useMemo(() => {
+    if (!plan) return { protein: 0, carbs: 0, fat: 0, calories: 0 };
+    return MEAL_SLOTS.reduce(
+      (acc, { key }) => {
+        const r = plan[key];
+        if (!r) return acc;
+        return {
+          protein:  acc.protein  + (r.protein  || 0),
+          carbs:    acc.carbs    + (r.carbs    || 0),
+          fat:      acc.fat      + (r.fat      || 0),
+          calories: acc.calories + (r.calories || 0),
+        };
+      },
+      { protein: 0, carbs: 0, fat: 0, calories: 0 }
+    );
+  }, [plan]);
 
-  const totals = useMemo(() => ({
-    protein:  slots.reduce((s, { recipe }) => s + (recipe.protein  || 0), 0),
-    carbs:    slots.reduce((s, { recipe }) => s + (recipe.carbs    || 0), 0),
-    fat:      slots.reduce((s, { recipe }) => s + (recipe.fat      || 0), 0),
-    calories: slots.reduce((s, { recipe }) => s + (recipe.calories || 0), 0),
-  }), [slots]);
-
+  // ── Actions ───────────────────────────────────────────────────────────────
   const toggleFilter = useCallback((key) => {
     Haptics.selectionAsync();
-    setFilters((prev) => ({ ...prev, [key]: !prev[key] }));
-    setExcludedBySlot({}); // reset swaps when filter changes
-  }, []);
-
-  const swapMeal = useCallback((slotKey, currentTitle) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    setExcludedBySlot((prev) => ({
-      ...prev,
-      [slotKey]: new Set([...(prev[slotKey] || []), currentTitle]),
-    }));
-  }, []);
+    setFilters((prev) => {
+      const next = { ...prev, [key]: !prev[key] };
+      setExcludedBySlot({});
+      loadPlan(next);
+      return next;
+    });
+  }, [loadPlan]);
 
   const regenerateAll = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     setExcludedBySlot({});
-    setPlanSeed(Date.now() % 10000);
+    loadPlan(filters);
+  }, [filters, loadPlan]);
+
+  const swapMeal = useCallback(async (slotKey) => {
+    if (!plan) return;
+    const currentTitle = plan[slotKey]?.title;
+    const excluded = [
+      ...(excludedBySlot[slotKey] ?? []),
+      ...(currentTitle ? [currentTitle] : []),
+    ];
+
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setLoadingSlot(slotKey);
+    try {
+      const recipe = hasApiKey()
+        ? await generateSingleMeal(allProducts, slotKey, excluded, filters)
+        : FALLBACK[slotKey];
+      setPlan((prev) => ({ ...prev, [slotKey]: recipe }));
+      setExcludedBySlot((prev) => ({ ...prev, [slotKey]: excluded }));
+    } catch (err) {
+      console.warn('generateSingleMeal failed:', err.message);
+    } finally {
+      setLoadingSlot(null);
+    }
+  }, [plan, excludedBySlot, allProducts, filters]);
+
+  const openRecipe = useCallback((slotKey) => {
+    Haptics.selectionAsync();
+    setSelectedSlot(slotKey);
   }, []);
+
+  const closeModal = useCallback(() => setSelectedSlot(null), []);
+
+  // ── Render ────────────────────────────────────────────────────────────────
+  const selectedSlotMeta = MEAL_SLOTS.find((s) => s.key === selectedSlot);
+  const selectedRecipe   = selectedSlot ? plan?.[selectedSlot] : null;
 
   return (
     <SafeAreaView style={styles.container}>
 
+      {/* Header */}
       <View style={styles.header}>
         <View style={{ flex: 1 }}>
           <Text style={styles.headerTitle}>Идеи за ястия 🍽️</Text>
-          <Text style={styles.headerSub}>Рецепти от gotvach.bg по вашите продукти</Text>
+          <Text style={styles.headerSub}>
+            {hasApiKey() ? 'Генерирано от AI по вашите продукти' : 'Примерни рецепти'}
+          </Text>
         </View>
-        <TouchableOpacity style={styles.regenerateBtn} onPress={regenerateAll}>
-          <Ionicons name="shuffle-outline" size={18} color="#6C63FF" />
+        <TouchableOpacity
+          style={[styles.regenerateBtn, !plan && styles.regenerateBtnDisabled]}
+          onPress={regenerateAll}
+          disabled={!plan}
+        >
+          <Ionicons name="shuffle-outline" size={18} color={plan ? '#6C63FF' : '#ccc'} />
         </TouchableOpacity>
       </View>
 
@@ -759,6 +359,7 @@ export default function MealsScreen({ route, navigation }) {
               style={[styles.filterChip, active && styles.filterChipActive]}
               onPress={() => toggleFilter(key)}
               activeOpacity={0.8}
+              disabled={!plan}
             >
               <Text style={styles.filterChipIcon}>{icon}</Text>
               <Text style={[styles.filterChipText, active && styles.filterChipTextActive]}>
@@ -767,11 +368,17 @@ export default function MealsScreen({ route, navigation }) {
             </TouchableOpacity>
           );
         })}
+        {planError && (
+          <View style={styles.fallbackBadge}>
+            <Ionicons name="warning-outline" size={12} color="#f39c12" />
+            <Text style={styles.fallbackText}>Примерни рецепти</Text>
+          </View>
+        )}
       </View>
 
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
 
-        {/* Products & Calories panel */}
+        {/* Products calories strip */}
         {productsSortedByCal.length > 0 && (
           <View style={styles.section}>
             <Text style={styles.sectionLabel}>Продукти • килокалории</Text>
@@ -786,112 +393,122 @@ export default function MealsScreen({ route, navigation }) {
           </View>
         )}
 
-        {/* Daily macro summary */}
-        <View style={styles.section}>
-          <Text style={styles.sectionLabel}>Дневни макронутриенти</Text>
-          <MacroBar {...totals} />
-        </View>
+        {/* Macros bar */}
+        {plan && (
+          <View style={styles.section}>
+            <Text style={styles.sectionLabel}>Дневни макронутриенти</Text>
+            <MacroBar {...totals} />
+          </View>
+        )}
 
-        {/* Daily plan */}
+        {/* Recipe cards */}
         <View style={styles.section}>
           <Text style={styles.sectionLabel}>Дневен план</Text>
 
-          {slots.map(({ slot, recipe, featured, missing }) => (
-            <View key={slot.key} style={[styles.card, { borderLeftColor: slot.color }]}>
+          {MEAL_SLOTS.map(({ key, label, icon, color }) => {
+            const recipe    = plan?.[key];
+            const isLoading = !plan || loadingSlot === key;
 
-              {/* Top row: badge + prep time + swap */}
-              <View style={styles.cardTopRow}>
-                <View style={[styles.badge, { backgroundColor: slot.color }]}>
-                  <Text style={styles.badgeIcon}>{slot.icon}</Text>
-                  <Text style={styles.badgeLabel}>{slot.label}</Text>
+            if (isLoading) {
+              return <RecipeCardSkeleton key={key} color={color} />;
+            }
+
+            return (
+              <View key={key} style={[styles.card, { borderLeftColor: color }]}>
+
+                {/* Top row */}
+                <View style={styles.cardTopRow}>
+                  <View style={[styles.badge, { backgroundColor: color }]}>
+                    <Text style={styles.badgeIcon}>{icon}</Text>
+                    <Text style={styles.badgeLabel}>{label}</Text>
+                  </View>
+                  <View style={styles.cardTopRight}>
+                    <View style={styles.prepTimeBadge}>
+                      <Ionicons name="time-outline" size={11} color="#999" />
+                      <Text style={styles.prepTimeText}>{recipe.prepTime} мин</Text>
+                    </View>
+                    <View style={[styles.calChip, { borderColor: color }]}>
+                      <Text style={[styles.calChipText, { color }]}>{recipe.calories} ккал</Text>
+                    </View>
+                    <TouchableOpacity
+                      style={styles.swapBtn}
+                      onPress={() => swapMeal(key)}
+                      hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                    >
+                      <Ionicons name="refresh-outline" size={16} color="#6C63FF" />
+                    </TouchableOpacity>
+                  </View>
                 </View>
 
-                <View style={styles.cardTopRight}>
-                  {/* Prep time */}
-                  <View style={styles.prepTimeBadge}>
-                    <Ionicons name="time-outline" size={11} color="#999" />
-                    <Text style={styles.prepTimeText}>{recipe.prepTime} мин</Text>
+                {/* Title */}
+                <Text style={styles.recipeTitle}>{recipe.title}</Text>
+
+                {/* From list pills (green) */}
+                {recipe.fromList?.length > 0 && (
+                  <View style={styles.pillsSection}>
+                    <Text style={styles.fromListLabel}>✓ От вашия списък:</Text>
+                    <View style={styles.pills}>
+                      {recipe.fromList.slice(0, 4).map((name, i) => (
+                        <View key={i} style={[styles.pill, { borderColor: color }]}>
+                          <Text style={[styles.pillText, { color }]}>{cleanName(name)}</Text>
+                        </View>
+                      ))}
+                    </View>
                   </View>
-                  {/* Calories chip */}
-                  <View style={[styles.calChip, { borderColor: slot.color }]}>
-                    <Text style={[styles.calChipText, { color: slot.color }]}>
-                      {recipe.calories} ккал
-                    </Text>
+                )}
+
+                {/* Extra pills (orange) */}
+                {recipe.extra?.length > 0 && (
+                  <View style={styles.pillsSection}>
+                    <Text style={styles.extraLabel}>🛒 Допълнително:</Text>
+                    <View style={styles.pills}>
+                      {recipe.extra.slice(0, 3).map((name, i) => (
+                        <View key={i} style={styles.extraPill}>
+                          <Text style={styles.extraPillText}>{name}</Text>
+                        </View>
+                      ))}
+                    </View>
                   </View>
-                  {/* Swap button */}
+                )}
+
+                {/* Description */}
+                <View style={styles.descBox}>
+                  <Text style={styles.descText}>{recipe.desc}</Text>
+                </View>
+
+                {/* Buttons */}
+                <View style={styles.btnRow}>
                   <TouchableOpacity
-                    style={styles.swapBtn}
-                    onPress={() => swapMeal(slot.key, recipe.title)}
-                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                    style={[styles.linkBtn, { backgroundColor: color }]}
+                    onPress={() => openRecipe(key)}
+                    activeOpacity={0.85}
                   >
-                    <Ionicons name="refresh-outline" size={16} color="#6C63FF" />
+                    <Ionicons name="book-outline" size={15} color="#fff" style={{ marginRight: 6 }} />
+                    <Text style={styles.linkBtnText}>Виж рецепта</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={styles.ytBtn}
+                    onPress={() => {
+                      const { Linking } = require('react-native');
+                      Linking.openURL(youtubeUrl(recipe.title)).catch(() => {});
+                    }}
+                    activeOpacity={0.85}
+                  >
+                    <Ionicons name="logo-youtube" size={15} color="#fff" style={{ marginRight: 6 }} />
+                    <Text style={styles.ytBtnText}>YouTube</Text>
                   </TouchableOpacity>
                 </View>
+
               </View>
-
-              {/* Recipe title */}
-              <Text style={styles.recipeTitle}>{recipe.title}</Text>
-
-              {/* Matched products from list */}
-              {featured.length > 0 && (
-                <View style={styles.productsBox}>
-                  <Text style={styles.productsLabel}>✓ От вашия списък:</Text>
-                  <View style={styles.pills}>
-                    {featured.map((p) => (
-                      <View key={p.id} style={[styles.pill, { borderColor: slot.color }]}>
-                        <Text style={styles.pillIcon}>{getCategoryIcon(p.category)}</Text>
-                        <Text style={[styles.pillText, { color: slot.color }]}>
-                          {cleanName(p.name)}
-                        </Text>
-                      </View>
-                    ))}
-                  </View>
-                </View>
-              )}
-
-              {/* Missing ingredients */}
-              {missing.length > 0 && (
-                <View style={styles.missingBox}>
-                  <Text style={styles.missingLabel}>🛒 Допълнително:</Text>
-                  <View style={styles.pills}>
-                    {missing.map((ing) => (
-                      <View key={ing} style={styles.missingPill}>
-                        <Text style={styles.missingPillText}>{ing}</Text>
-                      </View>
-                    ))}
-                  </View>
-                </View>
-              )}
-
-              {/* Description */}
-              <View style={styles.descBox}>
-                <Text style={styles.descText}>{recipe.desc}</Text>
-              </View>
-
-              {/* Action buttons */}
-              <View style={styles.btnRow}>
-                <TouchableOpacity
-                  style={[styles.linkBtn, { backgroundColor: slot.color, flex: 1 }]}
-                  onPress={() => Linking.openURL(recipe.url).catch(() => {})}
-                >
-                  <Text style={styles.linkBtnText}>📖 Виж рецепта</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={[styles.ytBtn, { flex: 1 }]}
-                  onPress={() => Linking.openURL(youtubeUrl(recipe.title)).catch(() => {})}
-                >
-                  <Text style={styles.ytBtnText}>▶ YouTube</Text>
-                </TouchableOpacity>
-              </View>
-
-            </View>
-          ))}
+            );
+          })}
         </View>
 
         <View style={{ height: 16 }} />
       </ScrollView>
 
+      {/* Footer */}
       <View style={styles.footer}>
         <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
           <Text style={styles.backBtnText}>← Обратно</Text>
@@ -900,6 +517,18 @@ export default function MealsScreen({ route, navigation }) {
           <Text style={styles.homeBtnText}>🏠 Начало</Text>
         </TouchableOpacity>
       </View>
+
+      {/* Recipe detail modal */}
+      <RecipeModal
+        visible={!!selectedSlot && !!selectedRecipe}
+        recipe={selectedRecipe}
+        slotColor={selectedSlotMeta?.color ?? '#6C63FF'}
+        onClose={closeModal}
+        onYouTube={() => {
+          const { Linking } = require('react-native');
+          Linking.openURL(youtubeUrl(selectedRecipe?.title ?? '')).catch(() => {});
+        }}
+      />
 
     </SafeAreaView>
   );
@@ -916,35 +545,36 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1, borderBottomColor: '#eee',
     flexDirection: 'row', alignItems: 'center',
   },
-  headerTitle: { fontSize: 24, fontWeight: '800', color: '#1A1A2E', marginBottom: 2 },
-  headerSub:   { fontSize: 13, color: '#999' },
+  headerTitle: { fontSize: 22, fontWeight: '800', color: '#1A1A2E', marginBottom: 2 },
+  headerSub:   { fontSize: 12, color: '#999' },
   regenerateBtn: {
     width: 38, height: 38, borderRadius: 19,
     backgroundColor: '#F0EEFF',
-    justifyContent: 'center', alignItems: 'center',
-    marginLeft: 12,
+    justifyContent: 'center', alignItems: 'center', marginLeft: 12,
   },
+  regenerateBtnDisabled: { backgroundColor: '#f5f5f5' },
 
-  // Filter chips
   filterRow: {
-    flexDirection: 'row',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    gap: 8,
-    backgroundColor: '#fff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
+    flexDirection: 'row', flexWrap: 'wrap',
+    paddingHorizontal: 16, paddingVertical: 10, gap: 8,
+    backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#eee',
   },
   filterChip: {
-    flexDirection: 'row', alignItems: 'center', gap: 5,
-    paddingHorizontal: 12, paddingVertical: 7,
-    borderRadius: 20, borderWidth: 1.5, borderColor: '#E0E0F0',
-    backgroundColor: '#fff',
+    flexDirection: 'row', alignItems: 'center', gap: 4,
+    paddingHorizontal: 12, paddingVertical: 6,
+    borderRadius: 20, borderWidth: 1.5, borderColor: '#E0E0F0', backgroundColor: '#fff',
   },
-  filterChipActive: { backgroundColor: '#6C63FF', borderColor: '#6C63FF' },
-  filterChipIcon: { fontSize: 12 },
-  filterChipText: { fontSize: 12, fontWeight: '700', color: '#555' },
+  filterChipActive:     { backgroundColor: '#6C63FF', borderColor: '#6C63FF' },
+  filterChipIcon:       { fontSize: 12 },
+  filterChipText:       { fontSize: 12, fontWeight: '700', color: '#555' },
   filterChipTextActive: { color: '#fff' },
+  fallbackBadge: {
+    flexDirection: 'row', alignItems: 'center', gap: 4,
+    paddingHorizontal: 10, paddingVertical: 6,
+    borderRadius: 20, backgroundColor: '#FFF8ED',
+    borderWidth: 1.5, borderColor: '#f39c12',
+  },
+  fallbackText: { fontSize: 11, fontWeight: '700', color: '#f39c12' },
 
   scroll: { padding: 16 },
   section: { marginBottom: 8 },
@@ -961,13 +591,13 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 6, elevation: 2,
   },
-  macroItem: { flex: 1, alignItems: 'center' },
-  macroValue: { fontSize: 16, fontWeight: '800', color: '#1A1A2E' },
-  macroLabel: { fontSize: 10, fontWeight: '600', color: '#aaa', marginTop: 2 },
+  macroItem:    { flex: 1, alignItems: 'center' },
+  macroValue:   { fontSize: 16, fontWeight: '800', color: '#1A1A2E' },
+  macroLabel:   { fontSize: 10, fontWeight: '600', color: '#aaa', marginTop: 2 },
   macroDivider: { width: 1, height: 32, backgroundColor: '#f0f0f0' },
 
   // Products calories strip
-  calRow: { paddingBottom: 4, gap: 10 },
+  calRow:       { paddingBottom: 4, gap: 10 },
   calCard: {
     width: 90, backgroundColor: '#fff', borderRadius: 14,
     padding: 10, alignItems: 'center', gap: 4,
@@ -982,81 +612,77 @@ const styles = StyleSheet.create({
   calBadgeText: { fontSize: 13, fontWeight: '800', color: '#6C63FF' },
   calBadgeUnit: { fontSize: 9, fontWeight: '600', color: '#6C63FF', marginTop: -1 },
 
+  // Skeleton
+  skeletonChip: {
+    borderRadius: 20, backgroundColor: '#E8E8F0',
+  },
+  skeletonLine: {
+    borderRadius: 8, backgroundColor: '#E8E8F0', marginBottom: 4,
+  },
+
   // Recipe card
   card: {
     backgroundColor: '#fff', borderRadius: 16,
     padding: 16, marginBottom: 16, borderLeftWidth: 5,
     shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 8, elevation: 2,
   },
-
   cardTopRow: {
     flexDirection: 'row', alignItems: 'center',
     justifyContent: 'space-between', marginBottom: 12,
   },
-  cardTopRight: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-
+  cardTopRight:   { flexDirection: 'row', alignItems: 'center', gap: 8 },
   badge: {
     flexDirection: 'row', alignItems: 'center',
     borderRadius: 20, paddingHorizontal: 12, paddingVertical: 5, gap: 5,
   },
-  badgeIcon:  { fontSize: 13 },
-  badgeLabel: { color: '#fff', fontWeight: '700', fontSize: 13 },
-
+  badgeIcon:      { fontSize: 13 },
+  badgeLabel:     { color: '#fff', fontWeight: '700', fontSize: 13 },
   prepTimeBadge: {
     flexDirection: 'row', alignItems: 'center', gap: 3,
     backgroundColor: '#F7F8FC', borderRadius: 12,
     paddingHorizontal: 8, paddingVertical: 4,
   },
-  prepTimeText: { fontSize: 11, fontWeight: '600', color: '#999' },
-
+  prepTimeText:   { fontSize: 11, fontWeight: '600', color: '#999' },
   calChip: {
-    borderWidth: 1.5, borderRadius: 20,
-    paddingHorizontal: 10, paddingVertical: 4,
+    borderWidth: 1.5, borderRadius: 20, paddingHorizontal: 10, paddingVertical: 4,
   },
-  calChipText: { fontSize: 12, fontWeight: '800' },
-
+  calChipText:    { fontSize: 12, fontWeight: '800' },
   swapBtn: {
     width: 30, height: 30, borderRadius: 15,
-    backgroundColor: '#F0EEFF',
-    justifyContent: 'center', alignItems: 'center',
+    backgroundColor: '#F0EEFF', justifyContent: 'center', alignItems: 'center',
   },
 
   recipeTitle: { fontSize: 17, fontWeight: '800', color: '#1A1A2E', marginBottom: 12, lineHeight: 23 },
 
-  // Matched products
-  productsBox:   { marginBottom: 10 },
-  productsLabel: { fontSize: 11, color: '#2ecc71', fontWeight: '700', marginBottom: 8 },
-
-  // Missing ingredients
-  missingBox:   { marginBottom: 10 },
-  missingLabel: { fontSize: 11, color: '#f39c12', fontWeight: '700', marginBottom: 8 },
-  missingPill: {
-    backgroundColor: '#FFF8ED',
-    borderWidth: 1.5, borderColor: '#f39c12', borderRadius: 20,
+  pillsSection:   { marginBottom: 10 },
+  fromListLabel:  { fontSize: 11, color: '#2ecc71', fontWeight: '700', marginBottom: 7 },
+  extraLabel:     { fontSize: 11, color: '#f39c12', fontWeight: '700', marginBottom: 7 },
+  pills:          { flexDirection: 'row', flexWrap: 'wrap', gap: 7 },
+  pill: {
+    borderWidth: 1.5, borderRadius: 20,
     paddingHorizontal: 10, paddingVertical: 4,
   },
-  missingPillText: { fontSize: 12, fontWeight: '700', color: '#f39c12' },
-
-  pills: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  pill: {
-    flexDirection: 'row', alignItems: 'center',
-    backgroundColor: '#fff', borderWidth: 1.5, borderRadius: 20,
-    paddingHorizontal: 10, paddingVertical: 4, gap: 5,
+  pillText:       { fontSize: 12, fontWeight: '700' },
+  extraPill: {
+    backgroundColor: '#FFF8ED', borderWidth: 1.5, borderColor: '#f39c12',
+    borderRadius: 20, paddingHorizontal: 10, paddingVertical: 4,
   },
-  pillIcon: { fontSize: 14 },
-  pillText: { fontSize: 12, fontWeight: '700' },
+  extraPillText:  { fontSize: 12, fontWeight: '700', color: '#f39c12' },
 
-  descBox: { backgroundColor: '#FFFBEA', borderRadius: 10, padding: 12, marginBottom: 12 },
+  descBox:  { backgroundColor: '#FFFBEA', borderRadius: 10, padding: 12, marginBottom: 12 },
   descText: { fontSize: 13, color: '#7d6608', lineHeight: 20 },
 
-  btnRow: { flexDirection: 'row', gap: 10 },
-  linkBtn: { borderRadius: 12, paddingVertical: 13, alignItems: 'center' },
-  linkBtnText: { color: '#fff', fontWeight: '700', fontSize: 13 },
-  ytBtn: {
-    borderRadius: 12, paddingVertical: 13, alignItems: 'center',
-    backgroundColor: '#FF0000',
+  btnRow:       { flexDirection: 'row', gap: 10 },
+  linkBtn: {
+    flex: 1, borderRadius: 12, paddingVertical: 13,
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
   },
-  ytBtnText: { color: '#fff', fontWeight: '700', fontSize: 13 },
+  linkBtnText:  { color: '#fff', fontWeight: '700', fontSize: 13 },
+  ytBtn: {
+    flex: 1, borderRadius: 12, paddingVertical: 13, backgroundColor: '#FF0000',
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+  },
+  ytBtnText:    { color: '#fff', fontWeight: '700', fontSize: 13 },
 
   footer: {
     flexDirection: 'row', padding: 16, gap: 12,
@@ -1072,4 +698,58 @@ const styles = StyleSheet.create({
     paddingVertical: 14, alignItems: 'center',
   },
   homeBtnText: { color: '#fff', fontWeight: '700', fontSize: 15 },
+
+  // ── Recipe Modal ──
+  modalContainer: { flex: 1, backgroundColor: '#F7F8FC' },
+  modalHeader: {
+    backgroundColor: '#fff',
+    flexDirection: 'row', alignItems: 'center',
+    paddingHorizontal: 16, paddingVertical: 14,
+    borderBottomWidth: 1, borderBottomColor: '#eee', gap: 12,
+  },
+  modalCloseBtn: {
+    width: 36, height: 36, borderRadius: 18,
+    backgroundColor: '#f0f0f0', justifyContent: 'center', alignItems: 'center',
+  },
+  modalTitle: { flex: 1, fontSize: 16, fontWeight: '800', color: '#1A1A2E' },
+  ytSmallBtn: {
+    width: 36, height: 36, borderRadius: 18,
+    backgroundColor: '#FF0000', justifyContent: 'center', alignItems: 'center',
+  },
+
+  modalBody: { flex: 1, padding: 20 },
+
+  modalInfoRow: { flexDirection: 'row', gap: 8, marginBottom: 14 },
+  modalInfoChip: {
+    flexDirection: 'row', alignItems: 'center', gap: 5,
+    backgroundColor: '#F0EEFF', borderRadius: 12,
+    paddingHorizontal: 12, paddingVertical: 6,
+  },
+  modalInfoText: { fontSize: 13, fontWeight: '700', color: '#6C63FF' },
+
+  modalDesc: {
+    fontSize: 14, color: '#555', lineHeight: 21,
+    backgroundColor: '#FFFBEA', borderRadius: 10,
+    padding: 14, marginBottom: 20,
+  },
+
+  modalSection:      { marginBottom: 20 },
+  modalSectionTitle: {
+    fontSize: 13, fontWeight: '800', color: '#1A1A2E',
+    marginBottom: 12, textTransform: 'uppercase', letterSpacing: 0.5,
+  },
+
+  modalIngredientRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 8 },
+  modalIngDot:        { width: 8, height: 8, borderRadius: 4 },
+  modalIngText:       { fontSize: 14, color: '#333', flex: 1 },
+
+  modalStepRow: {
+    flexDirection: 'row', alignItems: 'flex-start', gap: 12, marginBottom: 14,
+  },
+  modalStepNum: {
+    width: 28, height: 28, borderRadius: 14,
+    justifyContent: 'center', alignItems: 'center', marginTop: 1,
+  },
+  modalStepNumText: { color: '#fff', fontWeight: '800', fontSize: 13 },
+  modalStepText:    { flex: 1, fontSize: 14, color: '#333', lineHeight: 22 },
 });
