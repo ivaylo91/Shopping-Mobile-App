@@ -12,14 +12,17 @@ import HomeScreen from '../screens/HomeScreen';
 import ShoppingListScreen from '../screens/ShoppingListScreen';
 import SavedListsScreen from '../screens/SavedListsScreen';
 import AdminScreen from '../screens/AdminScreen';
+import BarcodeScannerScreen from '../screens/BarcodeScannerScreen';
+import StoreComparisonScreen from '../screens/StoreComparisonScreen';
+import SharedListScreen, { JoinSharedListScreen } from '../screens/SharedListScreen';
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
 
 const TAB_ICONS = {
-  Home:       { focused: 'wallet',     outline: 'wallet-outline' },
-  SavedLists: { focused: 'bookmark',   outline: 'bookmark-outline' },
-  Admin:      { focused: 'settings',   outline: 'settings-outline' },
+  Home:       { focused: 'wallet',   outline: 'wallet-outline' },
+  SavedLists: { focused: 'bookmark', outline: 'bookmark-outline' },
+  Admin:      { focused: 'settings', outline: 'settings-outline' },
 };
 
 function AuthStack() {
@@ -49,32 +52,14 @@ function MainTabs({ isAdmin }) {
         tabBarLabelStyle: { fontSize: 11, fontWeight: '700', letterSpacing: 0.2 },
         tabBarIcon: ({ focused, color }) => {
           const icons = TAB_ICONS[route.name];
-          return (
-            <Ionicons
-              name={focused ? icons.focused : icons.outline}
-              size={24}
-              color={color}
-            />
-          );
+          return <Ionicons name={focused ? icons.focused : icons.outline} size={24} color={color} />;
         },
       })}
     >
-      <Tab.Screen
-        name="Home"
-        component={HomeScreen}
-        options={{ tabBarLabel: 'Нов списък' }}
-      />
-      <Tab.Screen
-        name="SavedLists"
-        component={SavedListsScreen}
-        options={{ tabBarLabel: 'Запазени' }}
-      />
+      <Tab.Screen name="Home" component={HomeScreen} options={{ tabBarLabel: 'Нов списък' }} />
+      <Tab.Screen name="SavedLists" component={SavedListsScreen} options={{ tabBarLabel: 'Запазени' }} />
       {isAdmin && (
-        <Tab.Screen
-          name="Admin"
-          component={AdminScreen}
-          options={{ tabBarLabel: 'Админ' }}
-        />
+        <Tab.Screen name="Admin" component={AdminScreen} options={{ tabBarLabel: 'Админ' }} />
       )}
     </Tab.Navigator>
   );
@@ -92,9 +77,30 @@ function AppStack({ isAdmin }) {
       }}
     >
       <Stack.Screen name="MainTabs" component={Tabs} options={{ headerShown: false }} />
+
       <Stack.Screen
         name="ShoppingList"
         component={ShoppingListScreen}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="BarcodeScanner"
+        component={BarcodeScannerScreen}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="StoreComparison"
+        component={StoreComparisonScreen}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="SharedList"
+        component={SharedListScreen}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="JoinSharedList"
+        component={JoinSharedListScreen}
         options={{ headerShown: false }}
       />
     </Stack.Navigator>

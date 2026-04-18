@@ -319,10 +319,16 @@ export default function SavedListsScreen({ navigation }) {
               {lists.length > 0 ? `${lists.length} запазени` : 'Все още нямате списъци'}
             </Text>
           </View>
-          <TouchableOpacity style={styles.newBtn} onPress={() => navigation.navigate('Home')} activeOpacity={0.85}>
-            <Ionicons name="add" size={18} color="#fff" />
-            <Text style={styles.newBtnText}>Нов</Text>
-          </TouchableOpacity>
+          <View style={styles.headerBtns}>
+            <TouchableOpacity style={styles.joinBtn} onPress={() => navigation.navigate('JoinSharedList')} activeOpacity={0.85}>
+              <Ionicons name="people-outline" size={16} color="#6C63FF" />
+              <Text style={styles.joinBtnText}>Присъедини</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.newBtn} onPress={() => navigation.navigate('Home')} activeOpacity={0.85}>
+              <Ionicons name="add" size={18} color="#fff" />
+              <Text style={styles.newBtnText}>Нов</Text>
+            </TouchableOpacity>
+          </View>
         </View>
 
         {storeOptions.length > 1 && (
@@ -385,6 +391,13 @@ const styles = StyleSheet.create({
   headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   headerTitle: { fontSize: 24, fontWeight: '800', color: '#1A1A2E', marginBottom: 2 },
   headerSub: { fontSize: 13, color: '#999' },
+  headerBtns: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  joinBtn: {
+    flexDirection: 'row', alignItems: 'center', gap: 5,
+    backgroundColor: '#F0EEFF', paddingHorizontal: 12, paddingVertical: 9, borderRadius: 12,
+    borderWidth: 1.5, borderColor: '#E0DCFF',
+  },
+  joinBtnText: { color: '#6C63FF', fontWeight: '700', fontSize: 13 },
   newBtn: {
     flexDirection: 'row', alignItems: 'center', gap: 5,
     backgroundColor: '#6C63FF', paddingHorizontal: 16, paddingVertical: 9, borderRadius: 12,

@@ -172,6 +172,15 @@ export default function ShoppingListScreen({ route, navigation }) {
     catch { showToast('Споделянето е неуспешно', 'error'); }
   };
 
+  const handleShareLive = () => {
+    if (!readOnly && list.length === 0) { showToast('Добавете продукти преди споделяне', 'warning'); return; }
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    const code = Math.random().toString(36).slice(2, 8).toUpperCase();
+    navigation.navigate('SharedList', {
+      code, isOwner: true, list, budget, listName, store,
+    });
+  };
+
   const renderItem = useCallback(
     ({ item }) => <ShoppingItem item={item} checked={!!checked[item.id]} onToggle={toggleCheck} />,
     [checked, toggleCheck]
@@ -201,6 +210,10 @@ export default function ShoppingListScreen({ route, navigation }) {
               </View>
             )}
           </View>
+          <TouchableOpacity onPress={handleShareLive} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} style={styles.shareLiveBtn}>
+            <Ionicons name="people-outline" size={16} color="#fff" />
+            <Text style={styles.shareLiveBtnText}>Live</Text>
+          </TouchableOpacity>
           <TouchableOpacity onPress={handleShare} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
             <Ionicons name="share-outline" size={22} color="#6C63FF" />
           </TouchableOpacity>
@@ -363,4 +376,9 @@ const styles = StyleSheet.create({
   },
   btnSaveText: { color: '#fff', fontWeight: '800', fontSize: 16 },
   btnDisabled: { opacity: 0.6, shadowOpacity: 0 },
+  shareLiveBtn: {
+    flexDirection: 'row', alignItems: 'center', gap: 4,
+    backgroundColor: '#2ecc71', borderRadius: 10, paddingHorizontal: 10, paddingVertical: 5,
+  },
+  shareLiveBtnText: { fontSize: 12, fontWeight: '800', color: '#fff' },
 });
