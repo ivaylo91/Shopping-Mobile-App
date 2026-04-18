@@ -10,7 +10,6 @@ import LoginScreen from '../screens/LoginScreen';
 import RegisterScreen from '../screens/RegisterScreen';
 import HomeScreen from '../screens/HomeScreen';
 import ShoppingListScreen from '../screens/ShoppingListScreen';
-import MealsScreen from '../screens/MealsScreen';
 import SavedListsScreen from '../screens/SavedListsScreen';
 import AdminScreen from '../screens/AdminScreen';
 
@@ -18,9 +17,9 @@ const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
 
 const TAB_ICONS = {
-  Home:       { focused: 'home',          outline: 'home-outline' },
-  SavedLists: { focused: 'bookmark',      outline: 'bookmark-outline' },
-  Admin:      { focused: 'settings',      outline: 'settings-outline' },
+  Home:       { focused: 'wallet',     outline: 'wallet-outline' },
+  SavedLists: { focused: 'bookmark',   outline: 'bookmark-outline' },
+  Admin:      { focused: 'settings',   outline: 'settings-outline' },
 };
 
 function AuthStack() {
@@ -63,7 +62,7 @@ function MainTabs({ isAdmin }) {
       <Tab.Screen
         name="Home"
         component={HomeScreen}
-        options={{ tabBarLabel: 'Начало' }}
+        options={{ tabBarLabel: 'Нов списък' }}
       />
       <Tab.Screen
         name="SavedLists"
@@ -96,12 +95,7 @@ function AppStack({ isAdmin }) {
       <Stack.Screen
         name="ShoppingList"
         component={ShoppingListScreen}
-        options={{ title: 'Вашият списък', headerBackTitle: '' }}
-      />
-      <Stack.Screen
-        name="Meals"
-        component={MealsScreen}
-        options={{ title: 'Идеи за ястия', headerBackTitle: '' }}
+        options={{ headerShown: false }}
       />
     </Stack.Navigator>
   );
