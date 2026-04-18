@@ -44,14 +44,14 @@ function MonthlySummary({ lists }) {
     const totalSpent = thisMonth.reduce((s, l) => s + (l.total || 0), 0);
     const totalBudget = thisMonth.reduce((s, l) => s + (l.budget || 0), 0);
     const overCount = thisMonth.filter((l) => (l.total || 0) > (l.budget || 0)).length;
-    return { count: thisMonth.length, totalSpent, totalBudget, overCount };
+    const firstWithDate = thisMonth.find((l) => l.createdAt?.toDate);
+    const monthName = firstWithDate ? formatMonth(firstWithDate.createdAt) : null;
+    return { count: thisMonth.length, totalSpent, totalBudget, overCount, monthName };
   }, [lists]);
 
   if (stats.count === 0) return null;
 
-  const monthName = lists.find((l) => l.createdAt?.toDate)
-    ? formatMonth(lists.find((l) => l.createdAt?.toDate)?.createdAt)
-    : null;
+  const { monthName } = stats;
 
   const saved = stats.totalBudget - stats.totalSpent;
 

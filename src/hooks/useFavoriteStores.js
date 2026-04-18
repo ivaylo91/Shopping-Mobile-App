@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const KEY = '@favorite_stores_v1';
@@ -25,13 +25,12 @@ export function useFavoriteStores() {
     }
   };
 
-  const isFavorite = (store) => favorites.includes(store);
+  const isFavorite = useCallback((store) => favorites.includes(store), [favorites]);
 
-  // Sort stores: favorites first, then rest
-  const sortStores = (stores) => [
+  const sortStores = useCallback((stores) => [
     ...stores.filter((s) => favorites.includes(s)),
     ...stores.filter((s) => !favorites.includes(s)),
-  ];
+  ], [favorites]);
 
   return { favorites, toggleFavorite, isFavorite, sortStores };
 }

@@ -75,6 +75,8 @@ export default function HomeScreen({ navigation, route }) {
   const [storeModalVisible, setStoreModalVisible] = useState(false);
   const [newStoreName, setNewStoreName] = useState('');
   const [templatesModalVisible, setTemplatesModalVisible] = useState(false);
+  const [saveTemplateVisible, setSaveTemplateVisible] = useState(false);
+  const [saveTemplateName, setSaveTemplateName] = useState('');
 
   // Handle incoming scanned product / preloaded items from other screens
   useEffect(() => {
@@ -96,7 +98,7 @@ export default function HomeScreen({ navigation, route }) {
   const remaining = budgetNum - total;
 
   // Sorted stores with favorites first
-  const sortedStores = useMemo(() => sortStores(stores), [stores, isFavorite]);
+  const sortedStores = useMemo(() => sortStores(stores), [stores, sortStores]);
 
   // Product history suggestions
   const suggestions = useMemo(() => {
@@ -211,11 +213,16 @@ export default function HomeScreen({ navigation, route }) {
 
   const handleSaveTemplate = () => {
     if (items.length === 0) { showToast('Добавете продукти преди да запазите шаблон', 'warning'); return; }
-    Alert.prompt('Запази като шаблон', 'Въведете наименование:', async (name) => {
-      if (!name?.trim()) return;
-      await saveTemplate({ name: name.trim(), store, items });
-      showToast(`Шаблонът "${name.trim()}" е запазен`, 'success');
-    }, 'plain-text', listName || '');
+    setSaveTemplateName(listName || '');
+    setSaveTemplateVisible(true);
+  };
+
+  const confirmSaveTemplate = async () => {
+    const name = saveTemplateName.trim();
+    if (!name) { showToast('Въведете наименование', 'warning'); return; }
+    setSaveTemplateVisible(false);
+    await saveTemplate({ name, store, items });
+    showToast(`Шаблонът "${name}" е запазен`, 'success');
   };
 
   const loadTemplate = (tpl) => {
@@ -583,6 +590,33 @@ export default function HomeScreen({ navigation, route }) {
         </View>
       </Modal>
 
+      {/* Save-as-template modal (cross-platform replacement for Alert.prompt) */}
+      <Modal visible={saveTemplateVisible} animationType="fade" transparent>
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalSheet, { paddingBottom: 20 }]}>
+            <Text style={styles.modalTitle}>Запази като шаблон</Text>
+            <TextInput
+              style={styles.templateNameInput}
+              placeholder="Наименование на шаблона"
+              placeholderTextColor="#bbb"
+              value={saveTemplateName}
+              onChangeText={setSaveTemplateName}
+              autoFocus
+              returnKeyType="done"
+              onSubmitEditing={confirmSaveTemplate}
+            />
+            <View style={styles.templateModalBtns}>
+              <TouchableOpacity style={styles.templateCancelBtn} onPress={() => setSaveTemplateVisible(false)}>
+                <Text style={styles.templateCancelText}>Отказ</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.templateConfirmBtn} onPress={confirmSaveTemplate}>
+                <Text style={styles.templateConfirmText}>Запази</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
       {/* Templates modal */}
       <Modal visible={templatesModalVisible} animationType="slide" transparent>
         <View style={styles.modalOverlay}>
@@ -741,4 +775,13 @@ const styles = StyleSheet.create({
   tplStoreBadge: { backgroundColor: '#F0EEFF', borderRadius: 8, paddingHorizontal: 8, paddingVertical: 3 },
   tplStoreBadgeText: { fontSize: 11, fontWeight: '700', color: '#6C63FF' },
   tplCardItems: { fontSize: 12, color: '#888', lineHeight: 18 },
+  templateNameInput: {
+    backgroundColor: '#F7F8FC', borderRadius: 14, paddingHorizontal: 16, paddingVertical: 14,
+    fontSize: 16, color: '#1A1A2E', borderWidth: 1.5, borderColor: '#E0DCFF', marginBottom: 4,
+  },
+  templateModalBtns: { flexDirection: 'row', gap: 10, marginTop: 8 },
+  templateCancelBtn: { flex: 1, backgroundColor: '#F7F8FC', borderRadius: 14, paddingVertical: 14, alignItems: 'center' },
+  templateCancelText: { fontSize: 15, fontWeight: '700', color: '#555' },
+  templateConfirmBtn: { flex: 1, backgroundColor: '#6C63FF', borderRadius: 14, paddingVertical: 14, alignItems: 'center' },
+  templateConfirmText: { fontSize: 15, fontWeight: '700', color: '#fff' },
 });
