@@ -43,10 +43,10 @@ const SharedItem = memo(function SharedItem({ item, checked, onToggle }) {
           {item.name}
         </Text>
         {item.note ? <Text style={styles.itemNote}>📝 {item.note}</Text> : null}
-        <Text style={styles.itemMeta}>{item.price?.toFixed(2)} лв. × {item.quantity}</Text>
+        <Text style={styles.itemMeta}>{item.price?.toFixed(2)} € × {item.quantity}</Text>
       </View>
       <Text style={[styles.itemPrice, checked && styles.itemPriceChecked]}>
-        {item.subtotal?.toFixed(2)} лв.
+        {item.subtotal?.toFixed(2)} €
       </Text>
     </TouchableOpacity>
   );
@@ -288,18 +288,18 @@ export default function SharedListScreen({ route, navigation }) {
       <View style={styles.budgetBar}>
         <View style={styles.budgetStat}>
           <Text style={styles.budgetStatLabel}>Бюджет</Text>
-          <Text style={styles.budgetStatValue}>{sharedData.budget?.toFixed(2)} лв.</Text>
+          <Text style={styles.budgetStatValue}>{sharedData.budget?.toFixed(2)} €</Text>
         </View>
         <View style={styles.budgetDivider} />
         <View style={styles.budgetStat}>
           <Text style={styles.budgetStatLabel}>Изхарчено</Text>
-          <Text style={[styles.budgetStatValue, { color: '#e67e22' }]}>{spent.toFixed(2)} лв.</Text>
+          <Text style={[styles.budgetStatValue, { color: '#e67e22' }]}>{spent.toFixed(2)} €</Text>
         </View>
         <View style={styles.budgetDivider} />
         <View style={styles.budgetStat}>
           <Text style={styles.budgetStatLabel}>Оставащо</Text>
           <Text style={[styles.budgetStatValue, { color: remaining >= 0 ? '#2ecc71' : '#e74c3c' }]}>
-            {remaining.toFixed(2)} лв.
+            {remaining.toFixed(2)} €
           </Text>
         </View>
       </View>

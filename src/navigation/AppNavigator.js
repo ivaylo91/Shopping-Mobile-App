@@ -11,7 +11,6 @@ import RegisterScreen from '../screens/RegisterScreen';
 import HomeScreen from '../screens/HomeScreen';
 import ShoppingListScreen from '../screens/ShoppingListScreen';
 import SavedListsScreen from '../screens/SavedListsScreen';
-import AdminScreen from '../screens/AdminScreen';
 import BarcodeScannerScreen from '../screens/BarcodeScannerScreen';
 import StoreComparisonScreen from '../screens/StoreComparisonScreen';
 import SharedListScreen, { JoinSharedListScreen } from '../screens/SharedListScreen';
@@ -22,7 +21,6 @@ const Tab = createBottomTabNavigator();
 const TAB_ICONS = {
   Home:       { focused: 'wallet',   outline: 'wallet-outline' },
   SavedLists: { focused: 'bookmark', outline: 'bookmark-outline' },
-  Admin:      { focused: 'settings', outline: 'settings-outline' },
 };
 
 function AuthStack() {
@@ -34,7 +32,7 @@ function AuthStack() {
   );
 }
 
-function MainTabs({ isAdmin }) {
+function MainTabs() {
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
@@ -58,15 +56,12 @@ function MainTabs({ isAdmin }) {
     >
       <Tab.Screen name="Home" component={HomeScreen} options={{ tabBarLabel: 'Нов списък' }} />
       <Tab.Screen name="SavedLists" component={SavedListsScreen} options={{ tabBarLabel: 'Запазени' }} />
-      {isAdmin && (
-        <Tab.Screen name="Admin" component={AdminScreen} options={{ tabBarLabel: 'Админ' }} />
-      )}
     </Tab.Navigator>
   );
 }
 
-function AppStack({ isAdmin }) {
-  const Tabs = () => <MainTabs isAdmin={isAdmin} />;
+function AppStack() {
+  const Tabs = () => <MainTabs />;
   return (
     <Stack.Navigator
       screenOptions={{
@@ -108,7 +103,7 @@ function AppStack({ isAdmin }) {
 }
 
 export default function AppNavigator() {
-  const { user, loading, isAdmin } = useAuth();
+  const { user, loading } = useAuth();
 
   if (loading) {
     return (
@@ -120,7 +115,7 @@ export default function AppNavigator() {
 
   return (
     <NavigationContainer>
-      {user ? <AppStack isAdmin={isAdmin} /> : <AuthStack />}
+      {user ? <AppStack /> : <AuthStack />}
     </NavigationContainer>
   );
 }

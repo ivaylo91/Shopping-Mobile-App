@@ -50,7 +50,7 @@ function CategoryBreakdown({ items }) {
             <Text style={bdStyles.label}>{cat.label}</Text>
           </View>
           <View style={bdStyles.right}>
-            <Text style={bdStyles.amount}>{cat.amount.toFixed(2)} лв.</Text>
+            <Text style={bdStyles.amount}>{cat.amount.toFixed(2)} €</Text>
             <Text style={bdStyles.pct}>{cat.pct.toFixed(0)}%</Text>
           </View>
         </View>
@@ -99,10 +99,10 @@ const ShoppingItem = memo(function ShoppingItem({ item, checked, onToggle }) {
           {item.name}
         </Text>
         {item.note ? <Text style={styles.itemNote} numberOfLines={1}>📝 {item.note}</Text> : null}
-        <Text style={styles.itemMeta}>{item.price.toFixed(2)} лв. × {item.quantity}</Text>
+        <Text style={styles.itemMeta}>{item.price.toFixed(2)} € × {item.quantity}</Text>
       </View>
       <Text style={[styles.itemPrice, checked && styles.itemPriceChecked]}>
-        {item.subtotal.toFixed(2)} лв.
+        {item.subtotal.toFixed(2)} €
       </Text>
     </TouchableOpacity>
   );
@@ -156,17 +156,17 @@ export default function ShoppingListScreen({ route, navigation }) {
   const handleShare = async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     const lines = list.map(
-      (i) => `${getCategoryEmoji(i.category)} ${i.name} ×${i.quantity} — ${i.subtotal.toFixed(2)} лв.${i.note ? ` (${i.note})` : ''}`
+      (i) => `${getCategoryEmoji(i.category)} ${i.name} ×${i.quantity} — ${i.subtotal.toFixed(2)} €${i.note ? ` (${i.note})` : ''}`
     );
     const text = [
       `📋 ${listName || 'Списък за пазаруване'}`,
       store !== 'Всички' ? `📍 ${store}` : '',
-      `💰 Бюджет: ${budget.toFixed(2)} лв.`,
+      `💰 Бюджет: ${budget.toFixed(2)} €`,
       '',
       ...lines,
       '',
-      `Общо: ${total.toFixed(2)} лв.`,
-      `Оставащо: ${(budget - total).toFixed(2)} лв.`,
+      `Общо: ${total.toFixed(2)} €`,
+      `Оставащо: ${(budget - total).toFixed(2)} €`,
     ].filter(Boolean).join('\n');
     try { await Share.share({ message: text }); }
     catch { showToast('Споделянето е неуспешно', 'error'); }
@@ -230,18 +230,18 @@ export default function ShoppingListScreen({ route, navigation }) {
       <View style={styles.budgetBar}>
         <View style={styles.budgetStat}>
           <Text style={styles.budgetStatLabel}>Бюджет</Text>
-          <Text style={styles.budgetStatValue}>{budget.toFixed(2)} лв.</Text>
+          <Text style={styles.budgetStatValue}>{budget.toFixed(2)} €</Text>
         </View>
         <View style={styles.budgetDivider} />
         <View style={styles.budgetStat}>
           <Text style={styles.budgetStatLabel}>Изхарчено</Text>
-          <Text style={[styles.budgetStatValue, { color: '#e67e22' }]}>{spent.toFixed(2)} лв.</Text>
+          <Text style={[styles.budgetStatValue, { color: '#e67e22' }]}>{spent.toFixed(2)} €</Text>
         </View>
         <View style={styles.budgetDivider} />
         <View style={styles.budgetStat}>
           <Text style={styles.budgetStatLabel}>Оставащо</Text>
           <Text style={[styles.budgetStatValue, { color: budgetRemaining >= 0 ? '#2ecc71' : '#e74c3c' }]}>
-            {budgetRemaining.toFixed(2)} лв.
+            {budgetRemaining.toFixed(2)} €
           </Text>
         </View>
       </View>
@@ -275,13 +275,13 @@ export default function ShoppingListScreen({ route, navigation }) {
       <View style={styles.summaryCard}>
         <View style={styles.summaryRow}>
           <Text style={styles.summaryLabel}>Общо в списъка</Text>
-          <Text style={styles.summaryValue}>{total.toFixed(2)} лв.</Text>
+          <Text style={styles.summaryValue}>{total.toFixed(2)} €</Text>
         </View>
         <View style={styles.summaryDivider} />
         <View style={styles.summaryRow}>
           <Text style={styles.summaryLabel}>Бюджет след пазаруване</Text>
           <Text style={[styles.summaryRemaining, { color: budget - total >= 0 ? '#2ecc71' : '#e74c3c' }]}>
-            {(budget - total >= 0 ? '+' : '') + (budget - total).toFixed(2)} лв.
+            {(budget - total >= 0 ? '+' : '') + (budget - total).toFixed(2)} €
           </Text>
         </View>
       </View>

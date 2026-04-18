@@ -19,7 +19,7 @@ export async function sendOverBudgetAlert(listName, overBy) {
     await Notifications.scheduleNotificationAsync({
       content: {
         title: '⚠️ Над бюджета!',
-        body: `"${listName}" надхвърля бюджета с ${overBy.toFixed(2)} лв.`,
+        body: `"${listName}" надхвърля бюджета с ${overBy.toFixed(2)} €`,
         sound: true,
       },
       trigger: null,
@@ -34,7 +34,7 @@ export async function sendListSavedNotification(listName, total) {
     await Notifications.scheduleNotificationAsync({
       content: {
         title: '✅ Списъкът е запазен',
-        body: `"${listName}" — ${total.toFixed(2)} лв.`,
+        body: `"${listName}" — ${total.toFixed(2)} €`,
       },
       trigger: null,
     });

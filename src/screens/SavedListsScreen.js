@@ -71,13 +71,13 @@ function MonthlySummary({ lists }) {
         </View>
         <View style={msStyles.divider} />
         <View style={msStyles.stat}>
-          <Text style={msStyles.statValue}>{stats.totalSpent.toFixed(0)} лв.</Text>
+          <Text style={msStyles.statValue}>{stats.totalSpent.toFixed(0)} €</Text>
           <Text style={msStyles.statLabel}>Изхарчено</Text>
         </View>
         <View style={msStyles.divider} />
         <View style={msStyles.stat}>
           <Text style={[msStyles.statValue, { color: saved >= 0 ? '#2ecc71' : '#e74c3c' }]}>
-            {saved >= 0 ? '+' : ''}{saved.toFixed(0)} лв.
+            {saved >= 0 ? '+' : ''}{saved.toFixed(0)} €
           </Text>
           <Text style={msStyles.statLabel}>{saved >= 0 ? 'Спестено' : 'Над бюджета'}</Text>
         </View>
@@ -169,18 +169,18 @@ const BudgetCard = memo(function BudgetCard({ item, isDeleting, onDelete, onOpen
       <View style={[styles.statsRow, overBudget && styles.statsRowOver]}>
         <View style={styles.stat}>
           <Text style={styles.statLabel}>Бюджет</Text>
-          <Text style={styles.statValue}>{item.budget?.toFixed(2)} лв.</Text>
+          <Text style={styles.statValue}>{item.budget?.toFixed(2)} €</Text>
         </View>
         <View style={styles.statDivider} />
         <View style={styles.stat}>
           <Text style={styles.statLabel}>Общо</Text>
-          <Text style={styles.statValue}>{item.total?.toFixed(2)} лв.</Text>
+          <Text style={styles.statValue}>{item.total?.toFixed(2)} €</Text>
         </View>
         <View style={styles.statDivider} />
         <View style={styles.stat}>
           <Text style={styles.statLabel}>{overBudget ? 'Над бюджета' : 'Остатък'}</Text>
           <Text style={[styles.statRemaining, { color: overBudget ? '#e74c3c' : '#2ecc71' }]}>
-            {remaining >= 0 ? '+' : ''}{remaining.toFixed(2)} лв.
+            {remaining >= 0 ? '+' : ''}{remaining.toFixed(2)} €
           </Text>
         </View>
       </View>

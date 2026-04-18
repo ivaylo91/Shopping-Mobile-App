@@ -175,7 +175,7 @@ export default function StoreComparisonScreen({ navigation }) {
                 <View key={s} style={styles.priceCol}>
                   <Text style={styles.priceColLabel} numberOfLines={1}>{s}</Text>
                   <View style={styles.priceInputWrap}>
-                    <Text style={styles.pricePre}>лв.</Text>
+                    <Text style={styles.pricePre}>€</Text>
                     <TextInput
                       style={styles.priceInput}
                       placeholder="—"
@@ -267,7 +267,7 @@ export default function StoreComparisonScreen({ navigation }) {
                   </View>
                   <View style={styles.resultRight}>
                     <Text style={[styles.resultTotal, isBest && styles.resultTotalBest]}>
-                      {st.total.toFixed(2)} лв.
+                      {st.total.toFixed(2)} €
                     </Text>
                     {isBest && (
                       <AnimatedPressable style={styles.shopBtn} onPress={() => handleShopAt(st.store)}>

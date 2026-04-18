@@ -288,7 +288,7 @@ export default function HomeScreen({ navigation, route }) {
                     <Text style={styles.recurringEmoji}>{getCategoryEmoji(r.category)}</Text>
                     <View>
                       <Text style={[styles.recurringName, alreadyAdded && styles.recurringNameDone]} numberOfLines={1}>{r.name}</Text>
-                      <Text style={styles.recurringPrice}>{r.price.toFixed(2)} лв.</Text>
+                      <Text style={styles.recurringPrice}>{r.price.toFixed(2)} €</Text>
                     </View>
                     {alreadyAdded && <Ionicons name="checkmark-circle" size={14} color="#2ecc71" />}
                   </TouchableOpacity>
@@ -335,7 +335,7 @@ export default function HomeScreen({ navigation, route }) {
         <View style={styles.section}>
           <Text style={styles.sectionLabel}>Бюджет</Text>
           <View style={styles.inputCard}>
-            <Text style={styles.currencySymbol}>лв.</Text>
+            <Text style={styles.currencySymbol}>€</Text>
             <TextInput style={styles.budgetInput} placeholder="0.00" placeholderTextColor="#bbb"
               value={budget} onChangeText={setBudget} keyboardType="decimal-pad" returnKeyType="done" />
           </View>
@@ -385,7 +385,7 @@ export default function HomeScreen({ navigation, route }) {
                 <Ionicons name="barcode-outline" size={22} color="#6C63FF" />
               </TouchableOpacity>
               <View style={[styles.inputCard, { width: 100 }]}>
-                <Text style={styles.pricePre}>лв.</Text>
+                <Text style={styles.pricePre}>€</Text>
                 <TextInput style={styles.priceInput} placeholder="0.00" placeholderTextColor="#bbb"
                   value={itemPrice} onChangeText={setItemPrice} keyboardType="decimal-pad"
                   returnKeyType="done" onFocus={() => setShowSuggestions(false)} />
@@ -401,7 +401,7 @@ export default function HomeScreen({ navigation, route }) {
                     <TouchableOpacity key={s.name} style={styles.suggestionRow} onPress={() => applySuggestion(s)} activeOpacity={0.7}>
                       <Text style={styles.suggestionEmoji}>{getCategoryEmoji(s.category)}</Text>
                       <Text style={styles.suggestionName}>{s.name}</Text>
-                      <Text style={styles.suggestionPrice}>{s.price.toFixed(2)} лв.</Text>
+                      <Text style={styles.suggestionPrice}>{s.price.toFixed(2)} €</Text>
                       {info && (
                         <Text style={[styles.trendBadge, { color: TREND_COLOR[info.trend] }]}>
                           {TREND_ICON[info.trend]}
@@ -483,10 +483,10 @@ export default function HomeScreen({ navigation, route }) {
                         )}
                       </View>
                       {item.note ? <Text style={styles.itemNote} numberOfLines={1}>📝 {item.note}</Text> : null}
-                      <Text style={styles.itemMeta}>{item.price.toFixed(2)} лв. × {item.quantity}</Text>
+                      <Text style={styles.itemMeta}>{item.price.toFixed(2)} € × {item.quantity}</Text>
                     </View>
                     <View style={styles.itemRight}>
-                      <Text style={styles.itemSubtotal}>{item.subtotal.toFixed(2)} лв.</Text>
+                      <Text style={styles.itemSubtotal}>{item.subtotal.toFixed(2)} €</Text>
                       <View style={styles.itemQtyControls}>
                         <TouchableOpacity onPress={() => changeQty(item.id, -1)} hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}>
                           <Ionicons name="remove-circle-outline" size={19} color="#aaa" />
@@ -516,18 +516,18 @@ export default function HomeScreen({ navigation, route }) {
           <View style={[styles.summaryCard, remaining < 0 && styles.summaryCardOver]}>
             <View style={styles.summaryRow}>
               <Text style={styles.summaryLabel}>Обща сума</Text>
-              <Text style={styles.summaryValue}>{total.toFixed(2)} лв.</Text>
+              <Text style={styles.summaryValue}>{total.toFixed(2)} €</Text>
             </View>
             <View style={styles.summaryDivider} />
             <View style={styles.summaryRow}>
               <Text style={styles.summaryLabel}>Бюджет</Text>
-              <Text style={styles.summaryValue}>{budgetNum.toFixed(2)} лв.</Text>
+              <Text style={styles.summaryValue}>{budgetNum.toFixed(2)} €</Text>
             </View>
             <View style={styles.summaryDivider} />
             <View style={styles.summaryRow}>
               <Text style={styles.summaryLabel}>{remaining >= 0 ? 'Оставащо' : 'Над бюджета'}</Text>
               <Text style={[styles.summaryRemaining, { color: remaining >= 0 ? '#2ecc71' : '#e74c3c' }]}>
-                {remaining >= 0 ? '+' : ''}{remaining.toFixed(2)} лв.
+                {remaining >= 0 ? '+' : ''}{remaining.toFixed(2)} €
               </Text>
             </View>
           </View>
