@@ -17,8 +17,8 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Safety timeout — if Firebase doesn't respond in 5s, stop loading
-    const timeout = setTimeout(() => setLoading(false), 5000);
+    // Safety timeout — if Firebase doesn't respond in 10s, stop loading
+    const timeout = setTimeout(() => setLoading(false), 10000);
 
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
       clearTimeout(timeout);
