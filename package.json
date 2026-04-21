@@ -6,7 +6,10 @@
     "start": "expo start",
     "android": "expo start --android",
     "ios": "expo start --ios",
-    "web": "expo start --web"
+    "web": "expo start --web",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
@@ -37,7 +40,11 @@
   },
   "private": true,
   "devDependencies": {
+    "@testing-library/jest-native": "^5.4.3",
+    "@testing-library/react-native": "^13.3.3",
     "babel-preset-expo": "~54.0.10",
+    "jest": "^30.3.0",
+    "jest-expo": "^55.0.16",
     "sharp": "^0.34.5"
   }
 }
