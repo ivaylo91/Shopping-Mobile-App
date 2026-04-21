@@ -33,7 +33,7 @@ export default function ProductDetailScreen({ route, navigation }) {
 
       <View style={styles.body}>
         <Text style={styles.name}>{product.name}</Text>
-        <Text style={styles.price}>${product.price?.toFixed(2)}</Text>
+        <Text style={styles.price}>{product.price?.toFixed(2)} €</Text>
 
         {product.description ? (
           <Text style={styles.description}>{product.description}</Text>
