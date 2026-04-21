@@ -1,17 +1,21 @@
 import { useEffect } from 'react';
 import * as Notifications from 'expo-notifications';
 
-Notifications.setNotificationHandler({
+const HANDLER = {
   handleNotification: async () => ({
     shouldShowAlert: true,
     shouldPlaySound: true,
     shouldSetBadge: false,
   }),
-});
+};
 
 export async function requestNotificationPermission() {
-  const { status } = await Notifications.requestPermissionsAsync();
-  return status === 'granted';
+  try {
+    const { status } = await Notifications.requestPermissionsAsync();
+    return status === 'granted';
+  } catch {
+    return false;
+  }
 }
 
 export async function sendOverBudgetAlert(listName, overBy) {
@@ -24,9 +28,7 @@ export async function sendOverBudgetAlert(listName, overBy) {
       },
       trigger: null,
     });
-  } catch {
-    // Notifications may not be available in Expo Go without config
-  }
+  } catch {}
 }
 
 export async function sendListSavedNotification(listName, total) {
@@ -43,6 +45,9 @@ export async function sendListSavedNotification(listName, total) {
 
 export function useNotificationPermission() {
   useEffect(() => {
+    try {
+      Notifications.setNotificationHandler(HANDLER);
+    } catch {}
     requestNotificationPermission();
   }, []);
 }
