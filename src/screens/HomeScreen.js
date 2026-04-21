@@ -8,6 +8,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
+import { useTheme } from '../context/ThemeContext';
 import { useBudgetLists } from '../hooks/useBudgetLists';
 import { useTemplates } from '../hooks/useTemplates';
 import { useCustomStores } from '../hooks/useCustomStores';
@@ -16,6 +17,7 @@ import { usePriceHistory } from '../hooks/usePriceHistory';
 import { useFavoriteStores } from '../hooks/useFavoriteStores';
 import { useNotificationPermission } from '../hooks/useNotifications';
 import AnimatedPressable from '../components/AnimatedPressable';
+import { uid } from '../utils/uid';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -38,8 +40,47 @@ export function getCategoryEmoji(id) {
 const TREND_ICON = { up: '↑', down: '↓', same: '→', new: '★' };
 const TREND_COLOR = { up: '#e74c3c', down: '#2ecc71', same: '#aaa', new: '#6C63FF' };
 
-function uid() {
-  return Date.now().toString(36) + Math.random().toString(36).slice(2);
+// ─── Budget Progress Ring ─────────────────────────────────────────────────────
+
+function BudgetRing({ total, budget, colors }) {
+  if (!budget || budget <= 0) return null;
+  const pct = Math.min(total / budget, 1);
+  const size = 72;
+  const strokeW = 6;
+  const r = (size - strokeW) / 2;
+  const circ = 2 * Math.PI * r;
+  const dash = circ * pct;
+  const isOver = total > budget;
+  const ringColor = isOver ? colors.red : pct > 0.8 ? colors.orange : colors.green;
+
+  return (
+    <View style={{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }}>
+      {/* Background ring */}
+      <View style={{
+        position: 'absolute', width: size, height: size,
+        borderRadius: size / 2, borderWidth: strokeW, borderColor: colors.border,
+      }} />
+      {/* Progress arc via rotation trick */}
+      <View style={{
+        position: 'absolute', width: size, height: size,
+        borderRadius: size / 2, borderWidth: strokeW,
+        borderColor: 'transparent',
+        borderTopColor: ringColor,
+        borderRightColor: pct >= 0.25 ? ringColor : 'transparent',
+        borderBottomColor: pct >= 0.5 ? ringColor : 'transparent',
+        borderLeftColor: pct >= 0.75 ? ringColor : 'transparent',
+        transform: [{ rotate: '-90deg' }],
+      }} />
+      <View style={{ alignItems: 'center' }}>
+        <Text style={{ fontSize: 11, fontWeight: '800', color: ringColor }}>
+          {Math.round(pct * 100)}%
+        </Text>
+        <Text style={{ fontSize: 9, color: colors.textTertiary, fontWeight: '600' }}>
+          {isOver ? 'над' : 'изразх.'}
+        </Text>
+      </View>
+    </View>
+  );
 }
 
 // ─── Screen ───────────────────────────────────────────────────────────────────
@@ -47,6 +88,7 @@ function uid() {
 export default function HomeScreen({ navigation, route }) {
   const { logout, user } = useAuth();
   const { show: showToast } = useToast();
+  const { colors, isDark, toggleTheme } = useTheme();
   const { lists, saveList } = useBudgetLists();
   const { templates, saveTemplate, deleteTemplate } = useTemplates();
   const { stores, customs, addStore, removeStore } = useCustomStores();
@@ -55,14 +97,12 @@ export default function HomeScreen({ navigation, route }) {
   const { isFavorite, toggleFavorite, sortStores } = useFavoriteStores();
   useNotificationPermission();
 
-  // List fields
   const [listName, setListName] = useState('');
   const [budget, setBudget] = useState('');
   const [store, setStore] = useState('Всички');
   const [items, setItems] = useState([]);
   const [saving, setSaving] = useState(false);
 
-  // Add-item form
   const [itemName, setItemName] = useState('');
   const [itemPrice, setItemPrice] = useState('');
   const [itemQty, setItemQty] = useState(1);
@@ -71,14 +111,12 @@ export default function HomeScreen({ navigation, route }) {
   const [showNote, setShowNote] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
 
-  // Modals
   const [storeModalVisible, setStoreModalVisible] = useState(false);
   const [newStoreName, setNewStoreName] = useState('');
   const [templatesModalVisible, setTemplatesModalVisible] = useState(false);
   const [saveTemplateVisible, setSaveTemplateVisible] = useState(false);
   const [saveTemplateName, setSaveTemplateName] = useState('');
 
-  // Handle incoming scanned product / preloaded items from other screens
   useEffect(() => {
     if (route.params?.scannedProduct) {
       const { name, barcode } = route.params.scannedProduct;
@@ -97,18 +135,14 @@ export default function HomeScreen({ navigation, route }) {
   const budgetNum = parseFloat(budget) || 0;
   const remaining = budgetNum - total;
 
-  // Sorted stores with favorites first
   const sortedStores = useMemo(() => sortStores(stores), [stores, sortStores]);
 
-  // Product history suggestions
   const suggestions = useMemo(() => {
     const map = {};
     lists.forEach((list) => {
       (list.items || []).forEach((item) => {
         const key = item.name.toLowerCase();
-        if (!map[key]) {
-          map[key] = { name: item.name, price: item.price, category: item.category || 'other', count: 0 };
-        }
+        if (!map[key]) map[key] = { name: item.name, price: item.price, category: item.category || 'other', count: 0 };
         map[key].count++;
         map[key].price = item.price;
       });
@@ -121,7 +155,7 @@ export default function HomeScreen({ navigation, route }) {
     return suggestions.filter((s) => s.name.toLowerCase().includes(itemName.toLowerCase())).slice(0, 6);
   }, [suggestions, itemName]);
 
-  // ─── Item operations ─────────────────────────────────────────────────────────
+  // ─── Item operations ──────────────────────────────────────────────────────────
 
   const addItem = useCallback(() => {
     const name = itemName.trim();
@@ -179,8 +213,6 @@ export default function HomeScreen({ navigation, route }) {
     }
     Haptics.selectionAsync();
   }, [isRecurring, addRecurring, removeRecurring, showToast]);
-
-  // ─── Save / shop ──────────────────────────────────────────────────────────────
 
   const handleSave = async () => {
     if (!listName.trim()) { showToast('Въведете наименование', 'warning'); return; }
@@ -240,38 +272,50 @@ export default function HomeScreen({ navigation, route }) {
     else showToast('Магазинът вече съществува', 'warning');
   };
 
+  // ─── Dynamic styles ──────────────────────────────────────────────────────────
+
+  const s = makeStyles(colors, isDark);
+
   // ─── Render ───────────────────────────────────────────────────────────────────
 
   return (
-    <SafeAreaView style={styles.safe}>
-      <StatusBar barStyle="dark-content" />
-      <ScrollView style={styles.container} contentContainerStyle={styles.content}
+    <SafeAreaView style={s.safe}>
+      <ScrollView style={s.container} contentContainerStyle={s.content}
         keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
 
         {/* Header */}
-        <View style={styles.header}>
-          <View>
-            <Text style={styles.greeting}>Здравей, {user?.email?.split('@')[0]} 👋</Text>
-            <Text style={styles.title}>Нов бюджетен{'\n'}списък</Text>
+        <View style={s.header}>
+          <View style={{ flex: 1 }}>
+            <Text style={s.greeting}>Здравей, {user?.email?.split('@')[0]} 👋</Text>
+            <Text style={s.title}>Нов бюджетен{'\n'}списък</Text>
           </View>
-          <View style={styles.headerActions}>
-            <TouchableOpacity style={styles.iconBtn} onPress={() => navigation.navigate('StoreComparison')}>
-              <Ionicons name="stats-chart-outline" size={18} color="#6C63FF" />
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.logoutBtn} onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); logout(); }}>
-              <Ionicons name="log-out-outline" size={16} color="#666" />
-              <Text style={styles.logoutText}>Изход</Text>
-            </TouchableOpacity>
+          <View style={s.headerRight}>
+            {/* Budget ring shown when budget + items exist */}
+            {budgetNum > 0 && items.length > 0 && (
+              <BudgetRing total={total} budget={budgetNum} colors={colors} />
+            )}
+            <View style={s.headerActions}>
+              <TouchableOpacity style={s.iconBtn} onPress={() => navigation.navigate('StoreComparison')}>
+                <Ionicons name="stats-chart-outline" size={18} color={colors.primary} />
+              </TouchableOpacity>
+              <TouchableOpacity style={s.iconBtn} onPress={toggleTheme}>
+                <Ionicons name={isDark ? 'sunny-outline' : 'moon-outline'} size={18} color={colors.primary} />
+              </TouchableOpacity>
+              <TouchableOpacity style={s.logoutBtn} onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); logout(); }}>
+                <Ionicons name="log-out-outline" size={16} color={colors.textSecondary} />
+                <Text style={s.logoutText}>Изход</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
 
         {/* Recurring items */}
         {recurring.length > 0 && (
-          <View style={styles.section}>
-            <View style={styles.sectionRow}>
-              <Text style={styles.sectionLabel}>🔁 Постоянни продукти</Text>
+          <View style={s.section}>
+            <View style={s.sectionRow}>
+              <Text style={s.sectionLabel}>🔁 Постоянни продукти</Text>
               <TouchableOpacity onPress={addAllRecurring}>
-                <Text style={styles.sectionLink}>+ Добави всички</Text>
+                <Text style={s.sectionLink}>+ Добави всички</Text>
               </TouchableOpacity>
             </View>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
@@ -280,7 +324,7 @@ export default function HomeScreen({ navigation, route }) {
                 return (
                   <TouchableOpacity
                     key={r.id}
-                    style={[styles.recurringChip, alreadyAdded && styles.recurringChipDone]}
+                    style={[s.recurringChip, alreadyAdded && s.recurringChipDone]}
                     onPress={() => {
                       if (alreadyAdded) return;
                       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -292,12 +336,12 @@ export default function HomeScreen({ navigation, route }) {
                     onLongPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); removeRecurring(r.name); showToast(`"${r.name}" е премахнат`, 'info'); }}
                     activeOpacity={0.8}
                   >
-                    <Text style={styles.recurringEmoji}>{getCategoryEmoji(r.category)}</Text>
+                    <Text style={{ fontSize: 18 }}>{getCategoryEmoji(r.category)}</Text>
                     <View>
-                      <Text style={[styles.recurringName, alreadyAdded && styles.recurringNameDone]} numberOfLines={1}>{r.name}</Text>
-                      <Text style={styles.recurringPrice}>{r.price.toFixed(2)} €</Text>
+                      <Text style={[s.recurringName, alreadyAdded && s.recurringNameDone]} numberOfLines={1}>{r.name}</Text>
+                      <Text style={s.recurringPrice}>{r.price.toFixed(2)} €</Text>
                     </View>
-                    {alreadyAdded && <Ionicons name="checkmark-circle" size={14} color="#2ecc71" />}
+                    {alreadyAdded && <Ionicons name="checkmark-circle" size={14} color={colors.green} />}
                   </TouchableOpacity>
                 );
               })}
@@ -307,21 +351,21 @@ export default function HomeScreen({ navigation, route }) {
 
         {/* Templates */}
         {templates.length > 0 && (
-          <View style={styles.section}>
-            <View style={styles.sectionRow}>
-              <Text style={styles.sectionLabel}>Шаблони</Text>
+          <View style={s.section}>
+            <View style={s.sectionRow}>
+              <Text style={s.sectionLabel}>Шаблони</Text>
               <TouchableOpacity onPress={() => setTemplatesModalVisible(true)}>
-                <Text style={styles.sectionLink}>Всички ({templates.length})</Text>
+                <Text style={s.sectionLink}>Всички ({templates.length})</Text>
               </TouchableOpacity>
             </View>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10 }}>
               {templates.slice(0, 5).map((tpl) => (
-                <TouchableOpacity key={tpl.id} style={styles.tplChip} onPress={() => loadTemplate(tpl)}
+                <TouchableOpacity key={tpl.id} style={s.tplChip} onPress={() => loadTemplate(tpl)}
                   onLongPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); Alert.alert('Изтрий шаблон', `Изтрий "${tpl.name}"?`, [{ text: 'Отказ', style: 'cancel' }, { text: 'Изтрий', style: 'destructive', onPress: () => deleteTemplate(tpl.id) }]); }}
                   activeOpacity={0.8}>
-                  <Ionicons name="copy-outline" size={13} color="#6C63FF" />
-                  <Text style={styles.tplChipText} numberOfLines={1}>{tpl.name}</Text>
-                  <Text style={styles.tplChipCount}>{tpl.items.length} прод.</Text>
+                  <Ionicons name="copy-outline" size={13} color={colors.primary} />
+                  <Text style={s.tplChipText} numberOfLines={1}>{tpl.name}</Text>
+                  <Text style={s.tplChipCount}>{tpl.items.length} прод.</Text>
                 </TouchableOpacity>
               ))}
             </ScrollView>
@@ -329,43 +373,45 @@ export default function HomeScreen({ navigation, route }) {
         )}
 
         {/* List name */}
-        <View style={styles.section}>
-          <Text style={styles.sectionLabel}>Наименование</Text>
-          <View style={styles.inputCard}>
-            <Ionicons name="list-outline" size={20} color="#aaa" />
-            <TextInput style={styles.nameInput} placeholder="напр. Седмично пазаруване"
-              placeholderTextColor="#bbb" value={listName} onChangeText={setListName} returnKeyType="next" />
+        <View style={s.section}>
+          <Text style={s.sectionLabel}>Наименование</Text>
+          <View style={s.inputCard}>
+            <Ionicons name="list-outline" size={20} color={colors.textQuaternary} />
+            <TextInput style={s.nameInput} placeholder="напр. Седмично пазаруване"
+              placeholderTextColor={colors.textQuaternary} value={listName} onChangeText={setListName}
+              returnKeyType="next" keyboardAppearance={isDark ? 'dark' : 'light'} />
           </View>
         </View>
 
         {/* Budget */}
-        <View style={styles.section}>
-          <Text style={styles.sectionLabel}>Бюджет</Text>
-          <View style={styles.inputCard}>
-            <Text style={styles.currencySymbol}>€</Text>
-            <TextInput style={styles.budgetInput} placeholder="0.00" placeholderTextColor="#bbb"
-              value={budget} onChangeText={setBudget} keyboardType="decimal-pad" returnKeyType="done" />
+        <View style={s.section}>
+          <Text style={s.sectionLabel}>Бюджет</Text>
+          <View style={s.inputCard}>
+            <Text style={s.currencySymbol}>€</Text>
+            <TextInput style={s.budgetInput} placeholder="0.00" placeholderTextColor={colors.textQuaternary}
+              value={budget} onChangeText={setBudget} keyboardType="decimal-pad" returnKeyType="done"
+              keyboardAppearance={isDark ? 'dark' : 'light'} />
           </View>
         </View>
 
         {/* Store */}
-        <View style={styles.section}>
-          <View style={styles.sectionRow}>
-            <Text style={styles.sectionLabel}>Магазин</Text>
+        <View style={s.section}>
+          <View style={s.sectionRow}>
+            <Text style={s.sectionLabel}>Магазин</Text>
             <TouchableOpacity onPress={() => setStoreModalVisible(true)}>
-              <Text style={styles.sectionLink}>+ Управление</Text>
+              <Text style={s.sectionLink}>+ Управление</Text>
             </TouchableOpacity>
           </View>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.storeRow}>
-            {sortedStores.map((s) => {
-              const fav = isFavorite(s);
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.storeRow}>
+            {sortedStores.map((st) => {
+              const fav = isFavorite(st);
               return (
-                <TouchableOpacity key={s} style={[styles.storeChip, store === s && styles.storeChipActive]}
-                  onPress={() => { Haptics.selectionAsync(); setStore(s); }}
-                  onLongPress={() => { toggleFavorite(s); showToast(fav ? `"${s}" е премахнат от любими` : `"${s}" е добавен в любими`, 'info'); }}
+                <TouchableOpacity key={st} style={[s.storeChip, store === st && s.storeChipActive]}
+                  onPress={() => { Haptics.selectionAsync(); setStore(st); }}
+                  onLongPress={() => { toggleFavorite(st); showToast(fav ? `"${st}" е премахнат от любими` : `"${st}" е добавен в любими`, 'info'); }}
                   activeOpacity={0.8}>
-                  {fav && <Ionicons name="star" size={11} color={store === s ? '#FFD700' : '#6C63FF'} />}
-                  <Text style={[styles.storeLabel, store === s && styles.storeLabelActive]}>{s}</Text>
+                  {fav && <Ionicons name="star" size={11} color={store === st ? '#FFD700' : colors.primary} />}
+                  <Text style={[s.storeLabel, store === st && s.storeLabelActive]}>{st}</Text>
                 </TouchableOpacity>
               );
             })}
@@ -373,44 +419,46 @@ export default function HomeScreen({ navigation, route }) {
         </View>
 
         {/* Add Product */}
-        <View style={styles.section}>
-          <Text style={styles.sectionLabel}>Добави продукт</Text>
-          <View style={styles.addCard}>
-            <View style={styles.addRow}>
-              <View style={[styles.inputCard, { flex: 1, marginRight: 8 }]}>
-                <Ionicons name="cart-outline" size={18} color="#aaa" />
-                <TextInput style={styles.addNameInput} placeholder="Продукт" placeholderTextColor="#bbb"
+        <View style={s.section}>
+          <Text style={s.sectionLabel}>Добави продукт</Text>
+          <View style={s.addCard}>
+            <View style={s.addRow}>
+              <View style={[s.inputCard, { flex: 1, marginRight: 8 }]}>
+                <Ionicons name="cart-outline" size={18} color={colors.textQuaternary} />
+                <TextInput style={s.addNameInput} placeholder="Продукт" placeholderTextColor={colors.textQuaternary}
                   value={itemName} onChangeText={(v) => { setItemName(v); setShowSuggestions(true); }}
-                  onFocus={() => setShowSuggestions(true)} returnKeyType="next" />
+                  onFocus={() => setShowSuggestions(true)} returnKeyType="next"
+                  keyboardAppearance={isDark ? 'dark' : 'light'} />
                 {itemName.length > 0 && (
                   <TouchableOpacity onPress={() => { setItemName(''); setShowSuggestions(false); }}>
-                    <Ionicons name="close-circle" size={16} color="#ccc" />
+                    <Ionicons name="close-circle" size={16} color={colors.textQuaternary} />
                   </TouchableOpacity>
                 )}
               </View>
-              <TouchableOpacity style={styles.cameraBtn} onPress={() => navigation.navigate('BarcodeScanner')}>
-                <Ionicons name="barcode-outline" size={22} color="#6C63FF" />
+              <TouchableOpacity style={s.cameraBtn} onPress={() => navigation.navigate('BarcodeScanner')}>
+                <Ionicons name="barcode-outline" size={22} color={colors.primary} />
               </TouchableOpacity>
-              <View style={[styles.inputCard, { width: 100 }]}>
-                <Text style={styles.pricePre}>€</Text>
-                <TextInput style={styles.priceInput} placeholder="0.00" placeholderTextColor="#bbb"
+              <View style={[s.inputCard, { width: 100 }]}>
+                <Text style={s.pricePre}>€</Text>
+                <TextInput style={s.priceInput} placeholder="0.00" placeholderTextColor={colors.textQuaternary}
                   value={itemPrice} onChangeText={setItemPrice} keyboardType="decimal-pad"
-                  returnKeyType="done" onFocus={() => setShowSuggestions(false)} />
+                  returnKeyType="done" onFocus={() => setShowSuggestions(false)}
+                  keyboardAppearance={isDark ? 'dark' : 'light'} />
               </View>
             </View>
 
             {/* Autocomplete */}
             {showSuggestions && filteredSuggestions.length > 0 && (
-              <View style={styles.suggestionsBox}>
-                {filteredSuggestions.map((s) => {
-                  const info = getPriceInfo(s.name);
+              <View style={s.suggestionsBox}>
+                {filteredSuggestions.map((sg) => {
+                  const info = getPriceInfo(sg.name);
                   return (
-                    <TouchableOpacity key={s.name} style={styles.suggestionRow} onPress={() => applySuggestion(s)} activeOpacity={0.7}>
-                      <Text style={styles.suggestionEmoji}>{getCategoryEmoji(s.category)}</Text>
-                      <Text style={styles.suggestionName}>{s.name}</Text>
-                      <Text style={styles.suggestionPrice}>{s.price.toFixed(2)} €</Text>
+                    <TouchableOpacity key={sg.name} style={s.suggestionRow} onPress={() => applySuggestion(sg)} activeOpacity={0.7}>
+                      <Text style={{ fontSize: 16 }}>{getCategoryEmoji(sg.category)}</Text>
+                      <Text style={s.suggestionName}>{sg.name}</Text>
+                      <Text style={s.suggestionPrice}>{sg.price.toFixed(2)} €</Text>
                       {info && (
-                        <Text style={[styles.trendBadge, { color: TREND_COLOR[info.trend] }]}>
+                        <Text style={[s.trendBadge, { color: TREND_COLOR[info.trend] }]}>
                           {TREND_ICON[info.trend]}
                         </Text>
                       )}
@@ -421,43 +469,43 @@ export default function HomeScreen({ navigation, route }) {
             )}
 
             {/* Category */}
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.catRow}>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.catRow}>
               {CATEGORIES.map((cat) => (
-                <TouchableOpacity key={cat.id} style={[styles.catChip, itemCategory === cat.id && styles.catChipActive]}
+                <TouchableOpacity key={cat.id} style={[s.catChip, itemCategory === cat.id && s.catChipActive]}
                   onPress={() => { Haptics.selectionAsync(); setItemCategory(cat.id); }} activeOpacity={0.8}>
-                  <Text style={styles.catEmoji}>{cat.emoji}</Text>
-                  <Text style={[styles.catLabel, itemCategory === cat.id && styles.catLabelActive]}>{cat.label}</Text>
+                  <Text style={{ fontSize: 14 }}>{cat.emoji}</Text>
+                  <Text style={[s.catLabel, itemCategory === cat.id && s.catLabelActive]}>{cat.label}</Text>
                 </TouchableOpacity>
               ))}
             </ScrollView>
 
             {/* Qty + note + add */}
-            <View style={styles.addFooter}>
-              <View style={styles.qtyRow}>
-                <TouchableOpacity style={styles.qtyBtn} onPress={() => { Haptics.selectionAsync(); setItemQty((q) => Math.max(1, q - 1)); }}>
-                  <Ionicons name="remove" size={16} color="#6C63FF" />
+            <View style={s.addFooter}>
+              <View style={s.qtyRow}>
+                <TouchableOpacity style={s.qtyBtn} onPress={() => { Haptics.selectionAsync(); setItemQty((q) => Math.max(1, q - 1)); }}>
+                  <Ionicons name="remove" size={16} color={colors.primary} />
                 </TouchableOpacity>
-                <Text style={styles.qtyValue}>{itemQty}</Text>
-                <TouchableOpacity style={styles.qtyBtn} onPress={() => { Haptics.selectionAsync(); setItemQty((q) => q + 1); }}>
-                  <Ionicons name="add" size={16} color="#6C63FF" />
+                <Text style={s.qtyValue}>{itemQty}</Text>
+                <TouchableOpacity style={s.qtyBtn} onPress={() => { Haptics.selectionAsync(); setItemQty((q) => q + 1); }}>
+                  <Ionicons name="add" size={16} color={colors.primary} />
                 </TouchableOpacity>
               </View>
-              <TouchableOpacity style={styles.noteToggle} onPress={() => { Haptics.selectionAsync(); setShowNote((v) => !v); }}>
-                <Ionicons name={showNote ? 'chatbubble' : 'chatbubble-outline'} size={14} color={showNote ? '#6C63FF' : '#aaa'} />
-                <Text style={[styles.noteToggleText, showNote && { color: '#6C63FF' }]}>Бележка</Text>
+              <TouchableOpacity style={s.noteToggle} onPress={() => { Haptics.selectionAsync(); setShowNote((v) => !v); }}>
+                <Ionicons name={showNote ? 'chatbubble' : 'chatbubble-outline'} size={14} color={showNote ? colors.primary : colors.textQuaternary} />
+                <Text style={[s.noteToggleText, showNote && { color: colors.primary }]}>Бележка</Text>
               </TouchableOpacity>
-              <AnimatedPressable style={styles.addBtn} onPress={addItem}>
+              <AnimatedPressable style={s.addBtn} onPress={addItem}>
                 <Ionicons name="add-circle" size={17} color="#fff" />
-                <Text style={styles.addBtnText}>Добави</Text>
+                <Text style={s.addBtnText}>Добави</Text>
               </AnimatedPressable>
             </View>
 
             {showNote && (
-              <View style={styles.noteInputWrap}>
-                <Ionicons name="pencil-outline" size={14} color="#aaa" />
-                <TextInput style={styles.noteInput} placeholder="напр. само ако е намалено"
-                  placeholderTextColor="#ccc" value={itemNote} onChangeText={setItemNote}
-                  returnKeyType="done" multiline />
+              <View style={s.noteInputWrap}>
+                <Ionicons name="pencil-outline" size={14} color={colors.textQuaternary} />
+                <TextInput style={s.noteInput} placeholder="напр. само ако е намалено"
+                  placeholderTextColor={colors.textQuaternary} value={itemNote} onChangeText={setItemNote}
+                  returnKeyType="done" multiline keyboardAppearance={isDark ? 'dark' : 'light'} />
               </View>
             )}
           </View>
@@ -465,51 +513,50 @@ export default function HomeScreen({ navigation, route }) {
 
         {/* Items list */}
         {items.length > 0 && (
-          <View style={styles.section}>
-            <View style={styles.sectionRow}>
-              <Text style={styles.sectionLabel}>{items.length} продукта</Text>
+          <View style={s.section}>
+            <View style={s.sectionRow}>
+              <Text style={s.sectionLabel}>{items.length} продукта</Text>
               <TouchableOpacity onPress={handleSaveTemplate}>
-                <Text style={styles.sectionLink}>💾 Запази като шаблон</Text>
+                <Text style={s.sectionLink}>💾 Запази като шаблон</Text>
               </TouchableOpacity>
             </View>
-            <View style={styles.itemsList}>
+            <View style={s.itemsList}>
               {items.map((item, idx) => {
                 const info = getPriceInfo(item.name);
                 return (
-                  <View key={item.id} style={[styles.itemRow, idx < items.length - 1 && styles.itemRowBorder]}>
-                    <View style={styles.itemIconWrap}>
+                  <View key={item.id} style={[s.itemRow, idx < items.length - 1 && s.itemRowBorder]}>
+                    <View style={s.itemIconWrap}>
                       <Text style={{ fontSize: 18 }}>{getCategoryEmoji(item.category)}</Text>
                     </View>
-                    <View style={styles.itemInfo}>
-                      <View style={styles.itemNameRow}>
-                        <Text style={styles.itemName} numberOfLines={1}>{item.name}</Text>
+                    <View style={s.itemInfo}>
+                      <View style={s.itemNameRow}>
+                        <Text style={s.itemName} numberOfLines={1}>{item.name}</Text>
                         {info && (
-                          <Text style={[styles.trendBadge, { color: TREND_COLOR[info.trend] }]}>
+                          <Text style={[s.trendBadge, { color: TREND_COLOR[info.trend] }]}>
                             {TREND_ICON[info.trend]} {info.trend === 'down' ? 'Намалено' : info.trend === 'up' ? 'Поскъпнало' : ''}
                           </Text>
                         )}
                       </View>
-                      {item.note ? <Text style={styles.itemNote} numberOfLines={1}>📝 {item.note}</Text> : null}
-                      <Text style={styles.itemMeta}>{item.price.toFixed(2)} € × {item.quantity}</Text>
+                      {item.note ? <Text style={s.itemNote} numberOfLines={1}>📝 {item.note}</Text> : null}
+                      <Text style={s.itemMeta}>{item.price.toFixed(2)} € × {item.quantity}</Text>
                     </View>
-                    <View style={styles.itemRight}>
-                      <Text style={styles.itemSubtotal}>{item.subtotal.toFixed(2)} €</Text>
-                      <View style={styles.itemQtyControls}>
+                    <View style={s.itemRight}>
+                      <Text style={s.itemSubtotal}>{item.subtotal.toFixed(2)} €</Text>
+                      <View style={s.itemQtyControls}>
                         <TouchableOpacity onPress={() => changeQty(item.id, -1)} hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}>
-                          <Ionicons name="remove-circle-outline" size={19} color="#aaa" />
+                          <Ionicons name="remove-circle-outline" size={19} color={colors.textQuaternary} />
                         </TouchableOpacity>
-                        <Text style={styles.itemQtyNum}>{item.quantity}</Text>
+                        <Text style={s.itemQtyNum}>{item.quantity}</Text>
                         <TouchableOpacity onPress={() => changeQty(item.id, 1)} hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}>
-                          <Ionicons name="add-circle-outline" size={19} color="#aaa" />
+                          <Ionicons name="add-circle-outline" size={19} color={colors.textQuaternary} />
                         </TouchableOpacity>
                       </View>
                     </View>
-                    {/* Recurring toggle */}
                     <TouchableOpacity onPress={() => toggleItemRecurring(item)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-                      <Ionicons name={isRecurring(item.name) ? 'repeat' : 'repeat-outline'} size={18} color={isRecurring(item.name) ? '#6C63FF' : '#ccc'} />
+                      <Ionicons name={isRecurring(item.name) ? 'repeat' : 'repeat-outline'} size={18} color={isRecurring(item.name) ? colors.primary : colors.borderLight} />
                     </TouchableOpacity>
-                    <TouchableOpacity style={styles.deleteBtn} onPress={() => removeItem(item.id)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-                      <Ionicons name="close-circle" size={21} color="#e74c3c" />
+                    <TouchableOpacity style={{ padding: 2 }} onPress={() => removeItem(item.id)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                      <Ionicons name="close-circle" size={21} color={colors.red} />
                     </TouchableOpacity>
                   </View>
                 );
@@ -520,20 +567,20 @@ export default function HomeScreen({ navigation, route }) {
 
         {/* Budget summary */}
         {items.length > 0 && (
-          <View style={[styles.summaryCard, remaining < 0 && styles.summaryCardOver]}>
-            <View style={styles.summaryRow}>
-              <Text style={styles.summaryLabel}>Обща сума</Text>
-              <Text style={styles.summaryValue}>{total.toFixed(2)} €</Text>
+          <View style={[s.summaryCard, remaining < 0 && s.summaryCardOver]}>
+            <View style={s.summaryRow}>
+              <Text style={s.summaryLabel}>Обща сума</Text>
+              <Text style={s.summaryValue}>{total.toFixed(2)} €</Text>
             </View>
-            <View style={styles.summaryDivider} />
-            <View style={styles.summaryRow}>
-              <Text style={styles.summaryLabel}>Бюджет</Text>
-              <Text style={styles.summaryValue}>{budgetNum.toFixed(2)} €</Text>
+            <View style={s.summaryDivider} />
+            <View style={s.summaryRow}>
+              <Text style={s.summaryLabel}>Бюджет</Text>
+              <Text style={s.summaryValue}>{budgetNum.toFixed(2)} €</Text>
             </View>
-            <View style={styles.summaryDivider} />
-            <View style={styles.summaryRow}>
-              <Text style={styles.summaryLabel}>{remaining >= 0 ? 'Оставащо' : 'Над бюджета'}</Text>
-              <Text style={[styles.summaryRemaining, { color: remaining >= 0 ? '#2ecc71' : '#e74c3c' }]}>
+            <View style={s.summaryDivider} />
+            <View style={s.summaryRow}>
+              <Text style={s.summaryLabel}>{remaining >= 0 ? 'Оставащо' : 'Над бюджета'}</Text>
+              <Text style={[s.summaryRemaining, { color: remaining >= 0 ? colors.green : colors.red }]}>
                 {remaining >= 0 ? '+' : ''}{remaining.toFixed(2)} €
               </Text>
             </View>
@@ -541,15 +588,15 @@ export default function HomeScreen({ navigation, route }) {
         )}
 
         {/* Actions */}
-        <View style={styles.actionRow}>
-          <AnimatedPressable style={[styles.shopBtn, items.length === 0 && styles.btnDisabled]}
+        <View style={s.actionRow}>
+          <AnimatedPressable style={[s.shopBtn, items.length === 0 && s.btnDisabled]}
             onPress={handleStartShopping} disabled={items.length === 0}>
-            <Ionicons name="cart-outline" size={18} color="#6C63FF" />
-            <Text style={styles.shopBtnText}>Пазарувай</Text>
+            <Ionicons name="cart-outline" size={18} color={colors.primary} />
+            <Text style={s.shopBtnText}>Пазарувай</Text>
           </AnimatedPressable>
-          <AnimatedPressable style={[styles.saveBtn, saving && styles.btnDisabled]} onPress={handleSave} disabled={saving}>
+          <AnimatedPressable style={[s.saveBtn, saving && s.btnDisabled]} onPress={handleSave} disabled={saving}>
             {saving ? <ActivityIndicator color="#fff" size="small" />
-              : <><Ionicons name="bookmark-outline" size={18} color="#fff" /><Text style={styles.saveBtnText}>Запази</Text></>}
+              : <><Ionicons name="bookmark-outline" size={18} color="#fff" /><Text style={s.saveBtnText}>Запази</Text></>}
           </AnimatedPressable>
         </View>
 
@@ -557,60 +604,62 @@ export default function HomeScreen({ navigation, route }) {
 
       {/* Store modal */}
       <Modal visible={storeModalVisible} animationType="slide" transparent>
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalSheet}>
-            <Text style={styles.modalTitle}>Управление на магазини</Text>
-            <Text style={styles.modalSub}>Задръжте за ⭐ любими · Дълго натискане = изтриване</Text>
-            <View style={styles.storeAddRow}>
-              <TextInput style={styles.storeAddInput} placeholder="Нов магазин..." placeholderTextColor="#bbb"
-                value={newStoreName} onChangeText={setNewStoreName} returnKeyType="done" onSubmitEditing={handleAddStore} />
-              <TouchableOpacity style={styles.storeAddBtn} onPress={handleAddStore}>
+        <View style={s.modalOverlay}>
+          <View style={s.modalSheet}>
+            <Text style={s.modalTitle}>Управление на магазини</Text>
+            <Text style={s.modalSub}>Задръжте за ⭐ любими · Дълго натискане = изтриване</Text>
+            <View style={s.storeAddRow}>
+              <TextInput style={s.storeAddInput} placeholder="Нов магазин..." placeholderTextColor={colors.textQuaternary}
+                value={newStoreName} onChangeText={setNewStoreName} returnKeyType="done"
+                onSubmitEditing={handleAddStore} keyboardAppearance={isDark ? 'dark' : 'light'} />
+              <TouchableOpacity style={s.storeAddBtn} onPress={handleAddStore}>
                 <Ionicons name="add" size={20} color="#fff" />
               </TouchableOpacity>
             </View>
             <ScrollView style={{ maxHeight: 220 }} contentContainerStyle={{ gap: 8 }}>
-              {sortedStores.map((s) => (
-                <View key={s} style={styles.storeManageRow}>
-                  <TouchableOpacity onPress={() => toggleFavorite(s)} hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}>
-                    <Ionicons name={isFavorite(s) ? 'star' : 'star-outline'} size={18} color={isFavorite(s) ? '#FFD700' : '#ccc'} />
+              {sortedStores.map((st) => (
+                <View key={st} style={s.storeManageRow}>
+                  <TouchableOpacity onPress={() => toggleFavorite(st)} hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}>
+                    <Ionicons name={isFavorite(st) ? 'star' : 'star-outline'} size={18} color={isFavorite(st) ? '#FFD700' : colors.borderLight} />
                   </TouchableOpacity>
-                  <Text style={styles.storeManageName}>{s}</Text>
-                  {customs.includes(s) && (
-                    <TouchableOpacity onPress={() => { removeStore(s); if (store === s) setStore('Всички'); }}>
-                      <Ionicons name="trash-outline" size={18} color="#e74c3c" />
+                  <Text style={s.storeManageName}>{st}</Text>
+                  {customs.includes(st) && (
+                    <TouchableOpacity onPress={() => { removeStore(st); if (store === st) setStore('Всички'); }}>
+                      <Ionicons name="trash-outline" size={18} color={colors.red} />
                     </TouchableOpacity>
                   )}
                 </View>
               ))}
             </ScrollView>
-            <TouchableOpacity style={styles.modalClose} onPress={() => setStoreModalVisible(false)}>
-              <Text style={styles.modalCloseText}>Затвори</Text>
+            <TouchableOpacity style={s.modalClose} onPress={() => setStoreModalVisible(false)}>
+              <Text style={s.modalCloseText}>Затвори</Text>
             </TouchableOpacity>
           </View>
         </View>
       </Modal>
 
-      {/* Save-as-template modal (cross-platform replacement for Alert.prompt) */}
+      {/* Save-as-template modal */}
       <Modal visible={saveTemplateVisible} animationType="fade" transparent>
-        <View style={styles.modalOverlay}>
-          <View style={[styles.modalSheet, { paddingBottom: 20 }]}>
-            <Text style={styles.modalTitle}>Запази като шаблон</Text>
+        <View style={s.modalOverlay}>
+          <View style={[s.modalSheet, { paddingBottom: 20 }]}>
+            <Text style={s.modalTitle}>Запази като шаблон</Text>
             <TextInput
-              style={styles.templateNameInput}
+              style={s.templateNameInput}
               placeholder="Наименование на шаблона"
-              placeholderTextColor="#bbb"
+              placeholderTextColor={colors.textQuaternary}
               value={saveTemplateName}
               onChangeText={setSaveTemplateName}
               autoFocus
               returnKeyType="done"
               onSubmitEditing={confirmSaveTemplate}
+              keyboardAppearance={isDark ? 'dark' : 'light'}
             />
-            <View style={styles.templateModalBtns}>
-              <TouchableOpacity style={styles.templateCancelBtn} onPress={() => setSaveTemplateVisible(false)}>
-                <Text style={styles.templateCancelText}>Отказ</Text>
+            <View style={s.templateModalBtns}>
+              <TouchableOpacity style={s.templateCancelBtn} onPress={() => setSaveTemplateVisible(false)}>
+                <Text style={s.templateCancelText}>Отказ</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={styles.templateConfirmBtn} onPress={confirmSaveTemplate}>
-                <Text style={styles.templateConfirmText}>Запази</Text>
+              <TouchableOpacity style={s.templateConfirmBtn} onPress={confirmSaveTemplate}>
+                <Text style={s.templateConfirmText}>Запази</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -619,30 +668,30 @@ export default function HomeScreen({ navigation, route }) {
 
       {/* Templates modal */}
       <Modal visible={templatesModalVisible} animationType="slide" transparent>
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalSheet}>
-            <Text style={styles.modalTitle}>Шаблони</Text>
-            <Text style={styles.modalSub}>Натиснете за зареждане · Задръжте за изтриване</Text>
+        <View style={s.modalOverlay}>
+          <View style={s.modalSheet}>
+            <Text style={s.modalTitle}>Шаблони</Text>
+            <Text style={s.modalSub}>Натиснете за зареждане · Задръжте за изтриване</Text>
             <FlatList data={templates} keyExtractor={(t) => t.id} style={{ maxHeight: 340 }} contentContainerStyle={{ gap: 10 }}
               renderItem={({ item: tpl }) => (
-                <TouchableOpacity style={styles.tplCard} onPress={() => loadTemplate(tpl)}
+                <TouchableOpacity style={s.tplCard} onPress={() => loadTemplate(tpl)}
                   onLongPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); Alert.alert('Изтрий шаблон', `Изтрий "${tpl.name}"?`, [{ text: 'Отказ', style: 'cancel' }, { text: 'Изтрий', style: 'destructive', onPress: () => deleteTemplate(tpl.id) }]); }}
                   activeOpacity={0.8}>
-                  <View style={styles.tplCardHeader}>
-                    <Text style={styles.tplCardName}>{tpl.name}</Text>
+                  <View style={s.tplCardHeader}>
+                    <Text style={s.tplCardName}>{tpl.name}</Text>
                     {tpl.store && tpl.store !== 'Всички' && (
-                      <View style={styles.tplStoreBadge}><Text style={styles.tplStoreBadgeText}>{tpl.store}</Text></View>
+                      <View style={s.tplStoreBadge}><Text style={s.tplStoreBadgeText}>{tpl.store}</Text></View>
                     )}
                   </View>
-                  <Text style={styles.tplCardItems}>
+                  <Text style={s.tplCardItems}>
                     {tpl.items.map((i) => `${getCategoryEmoji(i.category)} ${i.name}`).slice(0, 4).join('  ')}
                     {tpl.items.length > 4 ? `  +${tpl.items.length - 4}` : ''}
                   </Text>
                 </TouchableOpacity>
               )}
             />
-            <TouchableOpacity style={styles.modalClose} onPress={() => setTemplatesModalVisible(false)}>
-              <Text style={styles.modalCloseText}>Затвори</Text>
+            <TouchableOpacity style={s.modalClose} onPress={() => setTemplatesModalVisible(false)}>
+              <Text style={s.modalCloseText}>Затвори</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -652,136 +701,139 @@ export default function HomeScreen({ navigation, route }) {
   );
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#F7F8FC' },
-  container: { flex: 1 },
-  content: { padding: 22, paddingBottom: 48 },
+// ─── Styles factory ───────────────────────────────────────────────────────────
 
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 22, marginTop: 6 },
-  greeting: { fontSize: 13, color: '#999', marginBottom: 4 },
-  title: { fontSize: 28, fontWeight: '800', color: '#1A1A2E', lineHeight: 34 },
-  headerActions: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 4 },
-  iconBtn: { width: 38, height: 38, borderRadius: 12, backgroundColor: '#F0EEFF', justifyContent: 'center', alignItems: 'center' },
-  logoutBtn: { flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: '#eee', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 20 },
-  logoutText: { color: '#666', fontSize: 13, fontWeight: '600' },
+function makeStyles(c, isDark) {
+  return StyleSheet.create({
+    safe: { flex: 1, backgroundColor: c.bg },
+    container: { flex: 1 },
+    content: { padding: 22, paddingBottom: 48 },
 
-  section: { marginBottom: 20 },
-  sectionRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
-  sectionLabel: { fontSize: 11, fontWeight: '700', color: '#999', letterSpacing: 1, textTransform: 'uppercase' },
-  sectionLink: { fontSize: 12, fontWeight: '700', color: '#6C63FF' },
+    header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 22, marginTop: 6 },
+    greeting: { fontSize: 13, color: c.textTertiary, marginBottom: 4 },
+    title: { fontSize: 28, fontWeight: '800', color: c.text, lineHeight: 34 },
+    headerRight: { alignItems: 'flex-end', gap: 8 },
+    headerActions: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+    iconBtn: { width: 38, height: 38, borderRadius: 12, backgroundColor: c.primaryLight, justifyContent: 'center', alignItems: 'center' },
+    logoutBtn: { flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: c.cardAlt, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 20 },
+    logoutText: { color: c.textSecondary, fontSize: 13, fontWeight: '600' },
 
-  recurringChip: {
-    flexDirection: 'row', alignItems: 'center', gap: 8,
-    backgroundColor: '#fff', borderRadius: 14, padding: 10,
-    borderWidth: 1.5, borderColor: '#eee', minWidth: 110,
-  },
-  recurringChipDone: { borderColor: '#2ecc71', backgroundColor: '#F0FFF4' },
-  recurringEmoji: { fontSize: 20 },
-  recurringName: { fontSize: 13, fontWeight: '700', color: '#1A1A2E', maxWidth: 100 },
-  recurringNameDone: { color: '#2ecc71' },
-  recurringPrice: { fontSize: 11, color: '#aaa', marginTop: 1 },
+    section: { marginBottom: 20 },
+    sectionRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
+    sectionLabel: { fontSize: 11, fontWeight: '700', color: c.textTertiary, letterSpacing: 1, textTransform: 'uppercase' },
+    sectionLink: { fontSize: 12, fontWeight: '700', color: c.primary },
 
-  tplChip: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: '#F0EEFF', borderRadius: 20, paddingHorizontal: 14, paddingVertical: 8, borderWidth: 1, borderColor: '#E0DCFF' },
-  tplChipText: { fontSize: 13, fontWeight: '700', color: '#6C63FF', maxWidth: 110 },
-  tplChipCount: { fontSize: 11, color: '#9B96D4' },
+    recurringChip: {
+      flexDirection: 'row', alignItems: 'center', gap: 8,
+      backgroundColor: c.card, borderRadius: 14, padding: 10,
+      borderWidth: 1.5, borderColor: c.border, minWidth: 110,
+    },
+    recurringChipDone: { borderColor: c.green, backgroundColor: c.greenLight },
+    recurringName: { fontSize: 13, fontWeight: '700', color: c.text, maxWidth: 100 },
+    recurringNameDone: { color: c.green },
+    recurringPrice: { fontSize: 11, color: c.textTertiary, marginTop: 1 },
 
-  inputCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', borderRadius: 14, paddingHorizontal: 14, paddingVertical: 4, gap: 10, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 6, elevation: 2 },
-  nameInput: { flex: 1, fontSize: 16, color: '#1A1A2E', paddingVertical: 14 },
-  currencySymbol: { fontSize: 18, fontWeight: '700', color: '#6C63FF' },
-  budgetInput: { flex: 1, fontSize: 28, fontWeight: '700', color: '#1A1A2E', paddingVertical: 12 },
+    tplChip: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: c.primaryLight, borderRadius: 20, paddingHorizontal: 14, paddingVertical: 8, borderWidth: 1, borderColor: isDark ? c.border : '#E0DCFF' },
+    tplChipText: { fontSize: 13, fontWeight: '700', color: c.primary, maxWidth: 110 },
+    tplChipCount: { fontSize: 11, color: c.primaryMuted },
 
-  storeRow: { gap: 8, paddingRight: 4 },
-  storeChip: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 16, paddingVertical: 10, borderRadius: 24, backgroundColor: '#fff', borderWidth: 2, borderColor: '#eee' },
-  storeChipActive: { backgroundColor: '#6C63FF', borderColor: '#6C63FF' },
-  storeLabel: { fontSize: 14, fontWeight: '600', color: '#555' },
-  storeLabelActive: { color: '#fff' },
+    inputCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: c.card, borderRadius: 14, paddingHorizontal: 14, paddingVertical: 4, gap: 10, shadowColor: '#000', shadowOpacity: isDark ? 0.3 : 0.05, shadowRadius: 6, elevation: 2 },
+    nameInput: { flex: 1, fontSize: 16, color: c.text, paddingVertical: 14 },
+    currencySymbol: { fontSize: 18, fontWeight: '700', color: c.primary },
+    budgetInput: { flex: 1, fontSize: 28, fontWeight: '700', color: c.text, paddingVertical: 12 },
 
-  addCard: { backgroundColor: '#fff', borderRadius: 16, padding: 14, gap: 12, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 8, elevation: 2 },
-  addRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  addNameInput: { flex: 1, fontSize: 15, color: '#1A1A2E', paddingVertical: 12 },
-  cameraBtn: { width: 46, height: 46, borderRadius: 14, backgroundColor: '#F0EEFF', justifyContent: 'center', alignItems: 'center' },
-  pricePre: { fontSize: 14, fontWeight: '700', color: '#6C63FF' },
-  priceInput: { flex: 1, fontSize: 18, fontWeight: '700', color: '#1A1A2E', paddingVertical: 12 },
+    storeRow: { gap: 8, paddingRight: 4 },
+    storeChip: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 16, paddingVertical: 10, borderRadius: 24, backgroundColor: c.card, borderWidth: 2, borderColor: c.border },
+    storeChipActive: { backgroundColor: c.primary, borderColor: c.primary },
+    storeLabel: { fontSize: 14, fontWeight: '600', color: c.textSecondary },
+    storeLabelActive: { color: '#fff' },
 
-  suggestionsBox: { backgroundColor: '#fff', borderRadius: 12, borderWidth: 1, borderColor: '#F0EEFF', overflow: 'hidden' },
-  suggestionRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: '#F7F8FC', gap: 8 },
-  suggestionEmoji: { fontSize: 16 },
-  suggestionName: { flex: 1, fontSize: 14, fontWeight: '600', color: '#1A1A2E' },
-  suggestionPrice: { fontSize: 13, fontWeight: '700', color: '#6C63FF' },
-  trendBadge: { fontSize: 11, fontWeight: '700' },
+    addCard: { backgroundColor: c.card, borderRadius: 16, padding: 14, gap: 12, shadowColor: '#000', shadowOpacity: isDark ? 0.3 : 0.05, shadowRadius: 8, elevation: 2 },
+    addRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+    addNameInput: { flex: 1, fontSize: 15, color: c.text, paddingVertical: 12 },
+    cameraBtn: { width: 46, height: 46, borderRadius: 14, backgroundColor: c.primaryLight, justifyContent: 'center', alignItems: 'center' },
+    pricePre: { fontSize: 14, fontWeight: '700', color: c.primary },
+    priceInput: { flex: 1, fontSize: 18, fontWeight: '700', color: c.text, paddingVertical: 12 },
 
-  catRow: { gap: 8, paddingRight: 4 },
-  catChip: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 12, paddingVertical: 7, borderRadius: 20, backgroundColor: '#F7F8FC', borderWidth: 1.5, borderColor: '#eee' },
-  catChipActive: { backgroundColor: '#F0EEFF', borderColor: '#6C63FF' },
-  catEmoji: { fontSize: 14 },
-  catLabel: { fontSize: 12, fontWeight: '600', color: '#888' },
-  catLabelActive: { color: '#6C63FF' },
+    suggestionsBox: { backgroundColor: c.card, borderRadius: 12, borderWidth: 1, borderColor: c.primaryLight, overflow: 'hidden' },
+    suggestionRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: c.borderLight, gap: 8 },
+    suggestionName: { flex: 1, fontSize: 14, fontWeight: '600', color: c.text },
+    suggestionPrice: { fontSize: 13, fontWeight: '700', color: c.primary },
+    trendBadge: { fontSize: 11, fontWeight: '700' },
 
-  addFooter: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  qtyRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  qtyBtn: { width: 30, height: 30, borderRadius: 10, backgroundColor: '#F0EEFF', justifyContent: 'center', alignItems: 'center' },
-  qtyValue: { fontSize: 16, fontWeight: '800', color: '#1A1A2E', minWidth: 20, textAlign: 'center' },
-  noteToggle: { flexDirection: 'row', alignItems: 'center', gap: 4, flex: 1 },
-  noteToggleText: { fontSize: 12, fontWeight: '600', color: '#aaa' },
-  addBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: '#6C63FF', paddingHorizontal: 16, paddingVertical: 10, borderRadius: 12 },
-  addBtnText: { color: '#fff', fontWeight: '700', fontSize: 14 },
-  noteInputWrap: { flexDirection: 'row', alignItems: 'flex-start', gap: 8, backgroundColor: '#F7F8FC', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 8 },
-  noteInput: { flex: 1, fontSize: 13, color: '#555', paddingTop: 0 },
+    catRow: { gap: 8, paddingRight: 4 },
+    catChip: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 12, paddingVertical: 7, borderRadius: 20, backgroundColor: c.cardAlt, borderWidth: 1.5, borderColor: c.border },
+    catChipActive: { backgroundColor: c.primaryLight, borderColor: c.primary },
+    catLabel: { fontSize: 12, fontWeight: '600', color: c.textTertiary },
+    catLabelActive: { color: c.primary },
 
-  itemsList: { backgroundColor: '#fff', borderRadius: 16, overflow: 'hidden', shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 8, elevation: 2 },
-  itemRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 12, gap: 8 },
-  itemRowBorder: { borderBottomWidth: 1, borderBottomColor: '#F7F8FC' },
-  itemIconWrap: { width: 34, height: 34, borderRadius: 10, backgroundColor: '#F0EEFF', justifyContent: 'center', alignItems: 'center' },
-  itemInfo: { flex: 1 },
-  itemNameRow: { flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap' },
-  itemName: { fontSize: 14, fontWeight: '700', color: '#1A1A2E' },
-  itemNote: { fontSize: 11, color: '#aaa', marginBottom: 1 },
-  itemMeta: { fontSize: 12, color: '#bbb' },
-  itemRight: { alignItems: 'flex-end', gap: 4 },
-  itemSubtotal: { fontSize: 14, fontWeight: '800', color: '#6C63FF' },
-  itemQtyControls: { flexDirection: 'row', alignItems: 'center', gap: 5 },
-  itemQtyNum: { fontSize: 13, fontWeight: '700', color: '#555', minWidth: 16, textAlign: 'center' },
-  deleteBtn: { padding: 2 },
+    addFooter: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+    qtyRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+    qtyBtn: { width: 30, height: 30, borderRadius: 10, backgroundColor: c.primaryLight, justifyContent: 'center', alignItems: 'center' },
+    qtyValue: { fontSize: 16, fontWeight: '800', color: c.text, minWidth: 20, textAlign: 'center' },
+    noteToggle: { flexDirection: 'row', alignItems: 'center', gap: 4, flex: 1 },
+    noteToggleText: { fontSize: 12, fontWeight: '600', color: c.textQuaternary },
+    addBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: c.primary, paddingHorizontal: 16, paddingVertical: 10, borderRadius: 12 },
+    addBtnText: { color: '#fff', fontWeight: '700', fontSize: 14 },
+    noteInputWrap: { flexDirection: 'row', alignItems: 'flex-start', gap: 8, backgroundColor: c.cardAlt, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 8 },
+    noteInput: { flex: 1, fontSize: 13, color: c.text, paddingTop: 0 },
 
-  summaryCard: { backgroundColor: '#fff', borderRadius: 18, padding: 18, marginBottom: 22, shadowColor: '#000', shadowOpacity: 0.07, shadowRadius: 10, elevation: 3, borderWidth: 2, borderColor: 'transparent' },
-  summaryCardOver: { borderColor: '#e74c3c' },
-  summaryRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 6 },
-  summaryLabel: { fontSize: 15, color: '#666', fontWeight: '600' },
-  summaryValue: { fontSize: 16, fontWeight: '700', color: '#1A1A2E' },
-  summaryRemaining: { fontSize: 22, fontWeight: '800' },
-  summaryDivider: { height: 1, backgroundColor: '#F0F0F0', marginVertical: 2 },
+    itemsList: { backgroundColor: c.card, borderRadius: 16, overflow: 'hidden', shadowColor: '#000', shadowOpacity: isDark ? 0.3 : 0.05, shadowRadius: 8, elevation: 2 },
+    itemRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 12, gap: 8 },
+    itemRowBorder: { borderBottomWidth: 1, borderBottomColor: c.borderLight },
+    itemIconWrap: { width: 34, height: 34, borderRadius: 10, backgroundColor: c.primaryLight, justifyContent: 'center', alignItems: 'center' },
+    itemInfo: { flex: 1 },
+    itemNameRow: { flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap' },
+    itemName: { fontSize: 14, fontWeight: '700', color: c.text },
+    itemNote: { fontSize: 11, color: c.textTertiary, marginBottom: 1 },
+    itemMeta: { fontSize: 12, color: c.textQuaternary },
+    itemRight: { alignItems: 'flex-end', gap: 4 },
+    itemSubtotal: { fontSize: 14, fontWeight: '800', color: c.primary },
+    itemQtyControls: { flexDirection: 'row', alignItems: 'center', gap: 5 },
+    itemQtyNum: { fontSize: 13, fontWeight: '700', color: c.textSecondary, minWidth: 16, textAlign: 'center' },
 
-  actionRow: { flexDirection: 'row', gap: 12 },
-  shopBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: '#F0EEFF', borderRadius: 18, paddingVertical: 18, borderWidth: 2, borderColor: '#6C63FF' },
-  shopBtnText: { color: '#6C63FF', fontWeight: '800', fontSize: 16 },
-  saveBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: '#6C63FF', borderRadius: 18, paddingVertical: 18, shadowColor: '#6C63FF', shadowOpacity: 0.4, shadowRadius: 12, shadowOffset: { width: 0, height: 6 }, elevation: 6 },
-  saveBtnText: { color: '#fff', fontWeight: '800', fontSize: 16 },
-  btnDisabled: { opacity: 0.45, shadowOpacity: 0 },
+    summaryCard: { backgroundColor: c.card, borderRadius: 18, padding: 18, marginBottom: 22, shadowColor: '#000', shadowOpacity: isDark ? 0.3 : 0.07, shadowRadius: 10, elevation: 3, borderWidth: 2, borderColor: 'transparent' },
+    summaryCardOver: { borderColor: c.red },
+    summaryRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 6 },
+    summaryLabel: { fontSize: 15, color: c.textSecondary, fontWeight: '600' },
+    summaryValue: { fontSize: 16, fontWeight: '700', color: c.text },
+    summaryRemaining: { fontSize: 22, fontWeight: '800' },
+    summaryDivider: { height: 1, backgroundColor: c.borderLight, marginVertical: 2 },
 
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' },
-  modalSheet: { backgroundColor: '#fff', borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, paddingBottom: 36, gap: 16 },
-  modalTitle: { fontSize: 19, fontWeight: '800', color: '#1A1A2E' },
-  modalSub: { fontSize: 13, color: '#aaa', marginTop: -10 },
-  storeAddRow: { flexDirection: 'row', gap: 10 },
-  storeAddInput: { flex: 1, backgroundColor: '#F7F8FC', borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12, fontSize: 15, color: '#1A1A2E' },
-  storeAddBtn: { backgroundColor: '#6C63FF', borderRadius: 12, width: 46, height: 46, justifyContent: 'center', alignItems: 'center' },
-  storeManageRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: '#F7F8FC' },
-  storeManageName: { flex: 1, fontSize: 15, fontWeight: '600', color: '#1A1A2E' },
-  modalClose: { backgroundColor: '#F7F8FC', borderRadius: 14, paddingVertical: 14, alignItems: 'center' },
-  modalCloseText: { fontSize: 15, fontWeight: '700', color: '#555' },
-  tplCard: { backgroundColor: '#F7F8FC', borderRadius: 14, padding: 14, borderWidth: 1.5, borderColor: '#eee', gap: 6 },
-  tplCardHeader: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  tplCardName: { flex: 1, fontSize: 15, fontWeight: '800', color: '#1A1A2E' },
-  tplStoreBadge: { backgroundColor: '#F0EEFF', borderRadius: 8, paddingHorizontal: 8, paddingVertical: 3 },
-  tplStoreBadgeText: { fontSize: 11, fontWeight: '700', color: '#6C63FF' },
-  tplCardItems: { fontSize: 12, color: '#888', lineHeight: 18 },
-  templateNameInput: {
-    backgroundColor: '#F7F8FC', borderRadius: 14, paddingHorizontal: 16, paddingVertical: 14,
-    fontSize: 16, color: '#1A1A2E', borderWidth: 1.5, borderColor: '#E0DCFF', marginBottom: 4,
-  },
-  templateModalBtns: { flexDirection: 'row', gap: 10, marginTop: 8 },
-  templateCancelBtn: { flex: 1, backgroundColor: '#F7F8FC', borderRadius: 14, paddingVertical: 14, alignItems: 'center' },
-  templateCancelText: { fontSize: 15, fontWeight: '700', color: '#555' },
-  templateConfirmBtn: { flex: 1, backgroundColor: '#6C63FF', borderRadius: 14, paddingVertical: 14, alignItems: 'center' },
-  templateConfirmText: { fontSize: 15, fontWeight: '700', color: '#fff' },
-});
+    actionRow: { flexDirection: 'row', gap: 12 },
+    shopBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: c.primaryLight, borderRadius: 18, paddingVertical: 18, borderWidth: 2, borderColor: c.primary },
+    shopBtnText: { color: c.primary, fontWeight: '800', fontSize: 16 },
+    saveBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: c.primary, borderRadius: 18, paddingVertical: 18, shadowColor: c.primary, shadowOpacity: 0.4, shadowRadius: 12, shadowOffset: { width: 0, height: 6 }, elevation: 6 },
+    saveBtnText: { color: '#fff', fontWeight: '800', fontSize: 16 },
+    btnDisabled: { opacity: 0.45, shadowOpacity: 0 },
+
+    modalOverlay: { flex: 1, backgroundColor: c.overlay, justifyContent: 'flex-end' },
+    modalSheet: { backgroundColor: c.card, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, paddingBottom: 36, gap: 16 },
+    modalTitle: { fontSize: 19, fontWeight: '800', color: c.text },
+    modalSub: { fontSize: 13, color: c.textTertiary, marginTop: -10 },
+    storeAddRow: { flexDirection: 'row', gap: 10 },
+    storeAddInput: { flex: 1, backgroundColor: c.cardAlt, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12, fontSize: 15, color: c.text },
+    storeAddBtn: { backgroundColor: c.primary, borderRadius: 12, width: 46, height: 46, justifyContent: 'center', alignItems: 'center' },
+    storeManageRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: c.borderLight },
+    storeManageName: { flex: 1, fontSize: 15, fontWeight: '600', color: c.text },
+    modalClose: { backgroundColor: c.cardAlt, borderRadius: 14, paddingVertical: 14, alignItems: 'center' },
+    modalCloseText: { fontSize: 15, fontWeight: '700', color: c.textSecondary },
+
+    tplCard: { backgroundColor: c.cardAlt, borderRadius: 14, padding: 14, borderWidth: 1.5, borderColor: c.border, gap: 6 },
+    tplCardHeader: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+    tplCardName: { flex: 1, fontSize: 15, fontWeight: '800', color: c.text },
+    tplStoreBadge: { backgroundColor: c.primaryLight, borderRadius: 8, paddingHorizontal: 8, paddingVertical: 3 },
+    tplStoreBadgeText: { fontSize: 11, fontWeight: '700', color: c.primary },
+    tplCardItems: { fontSize: 12, color: c.textTertiary, lineHeight: 18 },
+
+    templateNameInput: {
+      backgroundColor: c.cardAlt, borderRadius: 14, paddingHorizontal: 16, paddingVertical: 14,
+      fontSize: 16, color: c.text, borderWidth: 1.5, borderColor: isDark ? c.border : '#E0DCFF', marginBottom: 4,
+    },
+    templateModalBtns: { flexDirection: 'row', gap: 10, marginTop: 8 },
+    templateCancelBtn: { flex: 1, backgroundColor: c.cardAlt, borderRadius: 14, paddingVertical: 14, alignItems: 'center' },
+    templateCancelText: { fontSize: 15, fontWeight: '700', color: c.textSecondary },
+    templateConfirmBtn: { flex: 1, backgroundColor: c.primary, borderRadius: 14, paddingVertical: 14, alignItems: 'center' },
+    templateConfirmText: { fontSize: 15, fontWeight: '700', color: '#fff' },
+  });
+}

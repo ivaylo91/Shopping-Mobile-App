@@ -1,7 +1,9 @@
 import { useEffect, useRef } from 'react';
 import { Animated, StyleSheet, View } from 'react-native';
+import { useTheme } from '../context/ThemeContext';
 
 export function SkeletonBox({ style }) {
+  const { colors } = useTheme();
   const opacity = useRef(new Animated.Value(0.4)).current;
 
   useEffect(() => {
@@ -15,12 +17,13 @@ export function SkeletonBox({ style }) {
     return () => anim.stop();
   }, [opacity]);
 
-  return <Animated.View style={[styles.box, style, { opacity }]} />;
+  return <Animated.View style={[{ backgroundColor: colors.skeleton ?? colors.border }, style, { opacity }]} />;
 }
 
 export function OrderCardSkeleton() {
+  const { colors } = useTheme();
   return (
-    <View style={styles.card}>
+    <View style={[styles.card, { backgroundColor: colors.card, shadowColor: colors.shadow }]}>
       <View style={styles.row}>
         <SkeletonBox style={{ width: 90, height: 24, borderRadius: 12 }} />
         <SkeletonBox style={{ width: 28, height: 28, borderRadius: 14 }} />
@@ -41,8 +44,9 @@ export function OrderCardSkeleton() {
 }
 
 export function ListItemSkeleton() {
+  const { colors } = useTheme();
   return (
-    <View style={styles.listItem}>
+    <View style={[styles.listItem, { backgroundColor: colors.card, shadowColor: colors.shadow }]}>
       <SkeletonBox style={{ width: 38, height: 38, borderRadius: 12, marginRight: 12 }} />
       <View style={{ flex: 1, gap: 6 }}>
         <SkeletonBox style={{ width: '60%', height: 14, borderRadius: 7 }} />
@@ -54,13 +58,10 @@ export function ListItemSkeleton() {
 }
 
 const styles = StyleSheet.create({
-  box: { backgroundColor: '#E0E0EA' },
   card: {
-    backgroundColor: '#fff',
     borderRadius: 18,
     padding: 16,
     marginBottom: 14,
-    shadowColor: '#000',
     shadowOpacity: 0.07,
     shadowRadius: 10,
     elevation: 3,
@@ -68,13 +69,11 @@ const styles = StyleSheet.create({
   row: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   chipsRow: { flexDirection: 'row', gap: 6, marginTop: 12, marginBottom: 2 },
   listItem: {
-    backgroundColor: '#fff',
     borderRadius: 14,
     padding: 14,
     marginBottom: 10,
     flexDirection: 'row',
     alignItems: 'center',
-    shadowColor: '#000',
     shadowOpacity: 0.05,
     shadowRadius: 5,
     elevation: 1,

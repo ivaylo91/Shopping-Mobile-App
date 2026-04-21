@@ -1,7 +1,8 @@
 import {
   View, Text, StyleSheet, TouchableOpacity,
-  ScrollView, FlatList, Modal, ActivityIndicator,
+  ScrollView, Modal, ActivityIndicator, Linking,
 } from 'react-native';
+import { FlashList } from '@shopify/flash-list';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useState, useCallback, useEffect, useMemo } from 'react';
 import { Ionicons } from '@expo/vector-icons';
@@ -11,42 +12,37 @@ import { getCategoryIcon } from '../utils/ui';
 import { generateMealPlan, generateSingleMeal, hasApiKey } from '../services/mealAI';
 import { SkeletonBox } from '../components/Skeleton';
 import { useToast } from '../context/ToastContext';
+import { useTheme } from '../context/ThemeContext';
+import { useBudgetLists } from '../hooks/useBudgetLists';
 
-// ─── Fallback recipes (used when no API key is configured) ────────────────────
-// Keeps the screen functional without an API key.
+// ─── Fallback recipes ──────────────────────────────────────────────────────────
 
 const FALLBACK = {
   breakfast: {
-    title: 'Яйца на очи с хляб',
-    desc: 'Бърза закуска с яйца, масло и препечен хляб.',
+    title: 'Яйца на очи с хляб', desc: 'Бърза закуска с яйца, масло и препечен хляб.',
     fromList: [], extra: ['Яйца', 'Масло', 'Хляб'],
     steps: ['Разтопете масло в тиган на среден огън.', 'Счупете яйцата внимателно в тигана.', 'Запечете до желана степен и поднесете с хляб.'],
     calories: 310, protein: 14, carbs: 28, fat: 18, prepTime: 10,
   },
   lunch: {
-    title: 'Пилешко с ориз',
-    desc: 'Класическо пиле на тиган с гарнитура от ориз.',
+    title: 'Пилешко с ориз', desc: 'Класическо пиле на тиган с гарнитура от ориз.',
     fromList: [], extra: ['Пилешко филе', 'Ориз', 'Подправки'],
     steps: ['Нарежете пилешкото на хапки и подправете.', 'Запържете на тиган с малко масло 8–10 минути.', 'Сварете ориза и поднесете заедно.'],
     calories: 450, protein: 38, carbs: 42, fat: 14, prepTime: 25,
   },
   dinner: {
-    title: 'Зеленчукова яхния',
-    desc: 'Лека вечеря от сезонни зеленчуци.',
+    title: 'Зеленчукова яхния', desc: 'Лека вечеря от сезонни зеленчуци.',
     fromList: [], extra: ['Зеленчуци по избор', 'Домати', 'Лук', 'Олио'],
     steps: ['Нарежете зеленчуците на парчета.', 'Задушете лука в олио, добавете зеленчуците.', 'Добавете домати и гответе 20 минути.'],
     calories: 220, protein: 6, carbs: 32, fat: 8, prepTime: 30,
   },
   snack: {
-    title: 'Плодова салата',
-    desc: 'Свеж снак от пресни плодове с мед.',
+    title: 'Плодова салата', desc: 'Свеж снак от пресни плодове с мед.',
     fromList: [], extra: ['Плодове по избор', 'Мед', 'Лимонов сок'],
     steps: ['Нарежете плодовете на хапки.', 'Полейте с мед и лимонов сок.', 'Разбъркайте и сервирайте веднага.'],
     calories: 130, protein: 2, carbs: 30, fat: 1, prepTime: 10,
   },
 };
-
-// ─── Constants ────────────────────────────────────────────────────────────────
 
 const MEAL_SLOTS = [
   { key: 'breakfast', label: 'Закуска', icon: '🌅', color: '#f39c12' },
@@ -56,9 +52,9 @@ const MEAL_SLOTS = [
 ];
 
 const FILTERS = [
-  { key: 'vegetarian',  label: 'Вегет.',       icon: '🥦' },
-  { key: 'quick',       label: '≤25мин',        icon: '⚡' },
-  { key: 'highProtein', label: 'Протеин',       icon: '💪' },
+  { key: 'vegetarian',  label: 'Вегет.',  icon: '🥦' },
+  { key: 'quick',       label: '≤25мин',  icon: '⚡' },
+  { key: 'highProtein', label: 'Протеин', icon: '💪' },
 ];
 
 function cleanName(raw = '') {
@@ -76,49 +72,10 @@ function youtubeUrl(title) {
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
-function ProductCalCard({ item }) {
-  return (
-    <View style={styles.calCard}>
-      <Text style={styles.calCardIcon}>{getCategoryIcon(item.category)}</Text>
-      <Text style={styles.calCardName} numberOfLines={2}>{cleanName(item.name)}</Text>
-      <View style={styles.calBadge}>
-        <Text style={styles.calBadgeText}>{item.calories ?? '—'}</Text>
-        <Text style={styles.calBadgeUnit}>ккал</Text>
-      </View>
-    </View>
-  );
-}
-
-function MacroBar({ protein, carbs, fat, calories }) {
-  return (
-    <View style={styles.macroBar}>
-      <View style={styles.macroItem}>
-        <Text style={styles.macroValue}>{protein}г</Text>
-        <Text style={styles.macroLabel}>Протеин</Text>
-      </View>
-      <View style={styles.macroDivider} />
-      <View style={styles.macroItem}>
-        <Text style={styles.macroValue}>{carbs}г</Text>
-        <Text style={styles.macroLabel}>Въглехидрати</Text>
-      </View>
-      <View style={styles.macroDivider} />
-      <View style={styles.macroItem}>
-        <Text style={styles.macroValue}>{fat}г</Text>
-        <Text style={styles.macroLabel}>Мазнини</Text>
-      </View>
-      <View style={styles.macroDivider} />
-      <View style={styles.macroItem}>
-        <Text style={[styles.macroValue, { color: '#6C63FF' }]}>~{calories}</Text>
-        <Text style={styles.macroLabel}>ккал</Text>
-      </View>
-    </View>
-  );
-}
-
 function RecipeCardSkeleton({ color }) {
   return (
-    <View style={[styles.card, { borderLeftColor: color ?? '#ddd' }]}>
-      <View style={styles.cardTopRow}>
+    <View style={{ backgroundColor: 'transparent', borderRadius: 16, padding: 16, marginBottom: 16, borderLeftWidth: 5, borderLeftColor: color ?? '#ddd' }}>
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 }}>
         <SkeletonBox style={{ width: 90, height: 30, borderRadius: 20 }} />
         <View style={{ flexDirection: 'row', gap: 8 }}>
           <SkeletonBox style={{ width: 60, height: 24, borderRadius: 12 }} />
@@ -132,86 +89,105 @@ function RecipeCardSkeleton({ color }) {
   );
 }
 
-// ─── Recipe detail modal ──────────────────────────────────────────────────────
+function MacroBar({ protein, carbs, fat, calories, colors }) {
+  return (
+    <View style={[mS.bar, { backgroundColor: colors.card }]}>
+      <View style={mS.item}>
+        <Text style={[mS.val, { color: colors.text }]}>{protein}г</Text>
+        <Text style={[mS.lbl, { color: colors.textTertiary }]}>Протеин</Text>
+      </View>
+      <View style={[mS.div, { backgroundColor: colors.border }]} />
+      <View style={mS.item}>
+        <Text style={[mS.val, { color: colors.text }]}>{carbs}г</Text>
+        <Text style={[mS.lbl, { color: colors.textTertiary }]}>Въглехидрати</Text>
+      </View>
+      <View style={[mS.div, { backgroundColor: colors.border }]} />
+      <View style={mS.item}>
+        <Text style={[mS.val, { color: colors.text }]}>{fat}г</Text>
+        <Text style={[mS.lbl, { color: colors.textTertiary }]}>Мазнини</Text>
+      </View>
+      <View style={[mS.div, { backgroundColor: colors.border }]} />
+      <View style={mS.item}>
+        <Text style={[mS.val, { color: colors.primary }]}>~{calories}</Text>
+        <Text style={[mS.lbl, { color: colors.textTertiary }]}>ккал</Text>
+      </View>
+    </View>
+  );
+}
 
-function RecipeModal({ recipe, slotColor, visible, onClose, onYouTube }) {
+const mS = StyleSheet.create({
+  bar: { borderRadius: 16, flexDirection: 'row', alignItems: 'center', paddingVertical: 14, paddingHorizontal: 8, marginBottom: 16, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 6, elevation: 2 },
+  item: { flex: 1, alignItems: 'center' },
+  val: { fontSize: 16, fontWeight: '800' },
+  lbl: { fontSize: 10, fontWeight: '600', marginTop: 2 },
+  div: { width: 1, height: 32 },
+});
+
+// ─── Recipe Modal ─────────────────────────────────────────────────────────────
+
+function RecipeModal({ recipe, slotColor, visible, onClose, onYouTube, colors }) {
   if (!recipe) return null;
   return (
-    <Modal
-      visible={visible}
-      animationType="slide"
-      presentationStyle="pageSheet"
-      onRequestClose={onClose}
-    >
-      <SafeAreaView style={styles.modalContainer}>
-        {/* Header */}
-        <View style={styles.modalHeader}>
-          <TouchableOpacity style={styles.modalCloseBtn} onPress={onClose}>
-            <Ionicons name="close" size={22} color="#555" />
+    <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
+      <SafeAreaView style={{ flex: 1, backgroundColor: colors.bg }}>
+        <View style={[rmS.header, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
+          <TouchableOpacity style={[rmS.closeBtn, { backgroundColor: colors.cardAlt }]} onPress={onClose}>
+            <Ionicons name="close" size={22} color={colors.textSecondary} />
           </TouchableOpacity>
-          <Text style={styles.modalTitle} numberOfLines={2}>{recipe.title}</Text>
-          <TouchableOpacity style={styles.ytSmallBtn} onPress={onYouTube}>
+          <Text style={[rmS.title, { color: colors.text }]} numberOfLines={2}>{recipe.title}</Text>
+          <TouchableOpacity style={rmS.ytBtn} onPress={onYouTube}>
             <Ionicons name="logo-youtube" size={20} color="#fff" />
           </TouchableOpacity>
         </View>
 
-        <ScrollView
-          style={styles.modalBody}
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={{ paddingBottom: 40 }}
-        >
-          {/* Quick info row */}
-          <View style={styles.modalInfoRow}>
-            <View style={styles.modalInfoChip}>
-              <Ionicons name="time-outline" size={14} color="#6C63FF" />
-              <Text style={styles.modalInfoText}>{recipe.prepTime} мин</Text>
+        <ScrollView style={{ flex: 1, padding: 20 }} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 40 }}>
+          <View style={{ flexDirection: 'row', gap: 8, marginBottom: 14 }}>
+            <View style={[rmS.chip, { backgroundColor: colors.primaryLight }]}>
+              <Ionicons name="time-outline" size={14} color={colors.primary} />
+              <Text style={[rmS.chipText, { color: colors.primary }]}>{recipe.prepTime} мин</Text>
             </View>
-            <View style={styles.modalInfoChip}>
-              <Text style={styles.modalInfoText}>🔥 {recipe.calories} ккал</Text>
+            <View style={[rmS.chip, { backgroundColor: colors.primaryLight }]}>
+              <Text style={[rmS.chipText, { color: colors.primary }]}>🔥 {recipe.calories} ккал</Text>
             </View>
-            <View style={styles.modalInfoChip}>
-              <Text style={styles.modalInfoText}>💪 {recipe.protein}г</Text>
+            <View style={[rmS.chip, { backgroundColor: colors.primaryLight }]}>
+              <Text style={[rmS.chipText, { color: colors.primary }]}>💪 {recipe.protein}г</Text>
             </View>
           </View>
 
-          {/* Description */}
-          <Text style={styles.modalDesc}>{recipe.desc}</Text>
+          <Text style={[rmS.desc, { backgroundColor: colors.orangeLight, color: colors.text }]}>{recipe.desc}</Text>
 
-          {/* Products from list */}
           {recipe.fromList?.length > 0 && (
-            <View style={styles.modalSection}>
-              <Text style={styles.modalSectionTitle}>✓ От вашия списък</Text>
+            <View style={{ marginBottom: 20 }}>
+              <Text style={[rmS.sectionTitle, { color: colors.text }]}>✓ От вашия списък</Text>
               {recipe.fromList.map((ing, i) => (
-                <View key={i} style={styles.modalIngredientRow}>
-                  <View style={[styles.modalIngDot, { backgroundColor: slotColor }]} />
-                  <Text style={styles.modalIngText}>{ing}</Text>
+                <View key={i} style={rmS.ingRow}>
+                  <View style={[rmS.dot, { backgroundColor: slotColor }]} />
+                  <Text style={[rmS.ingText, { color: colors.text }]}>{ing}</Text>
                 </View>
               ))}
             </View>
           )}
 
-          {/* Extra ingredients needed */}
           {recipe.extra?.length > 0 && (
-            <View style={styles.modalSection}>
-              <Text style={[styles.modalSectionTitle, { color: '#f39c12' }]}>🛒 Допълнително нужни</Text>
+            <View style={{ marginBottom: 20 }}>
+              <Text style={[rmS.sectionTitle, { color: colors.orange }]}>🛒 Допълнително нужни</Text>
               {recipe.extra.map((ing, i) => (
-                <View key={i} style={styles.modalIngredientRow}>
-                  <View style={[styles.modalIngDot, { backgroundColor: '#f39c12' }]} />
-                  <Text style={styles.modalIngText}>{ing}</Text>
+                <View key={i} style={rmS.ingRow}>
+                  <View style={[rmS.dot, { backgroundColor: colors.orange }]} />
+                  <Text style={[rmS.ingText, { color: colors.text }]}>{ing}</Text>
                 </View>
               ))}
             </View>
           )}
 
-          {/* Steps */}
-          <View style={styles.modalSection}>
-            <Text style={styles.modalSectionTitle}>📋 Приготвяне</Text>
+          <View style={{ marginBottom: 20 }}>
+            <Text style={[rmS.sectionTitle, { color: colors.text }]}>📋 Приготвяне</Text>
             {recipe.steps?.map((step, i) => (
-              <View key={i} style={styles.modalStepRow}>
-                <View style={[styles.modalStepNum, { backgroundColor: slotColor }]}>
-                  <Text style={styles.modalStepNumText}>{i + 1}</Text>
+              <View key={i} style={rmS.stepRow}>
+                <View style={[rmS.stepNum, { backgroundColor: slotColor }]}>
+                  <Text style={rmS.stepNumText}>{i + 1}</Text>
                 </View>
-                <Text style={styles.modalStepText}>{step}</Text>
+                <Text style={[rmS.stepText, { color: colors.text }]}>{step}</Text>
               </View>
             ))}
           </View>
@@ -221,22 +197,45 @@ function RecipeModal({ recipe, slotColor, visible, onClose, onYouTube }) {
   );
 }
 
+const rmS = StyleSheet.create({
+  header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 14, borderBottomWidth: 1, gap: 12 },
+  closeBtn: { width: 36, height: 36, borderRadius: 18, justifyContent: 'center', alignItems: 'center' },
+  title: { flex: 1, fontSize: 16, fontWeight: '800' },
+  ytBtn: { width: 36, height: 36, borderRadius: 18, backgroundColor: '#FF0000', justifyContent: 'center', alignItems: 'center' },
+  chip: { flexDirection: 'row', alignItems: 'center', gap: 5, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 6 },
+  chipText: { fontSize: 13, fontWeight: '700' },
+  desc: { fontSize: 14, lineHeight: 21, borderRadius: 10, padding: 14, marginBottom: 20 },
+  sectionTitle: { fontSize: 13, fontWeight: '800', marginBottom: 12, textTransform: 'uppercase', letterSpacing: 0.5 },
+  ingRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 8 },
+  dot: { width: 8, height: 8, borderRadius: 4 },
+  ingText: { fontSize: 14, flex: 1 },
+  stepRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 12, marginBottom: 14 },
+  stepNum: { width: 28, height: 28, borderRadius: 14, justifyContent: 'center', alignItems: 'center', marginTop: 1 },
+  stepNumText: { color: '#fff', fontWeight: '800', fontSize: 13 },
+  stepText: { flex: 1, fontSize: 14, lineHeight: 22 },
+});
+
 // ─── Screen ───────────────────────────────────────────────────────────────────
 
-export default function MealsScreen({ route, navigation }) {
-  const { list } = route.params || {};
-  const allProducts = list || [];
-
+export default function MealsScreen({ route }) {
+  const { colors, isDark } = useTheme();
   const { show: showToast } = useToast();
+  const { lists } = useBudgetLists();
 
-  const [plan, setPlan]         = useState(null);      // null = loading
+  // Meals tab can receive list from navigation params OR use latest saved list
+  const paramList = route.params?.list;
+  const latestList = useMemo(() => lists[0]?.items || [], [lists]);
+  const allProducts = paramList || latestList;
+
+  const [plan, setPlan] = useState(null);
   const [planError, setPlanError] = useState(false);
-  const [loadingSlot, setLoadingSlot] = useState(null); // key of slot being swapped
-  const [filters, setFilters]   = useState({ vegetarian: false, quick: false, highProtein: false });
+  const [loadingSlot, setLoadingSlot] = useState(null);
+  const [filters, setFilters] = useState({ vegetarian: false, quick: false, highProtein: false });
   const [excludedBySlot, setExcludedBySlot] = useState({});
-  const [selectedSlot, setSelectedSlot] = useState(null); // for modal
+  const [selectedSlot, setSelectedSlot] = useState(null);
 
-  // ── Load plan ──────────────────────────────────────────────────────────────
+  const s = makeStyles(colors, isDark);
+
   const loadPlan = useCallback(async (currentFilters) => {
     setPlan(null);
     setPlanError(false);
@@ -245,11 +244,9 @@ export default function MealsScreen({ route, navigation }) {
         const result = await generateMealPlan(allProducts, currentFilters);
         setPlan(result);
       } else {
-        // No API key — use fallback immediately
         setPlan(FALLBACK);
       }
     } catch (err) {
-      console.warn('generateMealPlan failed:', err.message);
       setPlan(FALLBACK);
       setPlanError(true);
     }
@@ -257,33 +254,17 @@ export default function MealsScreen({ route, navigation }) {
 
   useEffect(() => {
     loadPlan(filters);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // only on mount; filter changes go through toggleFilter
-
-  // ── Derived ───────────────────────────────────────────────────────────────
-  const productsSortedByCal = useMemo(
-    () => [...allProducts].filter((p) => p.calories > 0).sort((a, b) => b.calories - a.calories),
-    [allProducts]
-  );
+  }, []);
 
   const totals = useMemo(() => {
     if (!plan) return { protein: 0, carbs: 0, fat: 0, calories: 0 };
-    return MEAL_SLOTS.reduce(
-      (acc, { key }) => {
-        const r = plan[key];
-        if (!r) return acc;
-        return {
-          protein:  acc.protein  + (r.protein  || 0),
-          carbs:    acc.carbs    + (r.carbs    || 0),
-          fat:      acc.fat      + (r.fat      || 0),
-          calories: acc.calories + (r.calories || 0),
-        };
-      },
-      { protein: 0, carbs: 0, fat: 0, calories: 0 }
-    );
+    return MEAL_SLOTS.reduce((acc, { key }) => {
+      const r = plan[key];
+      if (!r) return acc;
+      return { protein: acc.protein + (r.protein || 0), carbs: acc.carbs + (r.carbs || 0), fat: acc.fat + (r.fat || 0), calories: acc.calories + (r.calories || 0) };
+    }, { protein: 0, carbs: 0, fat: 0, calories: 0 });
   }, [plan]);
 
-  // ── Actions ───────────────────────────────────────────────────────────────
   const toggleFilter = useCallback((key) => {
     Haptics.selectionAsync();
     setFilters((prev) => {
@@ -303,11 +284,7 @@ export default function MealsScreen({ route, navigation }) {
   const swapMeal = useCallback(async (slotKey) => {
     if (!plan) return;
     const currentTitle = plan[slotKey]?.title;
-    const excluded = [
-      ...(excludedBySlot[slotKey] ?? []),
-      ...(currentTitle ? [currentTitle] : []),
-    ];
-
+    const excluded = [...(excludedBySlot[slotKey] ?? []), ...(currentTitle ? [currentTitle] : [])];
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setLoadingSlot(slotKey);
     try {
@@ -316,8 +293,7 @@ export default function MealsScreen({ route, navigation }) {
         : FALLBACK[slotKey];
       setPlan((prev) => ({ ...prev, [slotKey]: recipe }));
       setExcludedBySlot((prev) => ({ ...prev, [slotKey]: excluded }));
-    } catch (err) {
-      console.warn('generateSingleMeal failed:', err.message);
+    } catch {
       showToast('Неуспешна замяна на рецептата', 'error');
     } finally {
       setLoadingSlot(null);
@@ -329,433 +305,194 @@ export default function MealsScreen({ route, navigation }) {
     setSelectedSlot(slotKey);
   }, []);
 
-  const closeModal = useCallback(() => setSelectedSlot(null), []);
-
-  // ── Render ────────────────────────────────────────────────────────────────
-  const selectedSlotMeta = MEAL_SLOTS.find((s) => s.key === selectedSlot);
-  const selectedRecipe   = selectedSlot ? plan?.[selectedSlot] : null;
+  const selectedSlotMeta = MEAL_SLOTS.find((sl) => sl.key === selectedSlot);
+  const selectedRecipe = selectedSlot ? plan?.[selectedSlot] : null;
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={s.container}>
 
       {/* Header */}
-      <View style={styles.header}>
+      <View style={s.header}>
         <View style={{ flex: 1 }}>
-          <Text style={styles.headerTitle}>Идеи за ястия 🍽️</Text>
-          <Text style={styles.headerSub}>
+          <Text style={s.headerTitle}>Идеи за ястия 🍽️</Text>
+          <Text style={s.headerSub}>
             {hasApiKey() ? 'Генерирано от AI по вашите продукти' : 'Примерни рецепти'}
           </Text>
         </View>
         <TouchableOpacity
-          style={[styles.regenerateBtn, !plan && styles.regenerateBtnDisabled]}
+          style={[s.regenBtn, !plan && { backgroundColor: colors.cardAlt }]}
           onPress={regenerateAll}
           disabled={!plan}
         >
-          <Ionicons name="shuffle-outline" size={18} color={plan ? '#6C63FF' : '#ccc'} />
+          <Ionicons name="shuffle-outline" size={18} color={plan ? colors.primary : colors.textQuaternary} />
         </TouchableOpacity>
       </View>
 
       {/* Filter chips */}
-      <View style={styles.filterRow}>
+      <View style={s.filterRow}>
         {FILTERS.map(({ key, label, icon }) => {
           const active = filters[key];
           return (
             <TouchableOpacity
               key={key}
-              style={[styles.filterChip, active && styles.filterChipActive]}
+              style={[s.filterChip, active && s.filterChipActive]}
               onPress={() => toggleFilter(key)}
               activeOpacity={0.8}
               disabled={!plan}
             >
-              <Text style={styles.filterChipIcon}>{icon}</Text>
-              <Text style={[styles.filterChipText, active && styles.filterChipTextActive]}>
-                {label}
-              </Text>
+              <Text style={{ fontSize: 12 }}>{icon}</Text>
+              <Text style={[s.filterChipText, active && { color: '#fff' }]}>{label}</Text>
             </TouchableOpacity>
           );
         })}
         {planError && (
-          <View style={styles.fallbackBadge}>
-            <Ionicons name="warning-outline" size={12} color="#f39c12" />
-            <Text style={styles.fallbackText}>Примерни рецепти</Text>
+          <View style={[s.fallbackBadge, { backgroundColor: colors.orangeLight, borderColor: colors.orange }]}>
+            <Ionicons name="warning-outline" size={12} color={colors.orange} />
+            <Text style={[s.fallbackText, { color: colors.orange }]}>Примерни рецепти</Text>
           </View>
         )}
       </View>
 
-      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
-
-        {/* Products calories strip */}
-        {productsSortedByCal.length > 0 && (
-          <View style={styles.section}>
-            <Text style={styles.sectionLabel}>Продукти • килокалории</Text>
-            <FlatList
-              data={productsSortedByCal}
-              keyExtractor={(item) => item.id ?? item.name}
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.calRow}
-              renderItem={({ item }) => <ProductCalCard item={item} />}
-            />
-          </View>
-        )}
+      <ScrollView contentContainerStyle={s.scroll} showsVerticalScrollIndicator={false}>
 
         {/* Macros bar */}
         {plan && (
-          <View style={styles.section}>
-            <Text style={styles.sectionLabel}>Дневни макронутриенти</Text>
-            <MacroBar {...totals} />
+          <View style={{ marginBottom: 8 }}>
+            <Text style={s.sectionLabel}>Дневни макронутриенти</Text>
+            <MacroBar {...totals} colors={colors} />
           </View>
         )}
 
         {/* Recipe cards */}
-        <View style={styles.section}>
-          <Text style={styles.sectionLabel}>Дневен план</Text>
+        <Text style={s.sectionLabel}>Дневен план</Text>
 
-          {MEAL_SLOTS.map(({ key, label, icon, color }) => {
-            const recipe    = plan?.[key];
-            const isLoading = !plan || loadingSlot === key;
+        {MEAL_SLOTS.map(({ key, label, icon, color }) => {
+          const recipe = plan?.[key];
+          const isLoading = !plan || loadingSlot === key;
 
-            if (isLoading) {
-              return <RecipeCardSkeleton key={key} color={color} />;
-            }
+          if (isLoading) return <RecipeCardSkeleton key={key} color={color} />;
 
-            return (
-              <Animated.View key={`${key}-${recipe.title}`} entering={FadeIn.duration(300)} style={[styles.card, { borderLeftColor: color }]}>
+          return (
+            <Animated.View key={`${key}-${recipe.title}`} entering={FadeIn.duration(300)}
+              style={[s.card, { borderLeftColor: color }]}>
 
-                {/* Top row */}
-                <View style={styles.cardTopRow}>
-                  <View style={[styles.badge, { backgroundColor: color }]}>
-                    <Text style={styles.badgeIcon}>{icon}</Text>
-                    <Text style={styles.badgeLabel}>{label}</Text>
-                  </View>
-                  <View style={styles.cardTopRight}>
-                    <View style={styles.prepTimeBadge}>
-                      <Ionicons name="time-outline" size={11} color="#999" />
-                      <Text style={styles.prepTimeText}>{recipe.prepTime} мин</Text>
-                    </View>
-                    <View style={[styles.calChip, { borderColor: color }]}>
-                      <Text style={[styles.calChipText, { color }]}>{recipe.calories} ккал</Text>
-                    </View>
-                    <TouchableOpacity
-                      style={styles.swapBtn}
-                      onPress={() => swapMeal(key)}
-                      hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                    >
-                      <Ionicons name="refresh-outline" size={16} color="#6C63FF" />
-                    </TouchableOpacity>
-                  </View>
+              <View style={s.cardTopRow}>
+                <View style={[s.badge, { backgroundColor: color }]}>
+                  <Text style={{ fontSize: 13 }}>{icon}</Text>
+                  <Text style={s.badgeLabel}>{label}</Text>
                 </View>
-
-                {/* Title */}
-                <Text style={styles.recipeTitle}>{recipe.title}</Text>
-
-                {/* From list pills (green) */}
-                {recipe.fromList?.length > 0 && (
-                  <View style={styles.pillsSection}>
-                    <Text style={styles.fromListLabel}>✓ От вашия списък:</Text>
-                    <View style={styles.pills}>
-                      {recipe.fromList.slice(0, 4).map((name, i) => (
-                        <View key={i} style={[styles.pill, { borderColor: color }]}>
-                          <Text style={[styles.pillText, { color }]}>{cleanName(name)}</Text>
-                        </View>
-                      ))}
-                    </View>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                  <View style={[s.timeBadge, { backgroundColor: colors.cardAlt }]}>
+                    <Ionicons name="time-outline" size={11} color={colors.textTertiary} />
+                    <Text style={[s.timeText, { color: colors.textTertiary }]}>{recipe.prepTime} мин</Text>
                   </View>
-                )}
-
-                {/* Extra pills (orange) */}
-                {recipe.extra?.length > 0 && (
-                  <View style={styles.pillsSection}>
-                    <Text style={styles.extraLabel}>🛒 Допълнително:</Text>
-                    <View style={styles.pills}>
-                      {recipe.extra.slice(0, 3).map((name, i) => (
-                        <View key={i} style={styles.extraPill}>
-                          <Text style={styles.extraPillText}>{name}</Text>
-                        </View>
-                      ))}
-                    </View>
+                  <View style={[s.calChip, { borderColor: color }]}>
+                    <Text style={[s.calChipText, { color }]}>{recipe.calories} ккал</Text>
                   </View>
-                )}
-
-                {/* Description */}
-                <View style={styles.descBox}>
-                  <Text style={styles.descText}>{recipe.desc}</Text>
-                </View>
-
-                {/* Buttons */}
-                <View style={styles.btnRow}>
-                  <TouchableOpacity
-                    style={[styles.linkBtn, { backgroundColor: color }]}
-                    onPress={() => openRecipe(key)}
-                    activeOpacity={0.85}
-                  >
-                    <Ionicons name="book-outline" size={15} color="#fff" style={{ marginRight: 6 }} />
-                    <Text style={styles.linkBtnText}>Виж рецепта</Text>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    style={styles.ytBtn}
-                    onPress={() => {
-                      const { Linking } = require('react-native');
-                      Linking.openURL(youtubeUrl(recipe.title)).catch(() => {});
-                    }}
-                    activeOpacity={0.85}
-                  >
-                    <Ionicons name="logo-youtube" size={15} color="#fff" style={{ marginRight: 6 }} />
-                    <Text style={styles.ytBtnText}>YouTube</Text>
+                  <TouchableOpacity style={[s.swapBtn, { backgroundColor: colors.primaryLight }]} onPress={() => swapMeal(key)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                    <Ionicons name="refresh-outline" size={16} color={colors.primary} />
                   </TouchableOpacity>
                 </View>
+              </View>
 
-              </Animated.View>
-            );
-          })}
-        </View>
+              <Text style={[s.recipeTitle, { color: colors.text }]}>{recipe.title}</Text>
+
+              {recipe.fromList?.length > 0 && (
+                <View style={{ marginBottom: 10 }}>
+                  <Text style={[s.fromLabel, { color: colors.green }]}>✓ От вашия списък:</Text>
+                  <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 7 }}>
+                    {recipe.fromList.slice(0, 4).map((name, i) => (
+                      <View key={i} style={[s.pill, { borderColor: color }]}>
+                        <Text style={[s.pillText, { color }]}>{cleanName(name)}</Text>
+                      </View>
+                    ))}
+                  </View>
+                </View>
+              )}
+
+              {recipe.extra?.length > 0 && (
+                <View style={{ marginBottom: 10 }}>
+                  <Text style={[s.fromLabel, { color: colors.orange }]}>🛒 Допълнително:</Text>
+                  <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 7 }}>
+                    {recipe.extra.slice(0, 3).map((name, i) => (
+                      <View key={i} style={[s.pill, { borderColor: colors.orange, backgroundColor: colors.orangeLight }]}>
+                        <Text style={[s.pillText, { color: colors.orange }]}>{name}</Text>
+                      </View>
+                    ))}
+                  </View>
+                </View>
+              )}
+
+              <View style={[s.descBox, { backgroundColor: colors.orangeLight }]}>
+                <Text style={[s.descText, { color: colors.text }]}>{recipe.desc}</Text>
+              </View>
+
+              <View style={{ flexDirection: 'row', gap: 10 }}>
+                <TouchableOpacity style={[s.linkBtn, { backgroundColor: color }]} onPress={() => openRecipe(key)} activeOpacity={0.85}>
+                  <Ionicons name="book-outline" size={15} color="#fff" style={{ marginRight: 6 }} />
+                  <Text style={s.linkBtnText}>Виж рецепта</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={s.ytBtn} onPress={() => Linking.openURL(youtubeUrl(recipe.title)).catch(() => {})} activeOpacity={0.85}>
+                  <Ionicons name="logo-youtube" size={15} color="#fff" style={{ marginRight: 6 }} />
+                  <Text style={s.linkBtnText}>YouTube</Text>
+                </TouchableOpacity>
+              </View>
+            </Animated.View>
+          );
+        })}
 
         <View style={{ height: 16 }} />
       </ScrollView>
 
-      {/* Footer */}
-      <View style={styles.footer}>
-        <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
-          <Text style={styles.backBtnText}>← Обратно</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.homeBtn} onPress={() => navigation.navigate('Home')}>
-          <Text style={styles.homeBtnText}>🏠 Начало</Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* Recipe detail modal */}
       <RecipeModal
         visible={!!selectedSlot && !!selectedRecipe}
         recipe={selectedRecipe}
-        slotColor={selectedSlotMeta?.color ?? '#6C63FF'}
-        onClose={closeModal}
-        onYouTube={() => {
-          const { Linking } = require('react-native');
-          Linking.openURL(youtubeUrl(selectedRecipe?.title ?? '')).catch(() => {});
-        }}
+        slotColor={selectedSlotMeta?.color ?? colors.primary}
+        onClose={() => setSelectedSlot(null)}
+        onYouTube={() => Linking.openURL(youtubeUrl(selectedRecipe?.title ?? '')).catch(() => {})}
+        colors={colors}
       />
-
     </SafeAreaView>
   );
 }
 
-// ─── Styles ──────────────────────────────────────────────────────────────────
+function makeStyles(c, isDark) {
+  return StyleSheet.create({
+    container: { flex: 1, backgroundColor: c.bg },
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F7F8FC' },
+    header: { backgroundColor: c.card, paddingHorizontal: 20, paddingTop: 16, paddingBottom: 16, borderBottomWidth: 1, borderBottomColor: c.border, flexDirection: 'row', alignItems: 'center' },
+    headerTitle: { fontSize: 22, fontWeight: '800', color: c.text, marginBottom: 2 },
+    headerSub: { fontSize: 12, color: c.textTertiary },
+    regenBtn: { width: 38, height: 38, borderRadius: 19, backgroundColor: c.primaryLight, justifyContent: 'center', alignItems: 'center', marginLeft: 12 },
 
-  header: {
-    backgroundColor: '#fff',
-    paddingHorizontal: 20, paddingTop: 16, paddingBottom: 16,
-    borderBottomWidth: 1, borderBottomColor: '#eee',
-    flexDirection: 'row', alignItems: 'center',
-  },
-  headerTitle: { fontSize: 22, fontWeight: '800', color: '#1A1A2E', marginBottom: 2 },
-  headerSub:   { fontSize: 12, color: '#999' },
-  regenerateBtn: {
-    width: 38, height: 38, borderRadius: 19,
-    backgroundColor: '#F0EEFF',
-    justifyContent: 'center', alignItems: 'center', marginLeft: 12,
-  },
-  regenerateBtnDisabled: { backgroundColor: '#f5f5f5' },
+    filterRow: { flexDirection: 'row', flexWrap: 'wrap', paddingHorizontal: 16, paddingVertical: 10, gap: 8, backgroundColor: c.card, borderBottomWidth: 1, borderBottomColor: c.border },
+    filterChip: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, borderWidth: 1.5, borderColor: c.border, backgroundColor: c.card },
+    filterChipActive: { backgroundColor: c.primary, borderColor: c.primary },
+    filterChipText: { fontSize: 12, fontWeight: '700', color: c.textSecondary },
+    fallbackBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 20, borderWidth: 1.5 },
+    fallbackText: { fontSize: 11, fontWeight: '700' },
 
-  filterRow: {
-    flexDirection: 'row', flexWrap: 'wrap',
-    paddingHorizontal: 16, paddingVertical: 10, gap: 8,
-    backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#eee',
-  },
-  filterChip: {
-    flexDirection: 'row', alignItems: 'center', gap: 4,
-    paddingHorizontal: 12, paddingVertical: 6,
-    borderRadius: 20, borderWidth: 1.5, borderColor: '#E0E0F0', backgroundColor: '#fff',
-  },
-  filterChipActive:     { backgroundColor: '#6C63FF', borderColor: '#6C63FF' },
-  filterChipIcon:       { fontSize: 12 },
-  filterChipText:       { fontSize: 12, fontWeight: '700', color: '#555' },
-  filterChipTextActive: { color: '#fff' },
-  fallbackBadge: {
-    flexDirection: 'row', alignItems: 'center', gap: 4,
-    paddingHorizontal: 10, paddingVertical: 6,
-    borderRadius: 20, backgroundColor: '#FFF8ED',
-    borderWidth: 1.5, borderColor: '#f39c12',
-  },
-  fallbackText: { fontSize: 11, fontWeight: '700', color: '#f39c12' },
+    scroll: { padding: 16 },
+    sectionLabel: { fontSize: 12, fontWeight: '700', color: c.textTertiary, letterSpacing: 1, textTransform: 'uppercase', marginBottom: 12 },
 
-  scroll: { padding: 16 },
-  section: { marginBottom: 8 },
-  sectionLabel: {
-    fontSize: 12, fontWeight: '700', color: '#aaa',
-    letterSpacing: 1, textTransform: 'uppercase', marginBottom: 12,
-  },
+    card: { backgroundColor: c.card, borderRadius: 16, padding: 16, marginBottom: 16, borderLeftWidth: 5, shadowColor: '#000', shadowOpacity: isDark ? 0.3 : 0.06, shadowRadius: 8, elevation: 2 },
+    cardTopRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 },
+    badge: { flexDirection: 'row', alignItems: 'center', borderRadius: 20, paddingHorizontal: 12, paddingVertical: 5, gap: 5 },
+    badgeLabel: { color: '#fff', fontWeight: '700', fontSize: 13 },
+    timeBadge: { flexDirection: 'row', alignItems: 'center', gap: 3, borderRadius: 12, paddingHorizontal: 8, paddingVertical: 4 },
+    timeText: { fontSize: 11, fontWeight: '600' },
+    calChip: { borderWidth: 1.5, borderRadius: 20, paddingHorizontal: 10, paddingVertical: 4 },
+    calChipText: { fontSize: 12, fontWeight: '800' },
+    swapBtn: { width: 30, height: 30, borderRadius: 15, justifyContent: 'center', alignItems: 'center' },
 
-  // Macros bar
-  macroBar: {
-    backgroundColor: '#fff', borderRadius: 16,
-    flexDirection: 'row', alignItems: 'center',
-    paddingVertical: 14, paddingHorizontal: 8,
-    marginBottom: 16,
-    shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 6, elevation: 2,
-  },
-  macroItem:    { flex: 1, alignItems: 'center' },
-  macroValue:   { fontSize: 16, fontWeight: '800', color: '#1A1A2E' },
-  macroLabel:   { fontSize: 10, fontWeight: '600', color: '#aaa', marginTop: 2 },
-  macroDivider: { width: 1, height: 32, backgroundColor: '#f0f0f0' },
-
-  // Products calories strip
-  calRow:       { paddingBottom: 4, gap: 10 },
-  calCard: {
-    width: 90, backgroundColor: '#fff', borderRadius: 14,
-    padding: 10, alignItems: 'center', gap: 4,
-    shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 6, elevation: 2,
-  },
-  calCardIcon: { fontSize: 22 },
-  calCardName: { fontSize: 10, fontWeight: '600', color: '#444', textAlign: 'center', lineHeight: 13 },
-  calBadge: {
-    backgroundColor: '#F0EEFF', borderRadius: 10,
-    paddingHorizontal: 8, paddingVertical: 3, alignItems: 'center', marginTop: 4,
-  },
-  calBadgeText: { fontSize: 13, fontWeight: '800', color: '#6C63FF' },
-  calBadgeUnit: { fontSize: 9, fontWeight: '600', color: '#6C63FF', marginTop: -1 },
-
-  // Skeleton
-  skeletonChip: {
-    borderRadius: 20, backgroundColor: '#E8E8F0',
-  },
-  skeletonLine: {
-    borderRadius: 8, backgroundColor: '#E8E8F0', marginBottom: 4,
-  },
-
-  // Recipe card
-  card: {
-    backgroundColor: '#fff', borderRadius: 16,
-    padding: 16, marginBottom: 16, borderLeftWidth: 5,
-    shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 8, elevation: 2,
-  },
-  cardTopRow: {
-    flexDirection: 'row', alignItems: 'center',
-    justifyContent: 'space-between', marginBottom: 12,
-  },
-  cardTopRight:   { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  badge: {
-    flexDirection: 'row', alignItems: 'center',
-    borderRadius: 20, paddingHorizontal: 12, paddingVertical: 5, gap: 5,
-  },
-  badgeIcon:      { fontSize: 13 },
-  badgeLabel:     { color: '#fff', fontWeight: '700', fontSize: 13 },
-  prepTimeBadge: {
-    flexDirection: 'row', alignItems: 'center', gap: 3,
-    backgroundColor: '#F7F8FC', borderRadius: 12,
-    paddingHorizontal: 8, paddingVertical: 4,
-  },
-  prepTimeText:   { fontSize: 11, fontWeight: '600', color: '#999' },
-  calChip: {
-    borderWidth: 1.5, borderRadius: 20, paddingHorizontal: 10, paddingVertical: 4,
-  },
-  calChipText:    { fontSize: 12, fontWeight: '800' },
-  swapBtn: {
-    width: 30, height: 30, borderRadius: 15,
-    backgroundColor: '#F0EEFF', justifyContent: 'center', alignItems: 'center',
-  },
-
-  recipeTitle: { fontSize: 17, fontWeight: '800', color: '#1A1A2E', marginBottom: 12, lineHeight: 23 },
-
-  pillsSection:   { marginBottom: 10 },
-  fromListLabel:  { fontSize: 11, color: '#2ecc71', fontWeight: '700', marginBottom: 7 },
-  extraLabel:     { fontSize: 11, color: '#f39c12', fontWeight: '700', marginBottom: 7 },
-  pills:          { flexDirection: 'row', flexWrap: 'wrap', gap: 7 },
-  pill: {
-    borderWidth: 1.5, borderRadius: 20,
-    paddingHorizontal: 10, paddingVertical: 4,
-  },
-  pillText:       { fontSize: 12, fontWeight: '700' },
-  extraPill: {
-    backgroundColor: '#FFF8ED', borderWidth: 1.5, borderColor: '#f39c12',
-    borderRadius: 20, paddingHorizontal: 10, paddingVertical: 4,
-  },
-  extraPillText:  { fontSize: 12, fontWeight: '700', color: '#f39c12' },
-
-  descBox:  { backgroundColor: '#FFFBEA', borderRadius: 10, padding: 12, marginBottom: 12 },
-  descText: { fontSize: 13, color: '#7d6608', lineHeight: 20 },
-
-  btnRow:       { flexDirection: 'row', gap: 10 },
-  linkBtn: {
-    flex: 1, borderRadius: 12, paddingVertical: 13,
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-  },
-  linkBtnText:  { color: '#fff', fontWeight: '700', fontSize: 13 },
-  ytBtn: {
-    flex: 1, borderRadius: 12, paddingVertical: 13, backgroundColor: '#FF0000',
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-  },
-  ytBtnText:    { color: '#fff', fontWeight: '700', fontSize: 13 },
-
-  footer: {
-    flexDirection: 'row', padding: 16, gap: 12,
-    backgroundColor: '#fff', borderTopWidth: 1, borderTopColor: '#eee',
-  },
-  backBtn: {
-    flex: 1, backgroundColor: '#F0EEFF', borderRadius: 16,
-    paddingVertical: 14, alignItems: 'center',
-  },
-  backBtnText: { color: '#6C63FF', fontWeight: '700', fontSize: 15 },
-  homeBtn: {
-    flex: 1, backgroundColor: '#1A1A2E', borderRadius: 16,
-    paddingVertical: 14, alignItems: 'center',
-  },
-  homeBtnText: { color: '#fff', fontWeight: '700', fontSize: 15 },
-
-  // ── Recipe Modal ──
-  modalContainer: { flex: 1, backgroundColor: '#F7F8FC' },
-  modalHeader: {
-    backgroundColor: '#fff',
-    flexDirection: 'row', alignItems: 'center',
-    paddingHorizontal: 16, paddingVertical: 14,
-    borderBottomWidth: 1, borderBottomColor: '#eee', gap: 12,
-  },
-  modalCloseBtn: {
-    width: 36, height: 36, borderRadius: 18,
-    backgroundColor: '#f0f0f0', justifyContent: 'center', alignItems: 'center',
-  },
-  modalTitle: { flex: 1, fontSize: 16, fontWeight: '800', color: '#1A1A2E' },
-  ytSmallBtn: {
-    width: 36, height: 36, borderRadius: 18,
-    backgroundColor: '#FF0000', justifyContent: 'center', alignItems: 'center',
-  },
-
-  modalBody: { flex: 1, padding: 20 },
-
-  modalInfoRow: { flexDirection: 'row', gap: 8, marginBottom: 14 },
-  modalInfoChip: {
-    flexDirection: 'row', alignItems: 'center', gap: 5,
-    backgroundColor: '#F0EEFF', borderRadius: 12,
-    paddingHorizontal: 12, paddingVertical: 6,
-  },
-  modalInfoText: { fontSize: 13, fontWeight: '700', color: '#6C63FF' },
-
-  modalDesc: {
-    fontSize: 14, color: '#555', lineHeight: 21,
-    backgroundColor: '#FFFBEA', borderRadius: 10,
-    padding: 14, marginBottom: 20,
-  },
-
-  modalSection:      { marginBottom: 20 },
-  modalSectionTitle: {
-    fontSize: 13, fontWeight: '800', color: '#1A1A2E',
-    marginBottom: 12, textTransform: 'uppercase', letterSpacing: 0.5,
-  },
-
-  modalIngredientRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 8 },
-  modalIngDot:        { width: 8, height: 8, borderRadius: 4 },
-  modalIngText:       { fontSize: 14, color: '#333', flex: 1 },
-
-  modalStepRow: {
-    flexDirection: 'row', alignItems: 'flex-start', gap: 12, marginBottom: 14,
-  },
-  modalStepNum: {
-    width: 28, height: 28, borderRadius: 14,
-    justifyContent: 'center', alignItems: 'center', marginTop: 1,
-  },
-  modalStepNumText: { color: '#fff', fontWeight: '800', fontSize: 13 },
-  modalStepText:    { flex: 1, fontSize: 14, color: '#333', lineHeight: 22 },
-});
+    recipeTitle: { fontSize: 17, fontWeight: '800', marginBottom: 12, lineHeight: 23 },
+    fromLabel: { fontSize: 11, fontWeight: '700', marginBottom: 7 },
+    pill: { borderWidth: 1.5, borderRadius: 20, paddingHorizontal: 10, paddingVertical: 4 },
+    pillText: { fontSize: 12, fontWeight: '700' },
+    descBox: { borderRadius: 10, padding: 12, marginBottom: 12 },
+    descText: { fontSize: 13, lineHeight: 20 },
+    linkBtn: { flex: 1, borderRadius: 12, paddingVertical: 13, flexDirection: 'row', alignItems: 'center', justifyContent: 'center' },
+    linkBtnText: { color: '#fff', fontWeight: '700', fontSize: 13 },
+    ytBtn: { flex: 1, borderRadius: 12, paddingVertical: 13, backgroundColor: '#FF0000', flexDirection: 'row', alignItems: 'center', justifyContent: 'center' },
+  });
+}

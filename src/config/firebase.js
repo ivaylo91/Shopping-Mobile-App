@@ -1,6 +1,6 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
-import { initializeFirestore, memoryLocalCache } from 'firebase/firestore';
+import { initializeFirestore, persistentLocalCache } from 'firebase/firestore';
 
 const firebaseConfig = {
   apiKey:            process.env.EXPO_PUBLIC_FIREBASE_API_KEY            || 'AIzaSyC4_qUPhiEPFmBYWoL6g_zjASpJSPJQrIM',
@@ -15,8 +15,6 @@ const app = initializeApp(firebaseConfig);
 
 export const auth = getAuth(app);
 
-// memoryLocalCache: serves cached data instantly on re-renders,
-// then reconciles with Firestore — cuts redundant round-trips.
 export const db = initializeFirestore(app, {
-  localCache: memoryLocalCache(),
+  localCache: persistentLocalCache(),
 });
