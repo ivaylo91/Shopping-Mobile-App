@@ -1,5 +1,5 @@
 import { initializeApp } from 'firebase/app';
-import { initializeAuth, inMemoryPersistence } from 'firebase/auth';
+import { getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 
 const firebaseConfig = {
@@ -13,10 +13,6 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 
-// Firebase 12 removed getReactNativePersistence. Use inMemoryPersistence so
-// initializeAuth doesn't attempt browser storage APIs unavailable on native.
-export const auth = initializeAuth(app, {
-  persistence: inMemoryPersistence,
-});
+export const auth = getAuth(app);
 
 export const db = getFirestore(app);
