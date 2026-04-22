@@ -11,8 +11,17 @@ const firebaseConfig = {
   appId:             process.env.EXPO_PUBLIC_FIREBASE_APP_ID             || '1:384501943393:web:9ee10939a61a653151ee20',
 };
 
-const app = initializeApp(firebaseConfig);
+let app;
+let auth;
+let db;
 
-export const auth = getAuth(app);
+try {
+  app = initializeApp(firebaseConfig);
+  auth = getAuth(app);
+  db = getFirestore(app);
+} catch (e) {
+  console.error('[Firebase] init failed:', e);
+  throw e;
+}
 
-export const db = getFirestore(app);
+export { auth, db };
