@@ -33,18 +33,18 @@ export const FONT = {
 // ─── Color Palettes ────────────────────────────────────────────────────────────
 
 const LIGHT = {
-  primary: '#6C63FF',
-  primaryLight: '#F0EEFF',
-  primaryMuted: '#9b96d4',
-  bg: '#F7F8FC',
+  primary: '#2B7A5C',         // warm forest green — grounded, nourishing, calm
+  primaryLight: '#EAF5EF',    // light mint tint
+  primaryMuted: '#78B096',    // muted green for secondary elements
+  bg: '#F5F7F5',              // subtly green-tinted (cohesion with primary hue)
   card: '#FFFFFF',
-  cardAlt: '#F7F8FC',
+  cardAlt: '#EFF4F0',         // subtle green tint (was #F7F8FC)
   text: '#1A1A2E',
-  textSecondary: '#666',
-  textTertiary: '#999',
-  textQuaternary: '#bbb',
-  border: '#EEEEEE',
-  borderLight: '#F4F4F8',
+  textSecondary: '#555566',
+  textTertiary: '#6D6D6D',    // WCAG AA fixed: ~5.5:1 on white (was #999 at 2.6:1)
+  textQuaternary: '#767676',  // WCAG AA fixed: ~4.54:1 on white (was #bbb at 1.8:1)
+  border: '#DDE4DE',          // green-tinted border
+  borderLight: '#EBF0EC',     // green-tinted divider
   green: '#2ecc71',
   greenLight: '#E8FBF0',
   red: '#e74c3c',
@@ -55,27 +55,27 @@ const LIGHT = {
   purple: '#9b59b6',
   overlay: 'rgba(0,0,0,0.4)',
   tabBar: '#FFFFFF',
-  tabBarBorder: '#ECECF4',
+  tabBarBorder: '#DDE4DE',
   statusBar: 'dark-content',
   inputBg: '#FFFFFF',
-  shimmer1: '#F0F0F8',
-  shimmer2: '#E8E8F4',
-  skeleton: '#E0E0EA',
+  shimmer1: '#EDF2EE',
+  shimmer2: '#E5EDE7',
+  skeleton: '#DDE7DF',
 };
 
 const DARK = {
-  primary: '#8B7FFF',
-  primaryLight: '#1E1B3A',
-  primaryMuted: '#6B64C0',
-  bg: '#0F0F1A',
-  card: '#1A1A2E',
-  cardAlt: '#12121F',
-  text: '#F0F0FF',
-  textSecondary: '#AAA8CC',
-  textTertiary: '#7775A8',
-  textQuaternary: '#555380',
-  border: '#2A2845',
-  borderLight: '#1F1E35',
+  primary: '#4DB88A',         // lighter forest green for dark backgrounds
+  primaryLight: '#0B2419',    // deep green tint
+  primaryMuted: '#3A8A68',    // muted green
+  bg: '#0F0F18',
+  card: '#1A1E1B',            // subtle green-warm dark card
+  cardAlt: '#131812',         // slight green dark
+  text: '#F0F2F0',            // warm white (slight green tint)
+  textSecondary: '#B0B4B0',   // green-neutral secondary
+  textTertiary: '#9A9A9A',    // WCAG AA fixed: ~6.2:1 on dark card (was #7775A8 at 3.9:1)
+  textQuaternary: '#888888',  // WCAG AA fixed: ~4.9:1 on dark card (was #555380, near-invisible)
+  border: '#263028',          // dark green-tinted border
+  borderLight: '#1C2520',
   green: '#27ae60',
   greenLight: '#0D2B1A',
   red: '#c0392b',
@@ -85,13 +85,13 @@ const DARK = {
   blue: '#2980b9',
   purple: '#8e44ad',
   overlay: 'rgba(0,0,0,0.7)',
-  tabBar: '#1A1A2E',
-  tabBarBorder: '#2A2845',
+  tabBar: '#1A1E1B',
+  tabBarBorder: '#263028',
   statusBar: 'light-content',
-  inputBg: '#1A1A2E',
-  shimmer1: '#22203A',
-  shimmer2: '#2A2848',
-  skeleton: '#2A2845',
+  inputBg: '#1A1E1B',
+  shimmer1: '#20261F',
+  shimmer2: '#252E24',
+  skeleton: '#263028',
 };
 
 export const COLORS = LIGHT;
@@ -114,10 +114,10 @@ export const SHADOWS = {
     elevation: 3,
   },
   primary: {
-    shadowColor: '#6C63FF',
-    shadowOpacity: 0.35,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 6 },
+    shadowColor: '#2B7A5C',   // matches new forest-green primary
+    shadowOpacity: 0.28,      // reduced from 0.35 — less "glow", more grounded
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 5 },
     elevation: 6,
   },
 };
@@ -126,7 +126,7 @@ export function getShadows(isDark) {
   if (isDark) return {
     sm:      { shadowColor: '#000', shadowOpacity: 0.3, shadowRadius: 5, elevation: 2 },
     md:      { shadowColor: '#000', shadowOpacity: 0.4, shadowRadius: 10, elevation: 4 },
-    primary: { shadowColor: '#6C63FF', shadowOpacity: 0.5, shadowRadius: 12, shadowOffset: { width: 0, height: 6 }, elevation: 8 },
+    primary: { shadowColor: '#4DB88A', shadowOpacity: 0.4, shadowRadius: 10, shadowOffset: { width: 0, height: 5 }, elevation: 8 },
   };
   return SHADOWS;
 }

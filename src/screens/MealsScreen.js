@@ -45,10 +45,10 @@ const FALLBACK = {
 };
 
 const MEAL_SLOTS = [
-  { key: 'breakfast', label: 'Закуска', icon: '🌅', color: '#f39c12' },
-  { key: 'lunch',     label: 'Обяд',    icon: '☀️',  color: '#6C63FF' },
-  { key: 'dinner',    label: 'Вечеря',  icon: '🌙',  color: '#2ecc71' },
-  { key: 'snack',     label: 'Снак',    icon: '⚡',   color: '#e74c3c' },
+  { key: 'breakfast', label: 'Закуска', icon: '🌅', colorKey: 'orange' },
+  { key: 'lunch',     label: 'Обяд',    icon: '☀️',  colorKey: 'primary' },
+  { key: 'dinner',    label: 'Вечеря',  icon: '🌙',  colorKey: 'green' },
+  { key: 'snack',     label: 'Снак',    icon: '⚡',   colorKey: 'red' },
 ];
 
 const FILTERS = [
@@ -72,9 +72,9 @@ function youtubeUrl(title) {
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
-function RecipeCardSkeleton({ color }) {
+function RecipeCardSkeleton() {
   return (
-    <View style={{ backgroundColor: 'transparent', borderRadius: 16, padding: 16, marginBottom: 16, borderLeftWidth: 5, borderLeftColor: color ?? '#ddd' }}>
+    <View style={{ borderRadius: 16, padding: 16, marginBottom: 16 }}>
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 }}>
         <SkeletonBox style={{ width: 90, height: 30, borderRadius: 20 }} />
         <View style={{ flexDirection: 'row', gap: 8 }}>
@@ -366,15 +366,16 @@ export default function MealsScreen({ route }) {
         {/* Recipe cards */}
         <Text style={s.sectionLabel}>Дневен план</Text>
 
-        {MEAL_SLOTS.map(({ key, label, icon, color }) => {
+        {MEAL_SLOTS.map(({ key, label, icon, colorKey }) => {
+          const color = colors[colorKey];
           const recipe = plan?.[key];
           const isLoading = !plan || loadingSlot === key;
 
-          if (isLoading) return <RecipeCardSkeleton key={key} color={color} />;
+          if (isLoading) return <RecipeCardSkeleton key={key} />;
 
           return (
             <Animated.View key={`${key}-${recipe.title}`} entering={FadeIn.duration(300)}
-              style={[s.card, { borderLeftColor: color }]}>
+              style={s.card}>
 
               <View style={s.cardTopRow}>
                 <View style={[s.badge, { backgroundColor: color }]}>
@@ -447,7 +448,7 @@ export default function MealsScreen({ route }) {
       <RecipeModal
         visible={!!selectedSlot && !!selectedRecipe}
         recipe={selectedRecipe}
-        slotColor={selectedSlotMeta?.color ?? colors.primary}
+        slotColor={selectedSlotMeta ? colors[selectedSlotMeta.colorKey] : colors.primary}
         onClose={() => setSelectedSlot(null)}
         onYouTube={() => Linking.openURL(youtubeUrl(selectedRecipe?.title ?? '')).catch(() => {})}
         colors={colors}
@@ -475,7 +476,7 @@ function makeStyles(c, isDark) {
     scroll: { padding: 16 },
     sectionLabel: { fontSize: 12, fontWeight: '700', color: c.textTertiary, letterSpacing: 1, textTransform: 'uppercase', marginBottom: 12 },
 
-    card: { backgroundColor: c.card, borderRadius: 16, padding: 16, marginBottom: 16, borderLeftWidth: 5, shadowColor: '#000', shadowOpacity: isDark ? 0.3 : 0.06, shadowRadius: 8, elevation: 2 },
+    card: { backgroundColor: c.card, borderRadius: 16, padding: 16, marginBottom: 16, borderWidth: 1.5, borderColor: c.borderLight, shadowColor: '#000', shadowOpacity: isDark ? 0.3 : 0.06, shadowRadius: 8, elevation: 2 },
     cardTopRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 },
     badge: { flexDirection: 'row', alignItems: 'center', borderRadius: 20, paddingHorizontal: 12, paddingVertical: 5, gap: 5 },
     badgeLabel: { color: '#fff', fontWeight: '700', fontSize: 13 },

@@ -8,7 +8,7 @@ const TYPE_STYLES = {
   success: { backgroundColor: '#2ecc71' },
   error:   { backgroundColor: '#e74c3c' },
   warning: { backgroundColor: '#f39c12' },
-  info:    { backgroundColor: '#6C63FF' },
+  info:    { backgroundColor: '#2B7A5C' },
 };
 
 const TYPE_ICONS = {

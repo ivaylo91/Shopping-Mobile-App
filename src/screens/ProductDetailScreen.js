@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import {
   View,
   Text,
@@ -8,63 +9,73 @@ import {
   Alert,
 } from 'react-native';
 import { useCart } from '../context/CartContext';
+import { useTheme } from '../context/ThemeContext';
 
 export default function ProductDetailScreen({ route, navigation }) {
   const { product } = route.params;
   const { addItem } = useCart();
+  const { colors, isDark } = useTheme();
+  const s = useMemo(() => makeStyles(colors, isDark), [colors, isDark]);
 
   const handleAdd = () => {
     addItem(product);
-    Alert.alert('Added', `${product.name} added to cart`, [
-      { text: 'Continue Shopping', style: 'cancel' },
-      { text: 'Go to Cart', onPress: () => navigation.navigate('Cart') },
+    Alert.alert('Добавено', `${product.name} е добавен в кошницата`, [
+      { text: 'Продължи', style: 'cancel' },
+      { text: 'Към кошница', onPress: () => navigation.navigate('Cart') },
     ]);
   };
 
   return (
-    <ScrollView style={styles.container}>
+    <ScrollView style={s.container}>
       {product.imageUrl ? (
-        <Image source={{ uri: product.imageUrl }} style={styles.image} />
+        <Image source={{ uri: product.imageUrl }} style={s.image} />
       ) : (
-        <View style={[styles.image, styles.imagePlaceholder]}>
-          <Text style={styles.imagePlaceholderText}>No Image</Text>
+        <View style={[s.image, s.imagePlaceholder]}>
+          <Text style={s.imagePlaceholderText}>Няма снимка</Text>
         </View>
       )}
 
-      <View style={styles.body}>
-        <Text style={styles.name}>{product.name}</Text>
-        <Text style={styles.price}>{product.price?.toFixed(2)} €</Text>
+      <View style={s.body}>
+        <Text style={s.name}>{product.name}</Text>
+        <Text style={s.price}>{product.price?.toFixed(2)} €</Text>
 
         {product.description ? (
-          <Text style={styles.description}>{product.description}</Text>
+          <Text style={s.description}>{product.description}</Text>
         ) : null}
 
-        <TouchableOpacity style={styles.button} onPress={handleAdd}>
-          <Text style={styles.buttonText}>Add to Cart</Text>
+        <TouchableOpacity style={s.button} onPress={handleAdd} activeOpacity={0.85}>
+          <Text style={s.buttonText}>Добави в кошницата</Text>
         </TouchableOpacity>
       </View>
     </ScrollView>
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff' },
-  image: { width: '100%', height: 280 },
-  imagePlaceholder: {
-    backgroundColor: '#eee',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  imagePlaceholderText: { color: '#aaa', fontSize: 16 },
-  body: { padding: 20 },
-  name: { fontSize: 24, fontWeight: '700', marginBottom: 8 },
-  price: { fontSize: 22, color: '#6C63FF', fontWeight: '700', marginBottom: 16 },
-  description: { fontSize: 15, color: '#555', lineHeight: 22, marginBottom: 24 },
-  button: {
-    backgroundColor: '#6C63FF',
-    borderRadius: 12,
-    padding: 16,
-    alignItems: 'center',
-  },
-  buttonText: { color: '#fff', fontWeight: '700', fontSize: 16 },
-});
+function makeStyles(c, isDark) {
+  return StyleSheet.create({
+    container: { flex: 1, backgroundColor: c.bg },
+    image: { width: '100%', height: 280 },
+    imagePlaceholder: {
+      backgroundColor: c.cardAlt,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    imagePlaceholderText: { color: c.textTertiary, fontSize: 16 },
+    body: { padding: 20 },
+    name: { fontSize: 24, fontWeight: '700', color: c.text, marginBottom: 8 },
+    price: { fontSize: 22, color: c.primary, fontWeight: '700', marginBottom: 16 },
+    description: { fontSize: 15, color: c.textSecondary, lineHeight: 22, marginBottom: 24 },
+    button: {
+      backgroundColor: c.primary,
+      borderRadius: 12,
+      padding: 16,
+      alignItems: 'center',
+      shadowColor: c.primary,
+      shadowOpacity: isDark ? 0.4 : 0.28,
+      shadowRadius: 8,
+      shadowOffset: { width: 0, height: 4 },
+      elevation: 4,
+    },
+    buttonText: { color: '#fff', fontWeight: '700', fontSize: 16 },
+  });
+}

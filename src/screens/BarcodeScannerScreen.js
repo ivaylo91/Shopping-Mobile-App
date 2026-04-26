@@ -232,7 +232,7 @@ export default function BarcodeScannerScreen({ navigation }) {
 
 const CORNER_SIZE = 28;
 const CORNER_THICKNESS = 4;
-const CORNER_COLOR = '#6C63FF';
+const CORNER_COLOR = '#2B7A5C';
 
 const s = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#000' },
