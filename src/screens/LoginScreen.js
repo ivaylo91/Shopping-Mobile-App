@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet,
   ActivityIndicator, Alert, KeyboardAvoidingView, Platform,
@@ -37,11 +37,11 @@ export default function LoginScreen({ navigation }) {
     }
   };
 
-  const s = makeStyles(colors, isDark);
+  const s = useMemo(() => makeStyles(colors, isDark), [colors, isDark]);
 
   return (
     <KeyboardAvoidingView style={s.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <TouchableOpacity style={s.themeToggle} onPress={toggleTheme}>
+      <TouchableOpacity style={s.themeToggle} onPress={toggleTheme} accessibilityLabel={isDark ? 'Превключи светла тема' : 'Превключи тъмна тема'} accessibilityRole="button">
         <Ionicons name={isDark ? 'sunny-outline' : 'moon-outline'} size={20} color={colors.textTertiary} />
       </TouchableOpacity>
 
@@ -64,6 +64,7 @@ export default function LoginScreen({ navigation }) {
               keyboardType="email-address"
               autoComplete="email"
               keyboardAppearance={isDark ? 'dark' : 'light'}
+              accessibilityLabel="Имейл адрес"
             />
             {errors.email && <Text style={s.errorText}>{errors.email.message}</Text>}
           </View>
@@ -86,8 +87,9 @@ export default function LoginScreen({ navigation }) {
                 secureTextEntry={!showPassword}
                 autoComplete="password"
                 keyboardAppearance={isDark ? 'dark' : 'light'}
+                accessibilityLabel="Парола"
               />
-              <TouchableOpacity style={s.eyeBtn} onPress={() => setShowPassword((v) => !v)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+              <TouchableOpacity style={s.eyeBtn} onPress={() => setShowPassword((v) => !v)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} accessibilityLabel={showPassword ? 'Скрий паролата' : 'Покажи паролата'} accessibilityRole="button">
                 <Ionicons name={showPassword ? 'eye-off-outline' : 'eye-outline'} size={20} color={colors.textTertiary} />
               </TouchableOpacity>
             </View>
@@ -128,7 +130,7 @@ function makeStyles(c, isDark) {
     passwordInput: { flex: 1, paddingHorizontal: 16, paddingVertical: 14, fontSize: 15, color: c.text },
     eyeBtn: { paddingHorizontal: 14 },
     errorText: { fontSize: 12, color: c.red, marginTop: 5, marginLeft: 4 },
-    button: { backgroundColor: c.primary, borderRadius: 14, padding: 17, alignItems: 'center', marginTop: 6, marginBottom: 20, shadowColor: c.primary, shadowOpacity: 0.35, shadowRadius: 10, shadowOffset: { width: 0, height: 5 }, elevation: 5 },
+    button: { backgroundColor: c.primary, borderRadius: 14, padding: 17, alignItems: 'center', marginTop: 6, marginBottom: 20, shadowColor: c.primary, shadowOpacity: 0.28, shadowRadius: 10, shadowOffset: { width: 0, height: 5 }, elevation: 5 },
     buttonDisabled: { opacity: 0.6, shadowOpacity: 0 },
     buttonText: { color: '#fff', fontWeight: '800', fontSize: 17 },
     link: { color: c.textTertiary, textAlign: 'center', fontSize: 14 },

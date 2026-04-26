@@ -422,7 +422,7 @@ function makeStyles(c, isDark) {
     emptyBtn: {
       backgroundColor: c.primary, borderRadius: 16, paddingHorizontal: 24, paddingVertical: 14,
       flexDirection: 'row', alignItems: 'center', gap: 8,
-      shadowColor: c.primary, shadowOpacity: 0.35, shadowRadius: 10, elevation: 5,
+      shadowColor: c.primary, shadowOpacity: 0.28, shadowRadius: 10, elevation: 5,
     },
     emptyBtnText: { color: '#fff', fontWeight: '700', fontSize: 15 },
   });

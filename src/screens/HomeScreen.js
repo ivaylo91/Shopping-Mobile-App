@@ -238,7 +238,7 @@ export default function HomeScreen({ navigation, route }) {
 
   // ─── Dynamic styles + theme-aware trend colors ───────────────────────────────
 
-  const s = makeStyles(colors, isDark);
+  const s = useMemo(() => makeStyles(colors, isDark), [colors, isDark]);
   const trendColor = useMemo(
     () => ({ up: colors.red, down: colors.green, same: colors.textTertiary, new: colors.primary }),
     [colors],
@@ -255,7 +255,7 @@ export default function HomeScreen({ navigation, route }) {
         {/* Header */}
         <View style={s.header}>
           <Text style={s.title}>Нов списък</Text>
-          <TouchableOpacity style={s.overflowBtn} onPress={() => setOverflowVisible(true)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+          <TouchableOpacity style={s.overflowBtn} onPress={() => setOverflowVisible(true)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} accessibilityLabel="Меню" accessibilityRole="button">
             <Ionicons name="ellipsis-horizontal" size={20} color={colors.textSecondary} />
           </TouchableOpacity>
         </View>
@@ -322,7 +322,7 @@ export default function HomeScreen({ navigation, route }) {
                 </TouchableOpacity>
               )}
             </View>
-            <TouchableOpacity style={s.cameraBtn} onPress={() => navigation.navigate('BarcodeScanner')}>
+            <TouchableOpacity style={s.cameraBtn} onPress={() => navigation.navigate('BarcodeScanner')} accessibilityLabel="Сканирай баркод" accessibilityRole="button">
               <Ionicons name="barcode-outline" size={22} color={colors.primary} />
             </TouchableOpacity>
             <View style={s.addPriceWrap}>
@@ -359,7 +359,8 @@ export default function HomeScreen({ navigation, route }) {
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.catRow}>
             {CATEGORIES.map((cat) => (
               <TouchableOpacity key={cat.id} style={[s.catChip, itemCategory === cat.id && s.catChipActive]}
-                onPress={() => { Haptics.selectionAsync(); setItemCategory(cat.id); }} activeOpacity={0.8}>
+                onPress={() => { Haptics.selectionAsync(); setItemCategory(cat.id); }} activeOpacity={0.8}
+                accessibilityRole="radio" accessibilityState={{ selected: itemCategory === cat.id }} accessibilityLabel={cat.label}>
                 <Text style={{ fontSize: 14 }}>{cat.emoji}</Text>
                 <Text style={[s.catLabel, itemCategory === cat.id && s.catLabelActive]}>{cat.label}</Text>
               </TouchableOpacity>
@@ -424,11 +425,11 @@ export default function HomeScreen({ navigation, route }) {
                     <View style={s.itemRight}>
                       <Text style={s.itemSubtotal}>{item.subtotal.toFixed(2)} €</Text>
                       <View style={s.itemQtyControls}>
-                        <TouchableOpacity onPress={() => changeQty(item.id, -1)} hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}>
+                        <TouchableOpacity onPress={() => changeQty(item.id, -1)} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }} accessibilityLabel="Намали количеството" accessibilityRole="button">
                           <Ionicons name="remove-circle-outline" size={19} color={colors.textQuaternary} />
                         </TouchableOpacity>
                         <Text style={s.itemQtyNum}>{item.quantity}</Text>
-                        <TouchableOpacity onPress={() => changeQty(item.id, 1)} hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}>
+                        <TouchableOpacity onPress={() => changeQty(item.id, 1)} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }} accessibilityLabel="Увеличи количеството" accessibilityRole="button">
                           <Ionicons name="add-circle-outline" size={19} color={colors.textQuaternary} />
                         </TouchableOpacity>
                       </View>
@@ -728,7 +729,7 @@ function makeStyles(c, isDark) {
 
     addFooter: { flexDirection: 'row', alignItems: 'center', gap: 8 },
     qtyRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-    qtyBtn: { width: 30, height: 30, borderRadius: 10, backgroundColor: c.cardAlt, justifyContent: 'center', alignItems: 'center' },
+    qtyBtn: { width: 44, height: 44, borderRadius: 12, backgroundColor: c.cardAlt, justifyContent: 'center', alignItems: 'center' },
     qtyValue: { fontSize: 16, fontWeight: '800', color: c.text, minWidth: 20, textAlign: 'center' },
     noteToggle: { flexDirection: 'row', alignItems: 'center', gap: 4, flex: 1 },
     noteToggleText: { fontSize: 12, fontWeight: '600', color: c.textQuaternary },
@@ -768,7 +769,7 @@ function makeStyles(c, isDark) {
     primaryCta: {
       flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
       backgroundColor: c.primary, borderRadius: 16, paddingVertical: 18,
-      shadowColor: c.primary, shadowOpacity: 0.35, shadowRadius: 12, shadowOffset: { width: 0, height: 6 }, elevation: 6,
+      shadowColor: c.primary, shadowOpacity: 0.28, shadowRadius: 10, shadowOffset: { width: 0, height: 5 }, elevation: 6,
     },
     primaryCtaDisabled: { opacity: 0.4, shadowOpacity: 0 },
     primaryCtaText: { color: '#fff', fontWeight: '800', fontSize: 17 },

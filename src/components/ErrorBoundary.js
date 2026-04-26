@@ -77,7 +77,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingVertical: 14,
     shadowColor: '#2B7A5C',
-    shadowOpacity: 0.35,
+    shadowOpacity: 0.28,
     shadowRadius: 10,
     elevation: 5,
   },

@@ -234,7 +234,7 @@ export default function MealsScreen({ route }) {
   const [excludedBySlot, setExcludedBySlot] = useState({});
   const [selectedSlot, setSelectedSlot] = useState(null);
 
-  const s = makeStyles(colors, isDark);
+  const s = useMemo(() => makeStyles(colors, isDark), [colors, isDark]);
 
   const loadPlan = useCallback(async (currentFilters) => {
     setPlan(null);
@@ -323,6 +323,8 @@ export default function MealsScreen({ route }) {
           style={[s.regenBtn, !plan && { backgroundColor: colors.cardAlt }]}
           onPress={regenerateAll}
           disabled={!plan}
+          accessibilityLabel="Обнови всички рецепти"
+          accessibilityRole="button"
         >
           <Ionicons name="shuffle-outline" size={18} color={plan ? colors.primary : colors.textQuaternary} />
         </TouchableOpacity>
@@ -339,6 +341,9 @@ export default function MealsScreen({ route }) {
               onPress={() => toggleFilter(key)}
               activeOpacity={0.8}
               disabled={!plan}
+              accessibilityRole="checkbox"
+              accessibilityState={{ checked: active }}
+              accessibilityLabel={label}
             >
               <Text style={{ fontSize: 12 }}>{icon}</Text>
               <Text style={[s.filterChipText, active && { color: '#fff' }]}>{label}</Text>
@@ -390,7 +395,7 @@ export default function MealsScreen({ route }) {
                   <View style={[s.calChip, { borderColor: color }]}>
                     <Text style={[s.calChipText, { color }]}>{recipe.calories} ккал</Text>
                   </View>
-                  <TouchableOpacity style={[s.swapBtn, { backgroundColor: colors.primaryLight }]} onPress={() => swapMeal(key)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                  <TouchableOpacity style={[s.swapBtn, { backgroundColor: colors.primaryLight }]} onPress={() => swapMeal(key)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} accessibilityLabel={`Смени рецептата за ${label}`} accessibilityRole="button">
                     <Ionicons name="refresh-outline" size={16} color={colors.primary} />
                   </TouchableOpacity>
                 </View>

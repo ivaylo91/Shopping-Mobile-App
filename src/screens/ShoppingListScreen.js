@@ -77,6 +77,9 @@ const ShoppingItem = memo(function ShoppingItem({ item, checked, onToggle, color
       style={[iS.item, { backgroundColor: colors.card }, checked && iS.itemChecked]}
       onPress={() => onToggle(item.id)}
       activeOpacity={0.75}
+      accessibilityRole="checkbox"
+      accessibilityState={{ checked }}
+      accessibilityLabel={item.name}
     >
       <View>
         {checked
@@ -124,7 +127,7 @@ export default function ShoppingListScreen({ route, navigation }) {
   const [saving, setSaving] = useState(false);
   const [showBreakdown, setShowBreakdown] = useState(false);
 
-  const s = makeStyles(colors, isDark);
+  const s = useMemo(() => makeStyles(colors, isDark), [colors, isDark]);
 
   const { total, spent, budgetRemaining, checkedCount, progress } = useMemo(() => {
     const t = list.reduce((s, i) => s + i.subtotal, 0);
@@ -329,7 +332,7 @@ function makeStyles(c, isDark) {
     summaryDivider: { height: 1, backgroundColor: c.borderLight, marginVertical: 4 },
 
     actions: { paddingHorizontal: 14, paddingBottom: 16 },
-    btnSave: { backgroundColor: c.primary, borderRadius: 16, paddingVertical: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, shadowColor: c.primary, shadowOpacity: 0.35, shadowRadius: 10, shadowOffset: { width: 0, height: 4 }, elevation: 5 },
+    btnSave: { backgroundColor: c.primary, borderRadius: 16, paddingVertical: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, shadowColor: c.primary, shadowOpacity: 0.28, shadowRadius: 10, shadowOffset: { width: 0, height: 4 }, elevation: 5 },
     btnSaveText: { color: '#fff', fontWeight: '800', fontSize: 16 },
     btnDisabled: { opacity: 0.6, shadowOpacity: 0 },
   });
