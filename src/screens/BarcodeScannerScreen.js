@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Modal, Animated } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, useWindowDimensions } from 'react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
@@ -125,6 +125,8 @@ const sheetS = StyleSheet.create({
 
 export default function BarcodeScannerScreen({ navigation }) {
   const { colors } = useTheme();
+  const { width: screenWidth } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
   const [permission, requestPermission] = useCameraPermissions();
   const [scanned, setScanned] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -170,10 +172,10 @@ export default function BarcodeScannerScreen({ navigation }) {
         <Ionicons name="camera-outline" size={64} color={colors.border} />
         <Text style={[s.permTitle, { color: colors.text }]}>Нужен е достъп до камерата</Text>
         <Text style={[s.permSub, { color: colors.textTertiary }]}>За да сканирате баркодове</Text>
-        <TouchableOpacity style={[s.permBtn, { backgroundColor: colors.primary }]} onPress={requestPermission}>
+        <TouchableOpacity style={[s.permBtn, { backgroundColor: colors.primary }]} onPress={requestPermission} accessibilityLabel="Разреши достъп до камерата" accessibilityRole="button">
           <Text style={s.permBtnText}>Разреши достъп</Text>
         </TouchableOpacity>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
+        <TouchableOpacity onPress={() => navigation.goBack()} accessibilityLabel="Назад" accessibilityRole="button">
           <Text style={[s.backLinkText, { color: colors.textTertiary }]}>Назад</Text>
         </TouchableOpacity>
       </SafeAreaView>
@@ -190,8 +192,8 @@ export default function BarcodeScannerScreen({ navigation }) {
       />
 
       <View style={s.overlay}>
-        <View style={s.topBar}>
-          <TouchableOpacity style={s.closeBtn} onPress={() => navigation.goBack()}>
+        <View style={[s.topBar, { paddingTop: insets.top + 12 }]}>
+          <TouchableOpacity style={s.closeBtn} onPress={() => navigation.goBack()} accessibilityLabel="Затвори скенера" accessibilityRole="button">
             <Ionicons name="close" size={26} color="#fff" />
           </TouchableOpacity>
           <Text style={s.topTitle}>Сканирай продукт</Text>
@@ -199,7 +201,7 @@ export default function BarcodeScannerScreen({ navigation }) {
         </View>
 
         <View style={s.frameWrap}>
-          <View style={s.frame}>
+          <View style={[s.frame, { width: Math.min(280, screenWidth * 0.7), height: Math.round(Math.min(280, screenWidth * 0.7) * 0.77) }]}>
             <View style={[s.corner, s.tl]} />
             <View style={[s.corner, s.tr]} />
             <View style={[s.corner, s.bl]} />
@@ -244,12 +246,12 @@ const s = StyleSheet.create({
   backLinkText: { marginTop: 8, fontSize: 14, fontWeight: '600' },
 
   overlay: { ...StyleSheet.absoluteFillObject, justifyContent: 'space-between' },
-  topBar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingTop: 56, paddingBottom: 16, backgroundColor: 'rgba(0,0,0,0.55)' },
+  topBar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingBottom: 16, backgroundColor: 'rgba(0,0,0,0.55)' },
   closeBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.15)', justifyContent: 'center', alignItems: 'center' },
   topTitle: { fontSize: 17, fontWeight: '700', color: '#fff' },
 
   frameWrap: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: 20 },
-  frame: { width: 260, height: 200, borderRadius: 12, position: 'relative', justifyContent: 'center', alignItems: 'center' },
+  frame: { borderRadius: 12, position: 'relative', justifyContent: 'center', alignItems: 'center' },
   corner: { position: 'absolute', width: CORNER_SIZE, height: CORNER_SIZE },
   tl: { top: 0, left: 0, borderTopWidth: CORNER_THICKNESS, borderLeftWidth: CORNER_THICKNESS, borderColor: CORNER_COLOR, borderTopLeftRadius: 8 },
   tr: { top: 0, right: 0, borderTopWidth: CORNER_THICKNESS, borderRightWidth: CORNER_THICKNESS, borderColor: CORNER_COLOR, borderTopRightRadius: 8 },

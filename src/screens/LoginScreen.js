@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet,
-  ActivityIndicator, Alert, KeyboardAvoidingView, Platform,
+  ActivityIndicator, Alert, KeyboardAvoidingView, Platform, ScrollView,
 } from 'react-native';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -45,6 +45,7 @@ export default function LoginScreen({ navigation }) {
         <Ionicons name={isDark ? 'sunny-outline' : 'moon-outline'} size={20} color={colors.textTertiary} />
       </TouchableOpacity>
 
+      <ScrollView contentContainerStyle={s.scroll} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
       <Text style={s.subtitle}>Умно Пазаруване</Text>
       <Text style={s.title}>Добре дошли 👋</Text>
 
@@ -111,14 +112,16 @@ export default function LoginScreen({ navigation }) {
       <TouchableOpacity style={s.guestBtn} onPress={loginAsGuest}>
         <Text style={s.guestText}>Тествай без вход →</Text>
       </TouchableOpacity>
+      </ScrollView>
     </KeyboardAvoidingView>
   );
 }
 
 function makeStyles(c, isDark) {
   return StyleSheet.create({
-    container: { flex: 1, justifyContent: 'center', padding: 28, backgroundColor: c.card },
-    themeToggle: { position: 'absolute', top: 60, right: 24, padding: 8 },
+    container: { flex: 1, backgroundColor: c.card },
+    scroll: { flexGrow: 1, justifyContent: 'center', padding: 28 },
+    themeToggle: { position: 'absolute', top: 60, right: 24, padding: 8, zIndex: 1 },
     subtitle: { fontSize: 13, fontWeight: '700', color: c.primary, textAlign: 'center', letterSpacing: 1, textTransform: 'uppercase', marginBottom: 6 },
     title: { fontSize: 30, fontWeight: '800', color: c.text, marginBottom: 36, textAlign: 'center' },
     fieldWrap: { marginBottom: 18 },
