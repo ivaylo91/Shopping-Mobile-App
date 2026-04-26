@@ -15,7 +15,7 @@ const PRESET_STORES = ['Lidl', 'Kaufland', 'Billa', 'OMV', 'Fantastico'];
 
 export default function StoreComparisonScreen({ navigation }) {
   const { colors, isDark } = useTheme();
-  const s = makeStyles(colors, isDark);
+  const s = useMemo(() => makeStyles(colors, isDark), [colors, isDark]);
 
   const [stores, setStores] = useState(['Lidl', 'Kaufland']);
   const [newStore, setNewStore] = useState('');

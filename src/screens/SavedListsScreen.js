@@ -209,7 +209,7 @@ export default function SavedListsScreen({ navigation }) {
   const [refreshing, setRefreshing] = useState(false);
   const [storeFilter, setStoreFilter] = useState('Всички');
 
-  const s = makeStyles(colors, isDark);
+  const s = useMemo(() => makeStyles(colors, isDark), [colors, isDark]);
 
   const storeOptions = useMemo(() => {
     const stores = new Set(lists.map((l) => l.store).filter(Boolean));

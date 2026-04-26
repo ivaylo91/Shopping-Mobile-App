@@ -1,12 +1,12 @@
 import {
   View,
   Text,
-  FlatList,
   StyleSheet,
   TouchableOpacity,
   Alert,
   ActivityIndicator,
 } from 'react-native';
+import { FlashList } from '@shopify/flash-list';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useCallback, useMemo, useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
@@ -153,10 +153,11 @@ export default function CartScreen({ navigation }) {
         </TouchableOpacity>
       </View>
 
-      <FlatList
+      <FlashList
         data={cart}
         keyExtractor={(item) => item.id}
         renderItem={renderItem}
+        estimatedItemSize={90}
         contentContainerStyle={s.list}
         showsVerticalScrollIndicator={false}
       />

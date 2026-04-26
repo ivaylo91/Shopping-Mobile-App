@@ -1,12 +1,12 @@
 import {
   View,
   Text,
-  FlatList,
   StyleSheet,
   ActivityIndicator,
   RefreshControl,
   TouchableOpacity,
 } from 'react-native';
+import { FlashList } from '@shopify/flash-list';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useCallback, useMemo, useState, memo } from 'react';
 import { Ionicons } from '@expo/vector-icons';
@@ -165,15 +165,13 @@ export default function OrdersScreen({ navigation }) {
         <Text style={s.headerTitle}>Поръчки</Text>
         <Text style={s.headerSub}>{orders.length} поръчки</Text>
       </View>
-      <FlatList
+      <FlashList
         data={orders}
         keyExtractor={(item) => item.id}
         renderItem={renderItem}
+        estimatedItemSize={200}
         contentContainerStyle={s.list}
         showsVerticalScrollIndicator={false}
-        removeClippedSubviews
-        maxToRenderPerBatch={10}
-        windowSize={5}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
