@@ -322,11 +322,11 @@ export default function SavedListsScreen({ navigation }) {
             </Text>
           </View>
           <View style={s.headerBtns}>
-            <TouchableOpacity style={s.joinBtn} onPress={() => navigation.navigate('JoinSharedList')} activeOpacity={0.85}>
+            <TouchableOpacity style={s.joinBtn} onPress={() => navigation.navigate('JoinSharedList')} activeOpacity={0.85} accessibilityLabel="Присъедини се към споделен списък" accessibilityRole="button">
               <Ionicons name="people-outline" size={16} color={colors.primary} />
               <Text style={s.joinBtnText}>Присъедини</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={s.newBtn} onPress={() => navigation.navigate('Home')} activeOpacity={0.85}>
+            <TouchableOpacity style={s.newBtn} onPress={() => navigation.navigate('Home')} activeOpacity={0.85} accessibilityLabel="Нов списък" accessibilityRole="button">
               <Ionicons name="add" size={18} color="#fff" />
               <Text style={s.newBtnText}>Нов</Text>
             </TouchableOpacity>
@@ -341,6 +341,9 @@ export default function SavedListsScreen({ navigation }) {
                 style={[s.filterChip, storeFilter === st && s.filterChipActive]}
                 onPress={() => { Haptics.selectionAsync(); setStoreFilter(st); }}
                 activeOpacity={0.8}
+                accessibilityRole="radio"
+                accessibilityState={{ selected: storeFilter === st }}
+                accessibilityLabel={st}
               >
                 <Text style={[s.filterLabel, storeFilter === st && s.filterLabelActive]}>{st}</Text>
               </TouchableOpacity>
@@ -356,7 +359,7 @@ export default function SavedListsScreen({ navigation }) {
             {storeFilter !== 'Всички' ? `Няма списъци за ${storeFilter}` : 'Няма запазени списъци'}
           </Text>
           <Text style={s.emptyDesc}>Създайте нов бюджетен списък и го запазете.</Text>
-          <TouchableOpacity style={s.emptyBtn} onPress={() => navigation.navigate('Home')} activeOpacity={0.85}>
+          <TouchableOpacity style={s.emptyBtn} onPress={() => navigation.navigate('Home')} activeOpacity={0.85} accessibilityLabel="Създай нов списък" accessibilityRole="button">
             <Ionicons name="add" size={18} color="#fff" />
             <Text style={s.emptyBtnText}>Създай списък</Text>
           </TouchableOpacity>

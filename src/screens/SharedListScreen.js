@@ -34,6 +34,9 @@ const SharedItem = memo(function SharedItem({ item, checked, onToggle, colors })
       ]}
       onPress={() => onToggle(item.id)}
       activeOpacity={0.75}
+      accessibilityRole="checkbox"
+      accessibilityState={{ checked }}
+      accessibilityLabel={item.name}
     >
       <View>
         {checked
@@ -88,7 +91,7 @@ export function JoinSharedListScreen({ navigation }) {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.bg, padding: 24 }}>
-      <TouchableOpacity onPress={() => navigation.goBack()} style={{ padding: 4, alignSelf: 'flex-start' }}>
+      <TouchableOpacity onPress={() => navigation.goBack()} style={{ padding: 4, alignSelf: 'flex-start' }} accessibilityLabel="Назад" accessibilityRole="button">
         <Ionicons name="arrow-back" size={22} color={colors.text} />
       </TouchableOpacity>
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', gap: 14 }}>
@@ -242,7 +245,7 @@ export default function SharedListScreen({ route, navigation }) {
       {/* Header */}
       <View style={{ backgroundColor: colors.card, paddingHorizontal: 18, paddingTop: 14, paddingBottom: 12, borderBottomWidth: 1, borderBottomColor: colors.border }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12, gap: 10 }}>
-          <TouchableOpacity onPress={() => navigation.goBack()} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+          <TouchableOpacity onPress={() => navigation.goBack()} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} accessibilityLabel="Назад" accessibilityRole="button">
             <Ionicons name="arrow-back" size={22} color={colors.text} />
           </TouchableOpacity>
           <View style={{ flex: 1 }}>
@@ -258,7 +261,7 @@ export default function SharedListScreen({ route, navigation }) {
               </View>
             </View>
           </View>
-          <TouchableOpacity onPress={handleShare} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+          <TouchableOpacity onPress={handleShare} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} accessibilityLabel="Сподели кода" accessibilityRole="button">
             <Ionicons name="share-outline" size={22} color={colors.primary} />
           </TouchableOpacity>
         </View>
@@ -274,6 +277,8 @@ export default function SharedListScreen({ route, navigation }) {
           style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: colors.primaryLight, marginHorizontal: 14, marginTop: 12, borderRadius: 14, padding: 14, borderWidth: 1.5, borderColor: colors.border }}
           onPress={handleShare}
           activeOpacity={0.85}
+          accessibilityLabel={`Сподели код ${code}`}
+          accessibilityRole="button"
         >
           <View style={{ gap: 2 }}>
             <Text style={{ fontSize: 11, color: colors.textTertiary, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.5 }}>Код за споделяне</Text>

@@ -27,6 +27,8 @@ const CartItem = ({ item, onRemove, onIncrease, onDecrease, s, colors }) => (
         style={s.qtyBtn}
         onPress={onDecrease}
         hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        accessibilityLabel="Намали количеството"
+        accessibilityRole="button"
       >
         <Ionicons name="remove" size={16} color={colors.primary} />
       </TouchableOpacity>
@@ -35,6 +37,8 @@ const CartItem = ({ item, onRemove, onIncrease, onDecrease, s, colors }) => (
         style={s.qtyBtn}
         onPress={onIncrease}
         hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        accessibilityLabel="Увеличи количеството"
+        accessibilityRole="button"
       >
         <Ionicons name="add" size={16} color={colors.primary} />
       </TouchableOpacity>
@@ -42,6 +46,8 @@ const CartItem = ({ item, onRemove, onIncrease, onDecrease, s, colors }) => (
       <TouchableOpacity
         onPress={onRemove}
         hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        accessibilityLabel="Премахни от кошницата"
+        accessibilityRole="button"
       >
         <Ionicons name="trash-outline" size={18} color={colors.red} />
       </TouchableOpacity>

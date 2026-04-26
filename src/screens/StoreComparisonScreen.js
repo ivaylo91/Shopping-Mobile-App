@@ -98,7 +98,7 @@ export default function StoreComparisonScreen({ navigation }) {
 
         {/* Header */}
         <View style={s.header}>
-          <TouchableOpacity onPress={() => navigation.goBack()} style={{ padding: 4 }}>
+          <TouchableOpacity onPress={() => navigation.goBack()} style={{ padding: 4 }} accessibilityLabel="Назад" accessibilityRole="button">
             <Ionicons name="arrow-back" size={22} color={colors.text} />
           </TouchableOpacity>
           <View>
@@ -112,9 +112,9 @@ export default function StoreComparisonScreen({ navigation }) {
           <Text style={s.sectionLabel}>Магазини за сравнение</Text>
           <View style={s.storeChips}>
             {stores.map((st) => (
-              <TouchableOpacity key={st} style={s.storeChip} onLongPress={() => removeStore(st)} activeOpacity={0.8}>
+              <TouchableOpacity key={st} style={s.storeChip} onLongPress={() => removeStore(st)} activeOpacity={0.8} accessibilityLabel={st} accessibilityRole="button">
                 <Text style={s.storeChipText}>{st}</Text>
-                <TouchableOpacity onPress={() => removeStore(st)} hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}>
+                <TouchableOpacity onPress={() => removeStore(st)} hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }} accessibilityLabel={`Премахни ${st}`} accessibilityRole="button">
                   <Ionicons name="close" size={14} color={colors.primaryMuted} />
                 </TouchableOpacity>
               </TouchableOpacity>
@@ -134,7 +134,7 @@ export default function StoreComparisonScreen({ navigation }) {
           </View>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, marginTop: 8 }}>
             {PRESET_STORES.filter((st) => !stores.includes(st)).map((st) => (
-              <TouchableOpacity key={st} style={s.presetChip} onPress={() => setStores((prev) => [...prev, st])}>
+              <TouchableOpacity key={st} style={s.presetChip} onPress={() => setStores((prev) => [...prev, st])} accessibilityLabel={`Добави ${st}`} accessibilityRole="button">
                 <Ionicons name="add" size={13} color={colors.primary} />
                 <Text style={s.presetChipText}>{st}</Text>
               </TouchableOpacity>
@@ -220,7 +220,7 @@ export default function StoreComparisonScreen({ navigation }) {
                       </View>
                     );
                   })}
-                  <TouchableOpacity onPress={() => removeItem(item.id)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                  <TouchableOpacity onPress={() => removeItem(item.id)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} accessibilityLabel={`Премахни ${item.name}`} accessibilityRole="button">
                     <Ionicons name="close-circle" size={18} color={colors.red} />
                   </TouchableOpacity>
                 </View>

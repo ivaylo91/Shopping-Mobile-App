@@ -199,7 +199,7 @@ export default function ShoppingListScreen({ route, navigation }) {
       {/* Header */}
       <View style={s.header}>
         <View style={s.headerTop}>
-          <TouchableOpacity onPress={() => navigation.goBack()} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} style={{ padding: 2 }}>
+          <TouchableOpacity onPress={() => navigation.goBack()} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} style={{ padding: 2 }} accessibilityLabel="Назад" accessibilityRole="button">
             <Ionicons name="arrow-back" size={22} color={colors.text} />
           </TouchableOpacity>
           <View style={{ flex: 1 }}>
@@ -211,11 +211,11 @@ export default function ShoppingListScreen({ route, navigation }) {
               </View>
             )}
           </View>
-          <TouchableOpacity onPress={handleShareLive} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} style={s.shareLiveBtn}>
+          <TouchableOpacity onPress={handleShareLive} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} style={s.shareLiveBtn} accessibilityLabel="Сподели на живо" accessibilityRole="button">
             <Ionicons name="people-outline" size={16} color="#fff" />
             <Text style={s.shareLiveBtnText}>Live</Text>
           </TouchableOpacity>
-          <TouchableOpacity onPress={handleShare} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+          <TouchableOpacity onPress={handleShare} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} accessibilityLabel="Сподели списъка" accessibilityRole="button">
             <Ionicons name="share-outline" size={22} color={colors.primary} />
           </TouchableOpacity>
         </View>
@@ -259,6 +259,8 @@ export default function ShoppingListScreen({ route, navigation }) {
         style={s.breakdownToggle}
         onPress={() => { Haptics.selectionAsync(); setShowBreakdown((v) => !v); }}
         activeOpacity={0.8}
+        accessibilityLabel={showBreakdown ? 'Скрий разбивката' : 'Виж разбивка по категории'}
+        accessibilityRole="button"
       >
         <Ionicons name={showBreakdown ? 'chevron-down' : 'pie-chart-outline'} size={15} color={colors.primary} />
         <Text style={s.breakdownToggleText}>
