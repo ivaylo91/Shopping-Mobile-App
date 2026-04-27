@@ -30,6 +30,16 @@ export const FONT = {
   display: 28,
 };
 
+export const FONT_FAMILY = {
+  light: 'Figtree_300Light',
+  regular: 'Figtree_400Regular',
+  medium: 'Figtree_500Medium',
+  semiBold: 'Figtree_600SemiBold',
+  bold: 'Figtree_700Bold',
+  extraBold: 'Figtree_800ExtraBold',
+  black: 'Figtree_900Black',
+};
+
 // ─── Color Palettes ────────────────────────────────────────────────────────────
 
 const LIGHT = {

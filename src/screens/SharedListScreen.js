@@ -1,8 +1,9 @@
 import { useState, useEffect, useCallback, useMemo, memo } from 'react';
 import {
-  View, Text, StyleSheet, TouchableOpacity,
+  View, StyleSheet, TouchableOpacity,
   ActivityIndicator, Share, Alert, TextInput,
 } from 'react-native';
+import Text from '../components/Text';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { FlashList } from '@shopify/flash-list';
 import {

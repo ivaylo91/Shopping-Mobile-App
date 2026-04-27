@@ -1,13 +1,13 @@
 import { useMemo } from 'react';
 import {
   View,
-  Text,
   Image,
   StyleSheet,
   TouchableOpacity,
   ScrollView,
   Alert,
 } from 'react-native';
+import Text from '../components/Text';
 import { useCart } from '../context/CartContext';
 import { useTheme } from '../context/ThemeContext';
 

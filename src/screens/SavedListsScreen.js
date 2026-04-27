@@ -1,8 +1,9 @@
 import {
-  View, Text, StyleSheet, TouchableOpacity,
+  View, StyleSheet, TouchableOpacity,
   Alert, ActivityIndicator, RefreshControl, ScrollView,
 } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
+import Text from '../components/Text';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useState, useCallback, memo, useMemo } from 'react';
 import { Ionicons } from '@expo/vector-icons';
