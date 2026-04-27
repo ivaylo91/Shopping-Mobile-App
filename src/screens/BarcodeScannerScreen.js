@@ -108,7 +108,7 @@ const sheetS = StyleSheet.create({
   handle: { width: 40, height: 4, borderRadius: 2, alignSelf: 'center', marginBottom: 4 },
   productRow: { flexDirection: 'row', gap: 14, alignItems: 'flex-start' },
   iconWrap: { width: 64, height: 64, borderRadius: 16, justifyContent: 'center', alignItems: 'center' },
-  productName: { fontSize: 16, fontWeight: '800', marginBottom: 4, lineHeight: 22 },
+  productName: { fontSize: 16, fontWeight: '700', marginBottom: 4, lineHeight: 22 },
   productBrand: { fontSize: 12, marginBottom: 6 },
   catBadge: { alignSelf: 'flex-start', borderRadius: 10, paddingHorizontal: 10, paddingVertical: 3 },
   catBadgeText: { fontSize: 11, fontWeight: '700' },
@@ -118,7 +118,7 @@ const sheetS = StyleSheet.create({
   addBtnText: { color: '#fff', fontWeight: '700', fontSize: 15 },
   rescanBtn: { borderRadius: 14, paddingVertical: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
   rescanText: { fontWeight: '600', fontSize: 14 },
-  notFoundTitle: { fontSize: 17, fontWeight: '800', marginTop: 12, marginBottom: 4 },
+  notFoundTitle: { fontSize: 17, fontWeight: '700', marginTop: 12, marginBottom: 4 },
   notFoundSub: { fontSize: 13, marginBottom: 8 },
 });
 
@@ -240,7 +240,7 @@ const CORNER_COLOR = '#2B7A5C';
 const s = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#000' },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 32, gap: 12 },
-  permTitle: { fontSize: 19, fontWeight: '800', marginTop: 16 },
+  permTitle: { fontSize: 18, fontWeight: '700', marginTop: 16 },
   permSub: { fontSize: 14, textAlign: 'center' },
   permBtn: { borderRadius: 14, paddingHorizontal: 28, paddingVertical: 14, marginTop: 12 },
   permBtnText: { color: '#fff', fontWeight: '700', fontSize: 16 },

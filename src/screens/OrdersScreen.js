@@ -200,7 +200,7 @@ function makeStyles(c, isDark) {
       borderBottomWidth: 1,
       borderBottomColor: c.border,
     },
-    headerTitle: { fontSize: 24, fontWeight: '800', color: c.text, marginBottom: 2 },
+    headerTitle: { fontSize: 22, fontWeight: '700', color: c.text, marginBottom: 2 },
     headerSub: { fontSize: 13, color: c.textTertiary },
 
     list: { padding: 16, paddingBottom: 32 },
@@ -222,7 +222,7 @@ function makeStyles(c, isDark) {
       marginBottom: 10,
     },
     orderIdRow: { gap: 3 },
-    orderId: { fontSize: 14, fontWeight: '800', color: c.text },
+    orderId: { fontSize: 14, fontWeight: '700', color: c.text },
     dateText: { fontSize: 11, color: c.textQuaternary, fontWeight: '500' },
     statusBadge: {
       borderRadius: 12,
@@ -264,7 +264,7 @@ function makeStyles(c, isDark) {
       paddingTop: 12,
     },
     totalLabel: { fontSize: 12, color: c.textTertiary, fontWeight: '600' },
-    totalValue: { fontSize: 20, fontWeight: '800', color: c.primary },
+    totalValue: { fontSize: 18, fontWeight: '700', color: c.primary },
 
     emptyState: {
       flex: 1,
@@ -272,7 +272,7 @@ function makeStyles(c, isDark) {
       alignItems: 'center',
       padding: 40,
     },
-    emptyTitle: { fontSize: 20, fontWeight: '800', color: c.text, marginBottom: 8, marginTop: 16 },
+    emptyTitle: { fontSize: 18, fontWeight: '700', color: c.text, marginBottom: 8, marginTop: 16 },
     emptyDesc: { fontSize: 14, color: c.textTertiary, textAlign: 'center', marginBottom: 28, lineHeight: 20 },
     emptyBtn: {
       backgroundColor: c.primary,

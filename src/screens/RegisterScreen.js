@@ -157,7 +157,7 @@ function makeStyles(c, isDark) {
     container: { flex: 1, backgroundColor: c.card },
     scroll: { flexGrow: 1, justifyContent: 'center', padding: 28 },
     subtitle: { fontSize: 13, fontWeight: '700', color: c.primary, textAlign: 'center', letterSpacing: 1, textTransform: 'uppercase', marginBottom: 6 },
-    title: { fontSize: 30, fontWeight: '800', color: c.text, marginBottom: 36, textAlign: 'center' },
+    title: { fontSize: 26, fontWeight: '700', color: c.text, marginBottom: 36, textAlign: 'center' },
     fieldWrap: { marginBottom: 18 },
     label: { fontSize: 13, fontWeight: '700', color: c.textSecondary, marginBottom: 7 },
     input: { borderWidth: 1.5, borderColor: c.border, borderRadius: 12, paddingHorizontal: 16, paddingVertical: 14, fontSize: 15, color: c.text, backgroundColor: c.cardAlt },
@@ -171,7 +171,7 @@ function makeStyles(c, isDark) {
     hintOk: { fontSize: 12, marginTop: 5, marginLeft: 4 },
     button: { backgroundColor: c.primary, borderRadius: 14, padding: 17, alignItems: 'center', marginTop: 6, marginBottom: 20, shadowColor: c.primary, shadowOpacity: 0.28, shadowRadius: 10, shadowOffset: { width: 0, height: 5 }, elevation: 5 },
     buttonDisabled: { opacity: 0.6, shadowOpacity: 0 },
-    buttonText: { color: '#fff', fontWeight: '800', fontSize: 17 },
+    buttonText: { color: '#fff', fontWeight: '700', fontSize: 17 },
     link: { color: c.textTertiary, textAlign: 'center', fontSize: 14 },
     linkBold: { color: c.primary, fontWeight: '700' },
   });

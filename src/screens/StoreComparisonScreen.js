@@ -281,7 +281,7 @@ function makeStyles(c, isDark) {
     content: { padding: 20, paddingBottom: 48 },
 
     header: { flexDirection: 'row', alignItems: 'center', gap: 14, marginBottom: 24, marginTop: 4 },
-    title: { fontSize: 22, fontWeight: '800', color: c.text },
+    title: { fontSize: 20, fontWeight: '700', color: c.text },
     subtitle: { fontSize: 13, color: c.textTertiary, marginTop: 2 },
 
     section: { marginBottom: 22 },
@@ -320,13 +320,13 @@ function makeStyles(c, isDark) {
     resultCardBest: { borderColor: c.primary, backgroundColor: c.primaryLight },
     resultLeft: { flexDirection: 'row', alignItems: 'center', gap: 12, flex: 1 },
     resultRank: { width: 32, height: 32, borderRadius: 10, justifyContent: 'center', alignItems: 'center' },
-    resultRankText: { fontSize: 14, fontWeight: '800' },
-    resultStore: { fontSize: 16, fontWeight: '800' },
+    resultRankText: { fontSize: 14, fontWeight: '700' },
+    resultStore: { fontSize: 16, fontWeight: '700' },
     resultMissing: { fontSize: 11, marginTop: 2 },
     bestBadge: { borderRadius: 10, paddingHorizontal: 8, paddingVertical: 3 },
-    bestBadgeText: { fontSize: 11, color: '#fff', fontWeight: '700' },
+    bestBadgeText: { fontSize: 11, color: '#fff', fontWeight: '600' },
     resultRight: { alignItems: 'flex-end', gap: 6 },
-    resultTotal: { fontSize: 20, fontWeight: '800' },
+    resultTotal: { fontSize: 20, fontWeight: '700' },
     shopBtn: { borderRadius: 10, paddingHorizontal: 12, paddingVertical: 7 },
     shopBtnText: { color: '#fff', fontWeight: '700', fontSize: 12 },
   });

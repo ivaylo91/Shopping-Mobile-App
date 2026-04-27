@@ -54,7 +54,7 @@ const SharedItem = memo(function SharedItem({ item, checked, onToggle, colors })
         {item.note ? <Text style={{ fontSize: 11, color: colors.textTertiary, marginBottom: 2 }}>📝 {item.note}</Text> : null}
         <Text style={{ fontSize: 12, color: colors.textTertiary }}>{item.price?.toFixed(2)} € × {item.quantity}</Text>
       </View>
-      <Text style={{ fontSize: 15, fontWeight: '800', color: checked ? colors.textQuaternary : colors.primary }}>
+      <Text style={{ fontSize: 15, fontWeight: '600', color: checked ? colors.textQuaternary : colors.primary }}>
         {item.subtotal?.toFixed(2)} €
       </Text>
     </TouchableOpacity>
@@ -99,11 +99,11 @@ export function JoinSharedListScreen({ navigation }) {
         <View style={{ width: 80, height: 80, borderRadius: 24, backgroundColor: colors.primaryLight, justifyContent: 'center', alignItems: 'center', marginBottom: 8 }}>
           <Ionicons name="people-outline" size={40} color={colors.primary} />
         </View>
-        <Text style={{ fontSize: 22, fontWeight: '800', color: colors.text, textAlign: 'center' }}>Присъедини се към списък</Text>
+        <Text style={{ fontSize: 20, fontWeight: '700', color: colors.text, textAlign: 'center' }}>Присъедини се към списък</Text>
         <Text style={{ fontSize: 14, color: colors.textTertiary, textAlign: 'center', lineHeight: 20 }}>Въведете 6-символния код, получен от споделящия</Text>
         <TextInput
           style={{
-            fontSize: 32, fontWeight: '800', color: colors.text, textAlign: 'center',
+            fontSize: 28, fontWeight: '700', color: colors.text, textAlign: 'center',
             letterSpacing: 8, backgroundColor: colors.card, borderRadius: 16, padding: 16,
             width: '100%', borderWidth: 2, borderColor: colors.border,
             shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 8, elevation: 2,
@@ -130,7 +130,7 @@ export function JoinSharedListScreen({ navigation }) {
         >
           {loading
             ? <ActivityIndicator color="#fff" />
-            : <><Ionicons name="enter-outline" size={18} color="#fff" /><Text style={{ color: '#fff', fontWeight: '800', fontSize: 17 }}>Присъедини се</Text></>}
+            : <><Ionicons name="enter-outline" size={18} color="#fff" /><Text style={{ color: '#fff', fontWeight: '700', fontSize: 17 }}>Присъедини се</Text></>}
         </AnimatedPressable>
       </View>
     </SafeAreaView>
@@ -250,11 +250,11 @@ export default function SharedListScreen({ route, navigation }) {
             <Ionicons name="arrow-back" size={22} color={colors.text} />
           </TouchableOpacity>
           <View style={{ flex: 1 }}>
-            <Text style={{ fontSize: 17, fontWeight: '800', color: colors.text }} numberOfLines={1}>{sharedData.listName}</Text>
+            <Text style={{ fontSize: 17, fontWeight: '700', color: colors.text }} numberOfLines={1}>{sharedData.listName}</Text>
             <View style={{ flexDirection: 'row', gap: 8, marginTop: 3 }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: colors.primaryLight, borderRadius: 8, paddingHorizontal: 7, paddingVertical: 2 }}>
                 <Ionicons name="qr-code-outline" size={11} color={colors.primary} />
-                <Text style={{ fontSize: 11, fontWeight: '800', color: colors.primary, letterSpacing: 1 }}>{code}</Text>
+                <Text style={{ fontSize: 11, fontWeight: '700', color: colors.primary, letterSpacing: 1 }}>{code}</Text>
               </View>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: colors.greenLight ?? '#F0FFF4', borderRadius: 8, paddingHorizontal: 7, paddingVertical: 2 }}>
                 <Ionicons name="people-outline" size={11} color={colors.green} />
@@ -282,12 +282,12 @@ export default function SharedListScreen({ route, navigation }) {
           accessibilityRole="button"
         >
           <View style={{ gap: 2 }}>
-            <Text style={{ fontSize: 11, color: colors.textTertiary, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.5 }}>Код за споделяне</Text>
-            <Text style={{ fontSize: 24, fontWeight: '800', color: colors.primary, letterSpacing: 4 }}>{code}</Text>
+            <Text style={{ fontSize: 11, color: colors.textTertiary, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.5 }}>Код за споделяне</Text>
+            <Text style={{ fontSize: 22, fontWeight: '700', color: colors.primary, letterSpacing: 4 }}>{code}</Text>
           </View>
           <View style={{ alignItems: 'center', gap: 4 }}>
             <Ionicons name="share-social-outline" size={20} color={colors.primary} />
-            <Text style={{ fontSize: 11, fontWeight: '700', color: colors.primary }}>Сподели</Text>
+            <Text style={{ fontSize: 11, fontWeight: '600', color: colors.primary }}>Сподели</Text>
           </View>
         </TouchableOpacity>
       )}
@@ -296,17 +296,17 @@ export default function SharedListScreen({ route, navigation }) {
       <View style={{ flexDirection: 'row', backgroundColor: colors.card, marginHorizontal: 14, marginTop: 12, borderRadius: 14, paddingVertical: 12, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 6, elevation: 2 }}>
         <View style={{ flex: 1, alignItems: 'center' }}>
           <Text style={{ fontSize: 11, color: colors.textTertiary, fontWeight: '600', marginBottom: 4 }}>Бюджет</Text>
-          <Text style={{ fontSize: 15, fontWeight: '800', color: colors.text }}>{sharedData.budget?.toFixed(2)} €</Text>
+          <Text style={{ fontSize: 15, fontWeight: '600', color: colors.text }}>{sharedData.budget?.toFixed(2)} €</Text>
         </View>
         <View style={{ width: 1, backgroundColor: colors.border, marginVertical: 4 }} />
         <View style={{ flex: 1, alignItems: 'center' }}>
           <Text style={{ fontSize: 11, color: colors.textTertiary, fontWeight: '600', marginBottom: 4 }}>Изхарчено</Text>
-          <Text style={{ fontSize: 15, fontWeight: '800', color: colors.orange }}>{spent.toFixed(2)} €</Text>
+          <Text style={{ fontSize: 15, fontWeight: '600', color: colors.orange }}>{spent.toFixed(2)} €</Text>
         </View>
         <View style={{ width: 1, backgroundColor: colors.border, marginVertical: 4 }} />
         <View style={{ flex: 1, alignItems: 'center' }}>
           <Text style={{ fontSize: 11, color: colors.textTertiary, fontWeight: '600', marginBottom: 4 }}>Оставащо</Text>
-          <Text style={{ fontSize: 15, fontWeight: '800', color: remaining >= 0 ? colors.green : colors.red }}>
+          <Text style={{ fontSize: 15, fontWeight: '600', color: remaining >= 0 ? colors.green : colors.red }}>
             {remaining.toFixed(2)} €
           </Text>
         </View>

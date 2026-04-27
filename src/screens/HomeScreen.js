@@ -673,7 +673,7 @@ function makeStyles(c, isDark) {
     content: { padding: 20, paddingBottom: 40 },
 
     header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, marginTop: 4 },
-    title: { fontSize: 28, fontWeight: '800', color: c.text, letterSpacing: -0.5 },
+    title: { fontSize: 26, fontWeight: '700', color: c.text, letterSpacing: -0.5 },
     overflowBtn: { width: 38, height: 38, borderRadius: 12, backgroundColor: c.cardAlt, justifyContent: 'center', alignItems: 'center' },
 
     setupCard: {
@@ -683,8 +683,8 @@ function makeStyles(c, isDark) {
     setupTop: { flexDirection: 'row', alignItems: 'center', gap: 10 },
     setupName: { flex: 1, fontSize: 16, fontWeight: '600', color: c.text, paddingVertical: 4 },
     setupBudget: { flexDirection: 'row', alignItems: 'center', gap: 4, borderLeftWidth: 1, borderLeftColor: c.borderLight, paddingLeft: 12 },
-    setupCurrency: { fontSize: 16, fontWeight: '700', color: c.primary },
-    setupBudgetInput: { fontSize: 22, fontWeight: '800', color: c.text, minWidth: 60, textAlign: 'right', paddingVertical: 2 },
+    setupCurrency: { fontSize: 16, fontWeight: '500', color: c.textTertiary },
+    setupBudgetInput: { fontSize: 20, fontWeight: '600', color: c.text, minWidth: 60, textAlign: 'right', paddingVertical: 2 },
     setupBottom: { flexDirection: 'row', gap: 8, flexWrap: 'wrap' },
     storePill: {
       flexDirection: 'row', alignItems: 'center', gap: 5,
@@ -696,7 +696,7 @@ function makeStyles(c, isDark) {
       flexDirection: 'row', alignItems: 'center', gap: 5,
       backgroundColor: c.primaryLight, paddingHorizontal: 12, paddingVertical: 7, borderRadius: 20,
     },
-    libraryPillText: { fontSize: 12, fontWeight: '700', color: c.primary },
+    libraryPillText: { fontSize: 12, fontWeight: '600', color: c.primary },
 
     addCard: {
       backgroundColor: c.card, borderRadius: 16, padding: 14, gap: 12, marginBottom: 14,
@@ -713,13 +713,13 @@ function makeStyles(c, isDark) {
       flexDirection: 'row', alignItems: 'center', gap: 4,
       backgroundColor: c.cardAlt, borderRadius: 12, paddingHorizontal: 10, width: 96,
     },
-    pricePre: { fontSize: 14, fontWeight: '700', color: c.primary },
-    priceInput: { flex: 1, fontSize: 16, fontWeight: '700', color: c.text, paddingVertical: 12 },
+    pricePre: { fontSize: 14, fontWeight: '400', color: c.textTertiary },
+    priceInput: { flex: 1, fontSize: 16, fontWeight: '600', color: c.text, paddingVertical: 12 },
 
     suggestionsBox: { backgroundColor: c.cardAlt, borderRadius: 12, overflow: 'hidden' },
     suggestionRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: c.borderLight, gap: 8 },
     suggestionName: { flex: 1, fontSize: 14, fontWeight: '600', color: c.text },
-    suggestionPrice: { fontSize: 13, fontWeight: '700', color: c.primary },
+    suggestionPrice: { fontSize: 13, fontWeight: '600', color: c.primary },
     trendBadge: { fontSize: 11, fontWeight: '700' },
 
     catRow: { gap: 6, paddingRight: 4 },
@@ -731,7 +731,7 @@ function makeStyles(c, isDark) {
     addFooter: { flexDirection: 'row', alignItems: 'center', gap: 8 },
     qtyRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
     qtyBtn: { width: 44, height: 44, borderRadius: 12, backgroundColor: c.cardAlt, justifyContent: 'center', alignItems: 'center' },
-    qtyValue: { fontSize: 16, fontWeight: '800', color: c.text, minWidth: 20, textAlign: 'center' },
+    qtyValue: { fontSize: 16, fontWeight: '600', color: c.text, minWidth: 20, textAlign: 'center' },
     noteToggle: { flexDirection: 'row', alignItems: 'center', gap: 4, flex: 1 },
     noteToggleText: { fontSize: 12, fontWeight: '600', color: c.textQuaternary },
     addBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: c.primary, paddingHorizontal: 16, paddingVertical: 10, borderRadius: 12 },
@@ -751,9 +751,9 @@ function makeStyles(c, isDark) {
     itemNote: { fontSize: 11, color: c.textTertiary, marginBottom: 1 },
     itemMeta: { fontSize: 12, color: c.textQuaternary },
     itemRight: { alignItems: 'flex-end', gap: 4 },
-    itemSubtotal: { fontSize: 14, fontWeight: '800', color: c.primary },
+    itemSubtotal: { fontSize: 14, fontWeight: '600', color: c.primary },
     itemQtyControls: { flexDirection: 'row', alignItems: 'center', gap: 5 },
-    itemQtyNum: { fontSize: 13, fontWeight: '700', color: c.textSecondary, minWidth: 16, textAlign: 'center' },
+    itemQtyNum: { fontSize: 13, fontWeight: '500', color: c.textSecondary, minWidth: 16, textAlign: 'center' },
 
     summaryCard: {
       backgroundColor: c.card, borderRadius: 16, padding: 16, marginBottom: 14, gap: 10,
@@ -761,7 +761,7 @@ function makeStyles(c, isDark) {
     },
     summaryCardOver: { backgroundColor: c.redLight },
     summaryTop: { flexDirection: 'row', alignItems: 'baseline', gap: 8 },
-    summaryTotal: { fontSize: 30, fontWeight: '800', color: c.text, letterSpacing: -0.5 },
+    summaryTotal: { fontSize: 26, fontWeight: '700', color: c.text, letterSpacing: -0.5 },
     summaryOf: { fontSize: 14, color: c.textTertiary, fontWeight: '600' },
     summaryBarTrack: { height: 6, borderRadius: 3, overflow: 'hidden' },
     summaryBarFill: { height: 6, borderRadius: 3 },
@@ -773,7 +773,7 @@ function makeStyles(c, isDark) {
       shadowColor: c.primary, shadowOpacity: 0.28, shadowRadius: 10, shadowOffset: { width: 0, height: 5 }, elevation: 6,
     },
     primaryCtaDisabled: { opacity: 0.4, shadowOpacity: 0 },
-    primaryCtaText: { color: '#fff', fontWeight: '800', fontSize: 17 },
+    primaryCtaText: { color: '#fff', fontWeight: '700', fontSize: 17 },
 
     overflowBackdrop: { flex: 1, backgroundColor: c.overlay, justifyContent: 'flex-start', alignItems: 'flex-end', paddingTop: 64, paddingRight: 16 },
     overflowMenu: { backgroundColor: c.card, borderRadius: 14, paddingVertical: 6, minWidth: 220, shadowColor: '#000', shadowOpacity: 0.15, shadowRadius: 20, elevation: 10 },
@@ -782,7 +782,7 @@ function makeStyles(c, isDark) {
 
     sheetBackdrop: { flex: 1, backgroundColor: c.overlay, justifyContent: 'flex-end' },
     sheet: { backgroundColor: c.card, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, paddingBottom: 32, gap: 14 },
-    sheetTitle: { fontSize: 18, fontWeight: '800', color: c.text },
+    sheetTitle: { fontSize: 18, fontWeight: '700', color: c.text },
 
     storeAddRow: { flexDirection: 'row', gap: 10 },
     storeAddInput: { flex: 1, backgroundColor: c.cardAlt, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12, fontSize: 15, color: c.text },
@@ -794,7 +794,7 @@ function makeStyles(c, isDark) {
 
     libSectionRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
     libSectionLabel: { fontSize: 11, fontWeight: '700', color: c.textTertiary, letterSpacing: 0.8, textTransform: 'uppercase' },
-    libSectionLink: { fontSize: 12, fontWeight: '700', color: c.primary },
+    libSectionLink: { fontSize: 12, fontWeight: '600', color: c.primary },
     libChipsWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
     libChip: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: c.cardAlt, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 16 },
     libChipDone: { backgroundColor: c.greenLight },
@@ -803,9 +803,9 @@ function makeStyles(c, isDark) {
 
     tplCard: { backgroundColor: c.cardAlt, borderRadius: 12, padding: 12, gap: 4 },
     tplCardHeader: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-    tplCardName: { flex: 1, fontSize: 14, fontWeight: '800', color: c.text },
+    tplCardName: { flex: 1, fontSize: 14, fontWeight: '600', color: c.text },
     tplStoreBadge: { backgroundColor: c.primaryLight, borderRadius: 8, paddingHorizontal: 8, paddingVertical: 2 },
-    tplStoreBadgeText: { fontSize: 10, fontWeight: '700', color: c.primary },
+    tplStoreBadgeText: { fontSize: 10, fontWeight: '600', color: c.primary },
     tplCardItems: { fontSize: 12, color: c.textTertiary, lineHeight: 18 },
 
     templateNameInput: {

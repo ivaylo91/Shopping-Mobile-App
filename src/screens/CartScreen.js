@@ -205,7 +205,7 @@ function makeStyles(c, isDark) {
       padding: 40,
       backgroundColor: c.bg,
     },
-    emptyTitle: { fontSize: 22, fontWeight: '800', color: c.text, marginTop: 16, marginBottom: 8 },
+    emptyTitle: { fontSize: 20, fontWeight: '700', color: c.text, marginTop: 16, marginBottom: 8 },
     emptyDesc: { fontSize: 14, color: c.textTertiary, textAlign: 'center', lineHeight: 20, marginBottom: 28 },
     emptyBtn: {
       backgroundColor: c.primary,
@@ -230,7 +230,7 @@ function makeStyles(c, isDark) {
       justifyContent: 'space-between',
       alignItems: 'center',
     },
-    headerTitle: { fontSize: 24, fontWeight: '800', color: c.text },
+    headerTitle: { fontSize: 22, fontWeight: '700', color: c.text },
     clearText: { fontSize: 14, color: c.red, fontWeight: '600' },
 
     list: { padding: 14, paddingBottom: 8 },
@@ -258,7 +258,7 @@ function makeStyles(c, isDark) {
       alignItems: 'center',
     },
     qty: { fontSize: 16, fontWeight: '700', color: c.text, minWidth: 22, textAlign: 'center' },
-    itemSubtotal: { flex: 1, fontSize: 15, fontWeight: '800', color: c.primary, textAlign: 'right' },
+    itemSubtotal: { flex: 1, fontSize: 15, fontWeight: '600', color: c.primary, textAlign: 'right' },
 
     footer: {
       backgroundColor: c.card,
@@ -270,7 +270,7 @@ function makeStyles(c, isDark) {
       alignItems: 'center',
     },
     footerLabel: { fontSize: 12, color: c.textTertiary, fontWeight: '600', marginBottom: 2 },
-    footerTotal: { fontSize: 22, fontWeight: '800', color: c.text },
+    footerTotal: { fontSize: 20, fontWeight: '700', color: c.text },
     checkoutBtn: {
       backgroundColor: c.primary,
       borderRadius: 14,

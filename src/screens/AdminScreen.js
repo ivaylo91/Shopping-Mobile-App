@@ -535,7 +535,7 @@ function makeStyles(c, isDark) {
       justifyContent: 'space-between',
       alignItems: 'center',
     },
-    headerTitle: { fontSize: 22, fontWeight: '800', color: c.text },
+    headerTitle: { fontSize: 20, fontWeight: '700', color: c.text },
     headerSub: { fontSize: 13, color: c.textTertiary, marginTop: 2 },
     addBtn: {
       backgroundColor: c.primary,
@@ -630,7 +630,7 @@ function makeStyles(c, isDark) {
       justifyContent: 'center',
       alignItems: 'center',
     },
-    modalTitle: { fontSize: 16, fontWeight: '800', color: c.text },
+    modalTitle: { fontSize: 16, fontWeight: '700', color: c.text },
     modalSaveBtn: {
       backgroundColor: c.primary,
       borderRadius: 12,

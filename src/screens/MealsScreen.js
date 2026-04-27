@@ -119,7 +119,7 @@ function MacroBar({ protein, carbs, fat, calories, colors }) {
 const mS = StyleSheet.create({
   bar: { borderRadius: 16, flexDirection: 'row', alignItems: 'center', paddingVertical: 14, paddingHorizontal: 8, marginBottom: 16, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 6, elevation: 2 },
   item: { flex: 1, alignItems: 'center' },
-  val: { fontSize: 16, fontWeight: '800' },
+  val: { fontSize: 16, fontWeight: '700' },
   lbl: { fontSize: 10, fontWeight: '600', marginTop: 2 },
   div: { width: 1, height: 32 },
 });
@@ -201,18 +201,18 @@ function RecipeModal({ recipe, slotColor, visible, onClose, onYouTube, colors })
 const rmS = StyleSheet.create({
   header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 14, borderBottomWidth: 1, gap: 12 },
   closeBtn: { width: 36, height: 36, borderRadius: 18, justifyContent: 'center', alignItems: 'center' },
-  title: { flex: 1, fontSize: 16, fontWeight: '800' },
+  title: { flex: 1, fontSize: 16, fontWeight: '700' },
   ytBtn: { width: 36, height: 36, borderRadius: 18, backgroundColor: '#FF0000', justifyContent: 'center', alignItems: 'center' },
   chip: { flexDirection: 'row', alignItems: 'center', gap: 5, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 6 },
-  chipText: { fontSize: 13, fontWeight: '700' },
+  chipText: { fontSize: 13, fontWeight: '600' },
   desc: { fontSize: 14, lineHeight: 21, borderRadius: 10, padding: 14, marginBottom: 20 },
-  sectionTitle: { fontSize: 13, fontWeight: '800', marginBottom: 12, textTransform: 'uppercase', letterSpacing: 0.5 },
+  sectionTitle: { fontSize: 13, fontWeight: '600', marginBottom: 12, textTransform: 'uppercase', letterSpacing: 0.5 },
   ingRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 8 },
   dot: { width: 8, height: 8, borderRadius: 4 },
   ingText: { fontSize: 14, flex: 1 },
   stepRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 12, marginBottom: 14 },
   stepNum: { width: 28, height: 28, borderRadius: 14, justifyContent: 'center', alignItems: 'center', marginTop: 1 },
-  stepNumText: { color: '#fff', fontWeight: '800', fontSize: 13 },
+  stepNumText: { color: '#fff', fontWeight: '700', fontSize: 13 },
   stepText: { flex: 1, fontSize: 14, lineHeight: 22 },
 });
 
@@ -468,19 +468,19 @@ function makeStyles(c, isDark) {
     container: { flex: 1, backgroundColor: c.bg },
 
     header: { backgroundColor: c.card, paddingHorizontal: 20, paddingTop: 16, paddingBottom: 16, borderBottomWidth: 1, borderBottomColor: c.border, flexDirection: 'row', alignItems: 'center' },
-    headerTitle: { fontSize: 22, fontWeight: '800', color: c.text, marginBottom: 2 },
+    headerTitle: { fontSize: 20, fontWeight: '700', color: c.text, marginBottom: 2 },
     headerSub: { fontSize: 12, color: c.textTertiary },
     regenBtn: { width: 38, height: 38, borderRadius: 19, backgroundColor: c.primaryLight, justifyContent: 'center', alignItems: 'center', marginLeft: 12 },
 
     filterRow: { flexDirection: 'row', flexWrap: 'wrap', paddingHorizontal: 16, paddingVertical: 10, gap: 8, backgroundColor: c.card, borderBottomWidth: 1, borderBottomColor: c.border },
     filterChip: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, borderWidth: 1.5, borderColor: c.border, backgroundColor: c.card },
     filterChipActive: { backgroundColor: c.primary, borderColor: c.primary },
-    filterChipText: { fontSize: 12, fontWeight: '700', color: c.textSecondary },
+    filterChipText: { fontSize: 12, fontWeight: '600', color: c.textSecondary },
     fallbackBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 20, borderWidth: 1.5 },
-    fallbackText: { fontSize: 11, fontWeight: '700' },
+    fallbackText: { fontSize: 11, fontWeight: '600' },
 
     scroll: { padding: 16 },
-    sectionLabel: { fontSize: 12, fontWeight: '700', color: c.textTertiary, letterSpacing: 1, textTransform: 'uppercase', marginBottom: 12 },
+    sectionLabel: { fontSize: 12, fontWeight: '600', color: c.textTertiary, letterSpacing: 1, textTransform: 'uppercase', marginBottom: 12 },
 
     card: { backgroundColor: c.card, borderRadius: 16, padding: 16, marginBottom: 16, borderWidth: 1.5, borderColor: c.borderLight, shadowColor: '#000', shadowOpacity: isDark ? 0.3 : 0.06, shadowRadius: 8, elevation: 2 },
     cardTopRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 },
@@ -489,13 +489,13 @@ function makeStyles(c, isDark) {
     timeBadge: { flexDirection: 'row', alignItems: 'center', gap: 3, borderRadius: 12, paddingHorizontal: 8, paddingVertical: 4 },
     timeText: { fontSize: 11, fontWeight: '600' },
     calChip: { borderWidth: 1.5, borderRadius: 20, paddingHorizontal: 10, paddingVertical: 4 },
-    calChipText: { fontSize: 12, fontWeight: '800' },
+    calChipText: { fontSize: 12, fontWeight: '600' },
     swapBtn: { width: 30, height: 30, borderRadius: 15, justifyContent: 'center', alignItems: 'center' },
 
-    recipeTitle: { fontSize: 17, fontWeight: '800', marginBottom: 12, lineHeight: 23 },
-    fromLabel: { fontSize: 11, fontWeight: '700', marginBottom: 7 },
+    recipeTitle: { fontSize: 17, fontWeight: '700', marginBottom: 12, lineHeight: 23 },
+    fromLabel: { fontSize: 11, fontWeight: '600', marginBottom: 7 },
     pill: { borderWidth: 1.5, borderRadius: 20, paddingHorizontal: 10, paddingVertical: 4 },
-    pillText: { fontSize: 12, fontWeight: '700' },
+    pillText: { fontSize: 12, fontWeight: '600' },
     descBox: { borderRadius: 10, padding: 12, marginBottom: 12 },
     descText: { fontSize: 13, lineHeight: 20 },
     linkBtn: { flex: 1, borderRadius: 12, paddingVertical: 13, flexDirection: 'row', alignItems: 'center', justifyContent: 'center' },

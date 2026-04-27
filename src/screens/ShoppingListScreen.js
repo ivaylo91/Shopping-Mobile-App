@@ -66,7 +66,7 @@ const bdS = StyleSheet.create({
   barFill: { height: 6, borderRadius: 3 },
   label: { fontSize: 12, fontWeight: '600' },
   right: { alignItems: 'flex-end', minWidth: 68 },
-  amount: { fontSize: 13, fontWeight: '800' },
+  amount: { fontSize: 13, fontWeight: '600' },
   pct: { fontSize: 11 },
 });
 
@@ -113,7 +113,7 @@ const iS = StyleSheet.create({
   nameChecked: { textDecorationLine: 'line-through' },
   note: { fontSize: 11, marginBottom: 2 },
   meta: { fontSize: 12 },
-  price: { fontSize: 15, fontWeight: '800' },
+  price: { fontSize: 15, fontWeight: '600' },
 });
 
 // ─── Screen ───────────────────────────────────────────────────────────────────
@@ -306,11 +306,11 @@ function makeStyles(c, isDark) {
 
     header: { backgroundColor: c.card, paddingHorizontal: 18, paddingTop: 14, paddingBottom: 12, borderBottomWidth: 1, borderBottomColor: c.border },
     headerTop: { flexDirection: 'row', alignItems: 'center', marginBottom: 12, gap: 10 },
-    headerTitle: { fontSize: 17, fontWeight: '800', color: c.text },
+    headerTitle: { fontSize: 17, fontWeight: '700', color: c.text },
     storeBadge: { flexDirection: 'row', alignItems: 'center', gap: 3, marginTop: 2 },
     storeBadgeText: { fontSize: 12, color: c.primary, fontWeight: '600' },
     shareLiveBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: c.green, borderRadius: 10, paddingHorizontal: 10, paddingVertical: 5 },
-    shareLiveBtnText: { fontSize: 12, fontWeight: '800', color: '#fff' },
+    shareLiveBtnText: { fontSize: 12, fontWeight: '700', color: '#fff' },
 
     progressTrack: { height: 6, backgroundColor: c.primaryLight, borderRadius: 3, overflow: 'hidden', marginBottom: 6 },
     progressFill: { height: 6, backgroundColor: c.primary, borderRadius: 3 },
@@ -319,24 +319,24 @@ function makeStyles(c, isDark) {
     budgetBar: { flexDirection: 'row', backgroundColor: c.card, marginHorizontal: 14, marginTop: 12, borderRadius: 14, paddingVertical: 12, shadowColor: '#000', shadowOpacity: isDark ? 0.3 : 0.05, shadowRadius: 6, elevation: 2 },
     budgetStat: { flex: 1, alignItems: 'center' },
     budgetStatLabel: { fontSize: 11, color: c.textTertiary, fontWeight: '600', marginBottom: 4 },
-    budgetStatValue: { fontSize: 15, fontWeight: '800', color: c.text },
+    budgetStatValue: { fontSize: 15, fontWeight: '600', color: c.text },
     budgetDivider: { width: 1, backgroundColor: c.border, marginVertical: 4 },
 
     list: { padding: 14, paddingBottom: 4 },
 
     breakdownToggle: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 10, marginHorizontal: 14, marginBottom: 4 },
-    breakdownToggleText: { fontSize: 13, fontWeight: '700', color: c.primary },
+    breakdownToggleText: { fontSize: 13, fontWeight: '600', color: c.primary },
 
     summaryCard: { backgroundColor: c.card, marginHorizontal: 14, marginBottom: 10, borderRadius: 16, padding: 16, shadowColor: '#000', shadowOpacity: isDark ? 0.3 : 0.06, shadowRadius: 8, elevation: 2 },
     summaryRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 5 },
     summaryLabel: { fontSize: 14, color: c.textSecondary, fontWeight: '600' },
     summaryValue: { fontSize: 16, fontWeight: '700', color: c.text },
-    summaryRemaining: { fontSize: 20, fontWeight: '800' },
+    summaryRemaining: { fontSize: 18, fontWeight: '700' },
     summaryDivider: { height: 1, backgroundColor: c.borderLight, marginVertical: 4 },
 
     actions: { paddingHorizontal: 14, paddingBottom: 16 },
     btnSave: { backgroundColor: c.primary, borderRadius: 16, paddingVertical: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, shadowColor: c.primary, shadowOpacity: 0.28, shadowRadius: 10, shadowOffset: { width: 0, height: 4 }, elevation: 5 },
-    btnSaveText: { color: '#fff', fontWeight: '800', fontSize: 16 },
+    btnSaveText: { color: '#fff', fontWeight: '700', fontSize: 16 },
     btnDisabled: { opacity: 0.6, shadowOpacity: 0 },
   });
 }

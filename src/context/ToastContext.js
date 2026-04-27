@@ -88,6 +88,6 @@ const styles = StyleSheet.create({
     shadowRadius: 12,
     elevation: 10,
   },
-  icon: { color: '#fff', fontSize: 15, fontWeight: '800', width: 18, textAlign: 'center' },
+  icon: { color: '#fff', fontSize: 15, fontWeight: '700', width: 18, textAlign: 'center' },
   message: { color: '#fff', fontWeight: '700', fontSize: 14, flex: 1 },
 });
