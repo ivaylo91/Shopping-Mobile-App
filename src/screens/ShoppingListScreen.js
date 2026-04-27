@@ -11,7 +11,7 @@ import * as Haptics from 'expo-haptics';
 import { useBudgetLists } from '../hooks/useBudgetLists';
 import { useToast } from '../context/ToastContext';
 import { useTheme } from '../context/ThemeContext';
-import { getCategoryEmoji, CATEGORIES } from './HomeScreen';
+import { getCategoryEmoji, getCategoryColors, CATEGORIES } from './HomeScreen';
 import AnimatedPressable from '../components/AnimatedPressable';
 
 // ─── Category Breakdown ───────────────────────────────────────────────────────
@@ -72,7 +72,8 @@ const bdS = StyleSheet.create({
 
 // ─── Item Row ─────────────────────────────────────────────────────────────────
 
-const ShoppingItem = memo(function ShoppingItem({ item, checked, onToggle, colors }) {
+const ShoppingItem = memo(function ShoppingItem({ item, checked, onToggle, colors, isDark }) {
+  const catColors = getCategoryColors(item.category, isDark);
   return (
     <TouchableOpacity
       style={[iS.item, { backgroundColor: colors.card }, checked && iS.itemChecked]}
@@ -87,7 +88,7 @@ const ShoppingItem = memo(function ShoppingItem({ item, checked, onToggle, color
           ? <Ionicons name="checkmark-circle" size={24} color={colors.primary} />
           : <Ionicons name="ellipse-outline" size={24} color={colors.border} />}
       </View>
-      <View style={[iS.iconWrap, { backgroundColor: colors.primaryLight }]}>
+      <View style={[iS.iconWrap, { backgroundColor: catColors.bg }]}>
         <Text style={{ fontSize: 18 }}>{getCategoryEmoji(item.category)}</Text>
       </View>
       <View style={iS.body}>
@@ -190,8 +191,8 @@ export default function ShoppingListScreen({ route, navigation }) {
   };
 
   const renderItem = useCallback(
-    ({ item }) => <ShoppingItem item={item} checked={!!checked[item.id]} onToggle={toggleCheck} colors={colors} />,
-    [checked, toggleCheck, colors]
+    ({ item }) => <ShoppingItem item={item} checked={!!checked[item.id]} onToggle={toggleCheck} colors={colors} isDark={isDark} />,
+    [checked, toggleCheck, colors, isDark]
   );
 
   return (

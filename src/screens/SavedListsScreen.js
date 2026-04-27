@@ -12,7 +12,7 @@ import { useBudgetLists } from '../hooks/useBudgetLists';
 import { useTemplates } from '../hooks/useTemplates';
 import { useToast } from '../context/ToastContext';
 import { useTheme } from '../context/ThemeContext';
-import { getCategoryEmoji } from './HomeScreen';
+import { getCategoryEmoji, getCategoryColors } from './HomeScreen';
 import { OrderCardSkeleton } from '../components/Skeleton';
 
 function formatDate(timestamp) {
@@ -103,7 +103,7 @@ const msS = StyleSheet.create({
 
 // ─── Budget Card ──────────────────────────────────────────────────────────────
 
-const BudgetCard = memo(function BudgetCard({ item, isDeleting, onDelete, onOpen, onSaveTemplate, colors }) {
+const BudgetCard = memo(function BudgetCard({ item, isDeleting, onDelete, onOpen, onSaveTemplate, colors, isDark }) {
   const remaining = item.budget - item.total;
   const overBudget = remaining < 0;
 
@@ -134,13 +134,16 @@ const BudgetCard = memo(function BudgetCard({ item, isDeleting, onDelete, onOpen
       <Text style={[cS.dateText, { color: colors.textQuaternary }]}>{formatDate(item.createdAt)}</Text>
 
       <View style={cS.chipsRow}>
-        {(item.items || []).slice(0, 5).map((p, idx) => (
-          <View key={`${item.id}-${idx}`} style={[cS.chip, { backgroundColor: colors.cardAlt }]}>
-            <Text style={{ fontSize: 12 }}>{getCategoryEmoji(p.category)}</Text>
-            <Text style={[cS.chipText, { color: colors.textSecondary }]} numberOfLines={1}>{p.name}</Text>
-            <Text style={[cS.chipQty, { color: colors.textTertiary }]}>×{p.quantity}</Text>
-          </View>
-        ))}
+        {(item.items || []).slice(0, 5).map((p, idx) => {
+          const catColors = getCategoryColors(p.category, isDark);
+          return (
+            <View key={`${item.id}-${idx}`} style={[cS.chip, { backgroundColor: catColors.bg }]}>
+              <Text style={{ fontSize: 12 }}>{getCategoryEmoji(p.category)}</Text>
+              <Text style={[cS.chipText, { color: colors.textSecondary }]} numberOfLines={1}>{p.name}</Text>
+              <Text style={[cS.chipQty, { color: colors.textTertiary }]}>×{p.quantity}</Text>
+            </View>
+          );
+        })}
         {(item.items || []).length > 5 && (
           <View style={[cS.chip, { backgroundColor: colors.border }]}>
             <Text style={[cS.chipMoreText, { color: colors.textSecondary }]}>+{item.items.length - 5}</Text>
@@ -285,8 +288,9 @@ export default function SavedListsScreen({ navigation }) {
       onOpen={() => handleOpen(item)}
       onSaveTemplate={() => handleSaveTemplate(item)}
       colors={colors}
+      isDark={isDark}
     />
-  ), [deleting, handleDelete, handleOpen, handleSaveTemplate, colors]);
+  ), [deleting, handleDelete, handleOpen, handleSaveTemplate, colors, isDark]);
 
   if (loading) {
     return (

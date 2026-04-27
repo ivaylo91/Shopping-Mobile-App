@@ -34,8 +34,25 @@ export const CATEGORIES = [
   { id: 'other',     emoji: '📦', label: 'Друго' },
 ];
 
+export const CATEGORY_COLORS = {
+  food:      { bg: '#FEF3E2', text: '#92520F', darkBg: '#2A1C08', darkText: '#D4913A' },
+  dairy:     { bg: '#E3F4FD', text: '#1B6CA8', darkBg: '#071928', darkText: '#5BA3D4' },
+  meat:      { bg: '#FCEAE8', text: '#A83030', darkBg: '#2A0808', darkText: '#D06060' },
+  veggies:   { bg: '#E8F5E9', text: '#2E7434', darkBg: '#0A2A0C', darkText: '#5CB860' },
+  fruit:     { bg: '#FDE8F0', text: '#9C1A57', darkBg: '#2A0818', darkText: '#D460A0' },
+  drinks:    { bg: '#E3EFF8', text: '#1556A0', darkBg: '#08182A', darkText: '#5090D4' },
+  household: { bg: '#ECEFF1', text: '#455A64', darkBg: '#161A1C', darkText: '#8EA8B4' },
+  personal:  { bg: '#F3E5F5', text: '#6A1B9A', darkBg: '#1A0A2A', darkText: '#B06AD4' },
+  other:     { bg: '#F1F1EE', text: '#5A5A54', darkBg: '#1A1A14', darkText: '#9E9E96' },
+};
+
 export function getCategoryEmoji(id) {
   return CATEGORIES.find((c) => c.id === id)?.emoji || '📦';
+}
+
+export function getCategoryColors(id, isDark) {
+  const c = CATEGORY_COLORS[id] ?? CATEGORY_COLORS.other;
+  return { bg: isDark ? c.darkBg : c.bg, text: isDark ? c.darkText : c.text };
 }
 
 const TREND_ICON = { up: '↑', down: '↓', same: '→', new: '★' };
@@ -358,14 +375,24 @@ export default function HomeScreen({ navigation, route }) {
 
           {/* Category */}
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.catRow}>
-            {CATEGORIES.map((cat) => (
-              <TouchableOpacity key={cat.id} style={[s.catChip, itemCategory === cat.id && s.catChipActive]}
-                onPress={() => { Haptics.selectionAsync(); setItemCategory(cat.id); }} activeOpacity={0.8}
-                accessibilityRole="radio" accessibilityState={{ selected: itemCategory === cat.id }} accessibilityLabel={cat.label}>
-                <Text style={{ fontSize: 14 }}>{cat.emoji}</Text>
-                <Text style={[s.catLabel, itemCategory === cat.id && s.catLabelActive]}>{cat.label}</Text>
-              </TouchableOpacity>
-            ))}
+            {CATEGORIES.map((cat) => {
+              const catColors = getCategoryColors(cat.id, isDark);
+              const active = itemCategory === cat.id;
+              return (
+                <TouchableOpacity
+                  key={cat.id}
+                  style={[s.catChip, active && { backgroundColor: catColors.bg }]}
+                  onPress={() => { Haptics.selectionAsync(); setItemCategory(cat.id); }}
+                  activeOpacity={0.8}
+                  accessibilityRole="radio"
+                  accessibilityState={{ selected: active }}
+                  accessibilityLabel={cat.label}
+                >
+                  <Text style={{ fontSize: 14 }}>{cat.emoji}</Text>
+                  <Text style={[s.catLabel, active && { color: catColors.text }]}>{cat.label}</Text>
+                </TouchableOpacity>
+              );
+            })}
           </ScrollView>
 
           {/* Qty + note + add */}
@@ -408,7 +435,7 @@ export default function HomeScreen({ navigation, route }) {
                 const info = getPriceInfo(item.name);
                 return (
                   <View key={item.id} style={[s.itemRow, idx < items.length - 1 && s.itemRowBorder]}>
-                    <View style={s.itemIconWrap}>
+                    <View style={[s.itemIconWrap, { backgroundColor: getCategoryColors(item.category, isDark).bg }]}>
                       <Text style={{ fontSize: 18 }}>{getCategoryEmoji(item.category)}</Text>
                     </View>
                     <View style={s.itemInfo}>
@@ -724,9 +751,7 @@ function makeStyles(c, isDark) {
 
     catRow: { gap: 6, paddingRight: 4 },
     catChip: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 11, paddingVertical: 6, borderRadius: 20, backgroundColor: c.cardAlt },
-    catChipActive: { backgroundColor: c.primaryLight },
     catLabel: { fontSize: 12, fontWeight: '600', color: c.textTertiary },
-    catLabelActive: { color: c.primary },
 
     addFooter: { flexDirection: 'row', alignItems: 'center', gap: 8 },
     qtyRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
@@ -744,7 +769,7 @@ function makeStyles(c, isDark) {
     itemsList: { backgroundColor: c.card, borderRadius: 16, overflow: 'hidden', shadowColor: '#000', shadowOpacity: isDark ? 0.3 : 0.05, shadowRadius: 8, elevation: 2 },
     itemRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 12, gap: 8 },
     itemRowBorder: { borderBottomWidth: 1, borderBottomColor: c.borderLight },
-    itemIconWrap: { width: 34, height: 34, borderRadius: 10, backgroundColor: c.cardAlt, justifyContent: 'center', alignItems: 'center' },
+    itemIconWrap: { width: 34, height: 34, borderRadius: 10, justifyContent: 'center', alignItems: 'center' },
     itemInfo: { flex: 1 },
     itemNameRow: { flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap' },
     itemName: { fontSize: 14, fontWeight: '700', color: c.text },

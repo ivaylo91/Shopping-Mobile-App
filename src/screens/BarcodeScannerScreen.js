@@ -6,7 +6,7 @@ import { CameraView, useCameraPermissions } from 'expo-camera';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useTheme } from '../context/ThemeContext';
-import { CATEGORIES } from './HomeScreen';
+import { CATEGORIES, getCategoryColors } from './HomeScreen';
 
 const BARCODE_TYPES = ['ean13', 'ean8', 'upc_a', 'upc_e'];
 
@@ -44,10 +44,11 @@ function guessMappedCategory(category = '') {
 
 // ─── Bottom Sheet Preview ─────────────────────────────────────────────────────
 
-function ProductPreviewSheet({ result, onAdd, onRescan, onClose, colors }) {
+function ProductPreviewSheet({ result, onAdd, onRescan, onClose, colors, isDark }) {
   if (!result) return null;
   const mappedCat = guessMappedCategory(result.category);
   const catMeta = CATEGORIES.find((c) => c.id === mappedCat) || CATEGORIES[CATEGORIES.length - 1];
+  const catColors = getCategoryColors(mappedCat, isDark);
 
   return (
     <View style={[sheetS.sheet, { backgroundColor: colors.card }]}>
@@ -56,7 +57,7 @@ function ProductPreviewSheet({ result, onAdd, onRescan, onClose, colors }) {
       {result.found ? (
         <>
           <View style={sheetS.productRow}>
-            <View style={[sheetS.iconWrap, { backgroundColor: colors.primaryLight }]}>
+            <View style={[sheetS.iconWrap, { backgroundColor: catColors.bg }]}>
               <Text style={{ fontSize: 28 }}>{catMeta.emoji}</Text>
             </View>
             <View style={{ flex: 1 }}>
@@ -66,8 +67,8 @@ function ProductPreviewSheet({ result, onAdd, onRescan, onClose, colors }) {
               {result.brands && (
                 <Text style={[sheetS.productBrand, { color: colors.textTertiary }]}>{result.brands}</Text>
               )}
-              <View style={[sheetS.catBadge, { backgroundColor: colors.primaryLight }]}>
-                <Text style={[sheetS.catBadgeText, { color: colors.primary }]}>{catMeta.label}</Text>
+              <View style={[sheetS.catBadge, { backgroundColor: catColors.bg }]}>
+                <Text style={[sheetS.catBadgeText, { color: catColors.text }]}>{catMeta.label}</Text>
               </View>
             </View>
           </View>
@@ -125,7 +126,7 @@ const sheetS = StyleSheet.create({
 // ─── Screen ───────────────────────────────────────────────────────────────────
 
 export default function BarcodeScannerScreen({ navigation }) {
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
   const { width: screenWidth } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const [permission, requestPermission] = useCameraPermissions();
@@ -226,6 +227,7 @@ export default function BarcodeScannerScreen({ navigation }) {
             onAdd={handleAdd}
             onRescan={handleRescan}
             colors={colors}
+            isDark={isDark}
           />
         )}
       </View>
