@@ -137,7 +137,7 @@ export default function ShoppingListScreen({ route, navigation }) {
   const [checked, setChecked] = useState({});
   const [saving, setSaving] = useState(false);
   const [showBreakdown, setShowBreakdown] = useState(false);
-  const [progressTrackWidth, setProgressTrackWidth] = useState(0);
+  const progressTrackWidth = useSharedValue(0);
   const progressAnim = useSharedValue(0);
 
   const s = useMemo(() => makeStyles(colors, isDark), [colors, isDark]);
@@ -157,7 +157,7 @@ export default function ShoppingListScreen({ route, navigation }) {
   useEffect(() => {
     progressAnim.value = withTiming(progress, { duration: 500, easing: Easing.out(Easing.quart) });
   }, [progress]);
-  const progressAnimStyle = useAnimatedStyle(() => ({ width: progressAnim.value * progressTrackWidth }));
+  const progressAnimStyle = useAnimatedStyle(() => ({ width: progressAnim.value * progressTrackWidth.value }));
 
   const toggleCheck = useCallback((id) => {
     Haptics.selectionAsync();
@@ -240,7 +240,7 @@ export default function ShoppingListScreen({ route, navigation }) {
 
         <View
           style={s.progressTrack}
-          onLayout={e => setProgressTrackWidth(e.nativeEvent.layout.width)}
+          onLayout={e => { progressTrackWidth.value = e.nativeEvent.layout.width; }}
         >
           <Animated.View style={[s.progressFill, progressAnimStyle]} />
         </View>

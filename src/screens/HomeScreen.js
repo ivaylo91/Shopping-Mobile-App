@@ -119,7 +119,7 @@ export default function HomeScreen({ navigation, route }) {
   const overBudget = budgetNum > 0 && total > budgetNum;
 
   // ─── Budget bar animation ─────────────────────────────────────────────────────
-  const [barTrackWidth, setBarTrackWidth] = useState(0);
+  const barTrackWidth = useSharedValue(0);
   const barProgress = useSharedValue(0);
   useEffect(() => {
     barProgress.value = withTiming(
@@ -127,7 +127,7 @@ export default function HomeScreen({ navigation, route }) {
       { duration: 600, easing: Easing.out(Easing.quart) }
     );
   }, [total, budgetNum]);
-  const barAnimStyle = useAnimatedStyle(() => ({ width: barProgress.value * barTrackWidth }));
+  const barAnimStyle = useAnimatedStyle(() => ({ width: barProgress.value * barTrackWidth.value }));
 
   const sortedStores = useMemo(() => sortStores(stores), [stores, sortStores]);
 
@@ -507,7 +507,7 @@ export default function HomeScreen({ navigation, route }) {
             </View>
             <View
               style={[s.summaryBarTrack, { backgroundColor: colors.borderLight }]}
-              onLayout={e => setBarTrackWidth(e.nativeEvent.layout.width)}
+              onLayout={e => { barTrackWidth.value = e.nativeEvent.layout.width; }}
             >
               <Animated.View style={[
                 s.summaryBarFill,
