@@ -288,7 +288,7 @@ function makeStyles(c, isDark) {
     sectionLabel: { fontSize: 11, fontWeight: '700', color: c.textTertiary, letterSpacing: 1, textTransform: 'uppercase', marginBottom: 10 },
 
     storeChips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-    storeChip: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: c.primaryLight, borderRadius: 20, paddingHorizontal: 14, paddingVertical: 8, borderWidth: 1.5, borderColor: isDark ? c.border : '#E0DCFF' },
+    storeChip: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: c.primaryLight, borderRadius: 20, paddingHorizontal: 14, paddingVertical: 8, borderWidth: 1.5, borderColor: c.border },
     storeChipText: { fontSize: 14, fontWeight: '700', color: c.primary },
     addStoreRow: { backgroundColor: c.card, borderRadius: 20, paddingHorizontal: 14, borderWidth: 1.5, borderColor: c.border, minWidth: 90 },
     addStoreInput: { fontSize: 14, color: c.text, paddingVertical: 7 },

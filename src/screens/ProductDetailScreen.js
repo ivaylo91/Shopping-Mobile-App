@@ -43,7 +43,7 @@ export default function ProductDetailScreen({ route, navigation }) {
           <Text style={s.description}>{product.description}</Text>
         ) : null}
 
-        <TouchableOpacity style={s.button} onPress={handleAdd} activeOpacity={0.85}>
+        <TouchableOpacity style={s.button} onPress={handleAdd} activeOpacity={0.85} accessibilityLabel="Добави в кошницата" accessibilityRole="button">
           <Text style={s.buttonText}>Добави в кошницата</Text>
         </TouchableOpacity>
       </View>

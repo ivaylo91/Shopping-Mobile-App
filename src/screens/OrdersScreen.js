@@ -16,13 +16,15 @@ import { useTheme } from '../context/ThemeContext';
 import { getCategoryIcon, GOAL_META } from '../utils/ui';
 import { OrderCardSkeleton } from '../components/Skeleton';
 
-const STATUS_CONFIG = {
-  pending:    { label: 'Изчаква',      color: '#f39c12', icon: 'time-outline' },
-  processing: { label: 'Обработва се', color: '#3498db', icon: 'sync-outline' },
-  shipped:    { label: 'Изпратена',    color: '#9b59b6', icon: 'cube-outline' },
-  delivered:  { label: 'Доставена',   color: '#2ecc71', icon: 'checkmark-circle-outline' },
-  cancelled:  { label: 'Отказана',    color: '#e74c3c', icon: 'close-circle-outline' },
-};
+function getStatusConfig(colors) {
+  return {
+    pending:    { label: 'Изчаква',      color: colors.orange,  icon: 'time-outline' },
+    processing: { label: 'Обработва се', color: colors.blue,    icon: 'sync-outline' },
+    shipped:    { label: 'Изпратена',    color: colors.purple,  icon: 'cube-outline' },
+    delivered:  { label: 'Доставена',   color: colors.green,   icon: 'checkmark-circle-outline' },
+    cancelled:  { label: 'Отказана',    color: colors.red,     icon: 'close-circle-outline' },
+  };
+}
 
 function formatDate(timestamp) {
   if (!timestamp?.toDate) return '—';
@@ -34,7 +36,8 @@ function formatDate(timestamp) {
 }
 
 const OrderCard = memo(function OrderCard({ item, s, colors }) {
-  const status = STATUS_CONFIG[item.status] || STATUS_CONFIG.pending;
+  const statusConfig = getStatusConfig(colors);
+  const status = statusConfig[item.status] || statusConfig.pending;
   const meta = GOAL_META[item.goal] || GOAL_META.cheapest;
 
   return (
@@ -151,6 +154,8 @@ export default function OrdersScreen({ navigation }) {
             style={s.emptyBtn}
             onPress={() => navigation.navigate('Home')}
             activeOpacity={0.85}
+            accessibilityLabel="Към начало"
+            accessibilityRole="button"
           >
             <Text style={s.emptyBtnText}>Към начало</Text>
           </TouchableOpacity>

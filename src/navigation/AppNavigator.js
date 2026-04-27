@@ -53,7 +53,7 @@ function MainTabs() {
           paddingBottom: 10,
           paddingTop: 8,
         },
-        tabBarLabelStyle: { fontSize: 11, fontWeight: '700', letterSpacing: 0.2 },
+        tabBarLabelStyle: { fontSize: 11, fontWeight: '600', letterSpacing: 0.2 },
         tabBarIcon: ({ focused, color }) => {
           const icons = TAB_ICONS[route.name];
           return <Ionicons name={focused ? icons.focused : icons.outline} size={24} color={color} />;
