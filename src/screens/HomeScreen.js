@@ -3,6 +3,9 @@ import {
   View, TextInput, TouchableOpacity, StyleSheet,
   ScrollView, ActivityIndicator, Alert, Modal,
 } from 'react-native';
+import Animated, {
+  FadeIn, FadeInDown, useSharedValue, useAnimatedStyle, withTiming, Easing,
+} from 'react-native-reanimated';
 import Text from '../components/Text';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -112,6 +115,17 @@ export default function HomeScreen({ navigation, route }) {
   const budgetNum = parseFloat(budget) || 0;
   const remaining = budgetNum - total;
   const overBudget = budgetNum > 0 && total > budgetNum;
+
+  // ─── Budget bar animation ─────────────────────────────────────────────────────
+  const [barTrackWidth, setBarTrackWidth] = useState(0);
+  const barProgress = useSharedValue(0);
+  useEffect(() => {
+    barProgress.value = withTiming(
+      Math.min(budgetNum > 0 ? total / budgetNum : 0, 1),
+      { duration: 600, easing: Easing.out(Easing.quart) }
+    );
+  }, [total, budgetNum]);
+  const barAnimStyle = useAnimatedStyle(() => ({ width: barProgress.value * barTrackWidth }));
 
   const sortedStores = useMemo(() => sortStores(stores), [stores, sortStores]);
 
@@ -441,7 +455,7 @@ export default function HomeScreen({ navigation, route }) {
               {items.map((item, idx) => {
                 const info = getPriceInfo(item.name);
                 return (
-                  <View key={item.id} style={[s.itemRow, idx < items.length - 1 && s.itemRowBorder]}>
+                  <Animated.View key={item.id} entering={FadeInDown.duration(250).delay(Math.min(idx * 30, 120))} style={[s.itemRow, idx < items.length - 1 && s.itemRowBorder]}>
                     <View style={[s.itemIconWrap, { backgroundColor: getCategoryColors(item.category, isDark).bg }]}>
                       <Text style={{ fontSize: 18 }}>{getCategoryEmoji(item.category)}</Text>
                     </View>
@@ -475,7 +489,7 @@ export default function HomeScreen({ navigation, route }) {
                     <TouchableOpacity style={{ padding: 2 }} onPress={() => removeItem(item.id)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} accessibilityRole="button" accessibilityLabel={`Премахни ${item.name}`}>
                       <Ionicons name="close-circle" size={21} color={colors.red} />
                     </TouchableOpacity>
-                  </View>
+                  </Animated.View>
                 );
               })}
             </View>
@@ -484,24 +498,25 @@ export default function HomeScreen({ navigation, route }) {
 
         {/* Budget summary — the single progress surface */}
         {items.length > 0 && (
-          <View style={[s.summaryCard, overBudget && s.summaryCardOver]}>
+          <Animated.View entering={FadeIn.duration(300)} style={[s.summaryCard, overBudget && s.summaryCardOver]}>
             <View style={s.summaryTop}>
               <Text style={s.summaryTotal}>{total.toFixed(2)} €</Text>
               <Text style={s.summaryOf}>от {budgetNum.toFixed(2)} €</Text>
             </View>
-            <View style={[s.summaryBarTrack, { backgroundColor: colors.borderLight }]}>
-              <View style={[
+            <View
+              style={[s.summaryBarTrack, { backgroundColor: colors.borderLight }]}
+              onLayout={e => setBarTrackWidth(e.nativeEvent.layout.width)}
+            >
+              <Animated.View style={[
                 s.summaryBarFill,
-                {
-                  width: `${Math.min((total / Math.max(budgetNum, 1)) * 100, 100)}%`,
-                  backgroundColor: overBudget ? colors.red : total / Math.max(budgetNum, 1) > 0.8 ? colors.orange : colors.green,
-                },
+                { backgroundColor: overBudget ? colors.red : total / Math.max(budgetNum, 1) > 0.8 ? colors.orange : colors.green },
+                barAnimStyle,
               ]} />
             </View>
             <Text style={[s.summaryDelta, { color: overBudget ? colors.red : colors.green }]}>
               {overBudget ? `Над бюджета с ${Math.abs(remaining).toFixed(2)} €` : `Остават ${remaining.toFixed(2)} €`}
             </Text>
-          </View>
+          </Animated.View>
         )}
 
         {/* Primary CTA — single action */}

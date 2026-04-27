@@ -2,11 +2,16 @@ import {
   View, StyleSheet, TouchableOpacity,
   ActivityIndicator, Share,
 } from 'react-native';
+import Animated, {
+  useSharedValue, useAnimatedStyle, withTiming, Easing,
+} from 'react-native-reanimated';
 import { FlashList } from '@shopify/flash-list';
 import Text from '../components/Text';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useState, useMemo, useCallback, memo } from 'react';
+import { useState, useMemo, useCallback, memo, useEffect } from 'react';
 import { Ionicons } from '@expo/vector-icons';
+
+const AnimatedTouchableOpacity = Animated.createAnimatedComponent(TouchableOpacity);
 import * as Haptics from 'expo-haptics';
 import { useBudgetLists } from '../hooks/useBudgetLists';
 import { useToast } from '../context/ToastContext';
@@ -74,11 +79,16 @@ const bdS = StyleSheet.create({
 
 const ShoppingItem = memo(function ShoppingItem({ item, checked, onToggle, colors, isDark }) {
   const catColors = getCategoryColors(item.category, isDark);
+  const opacity = useSharedValue(checked ? 0.45 : 1);
+  useEffect(() => {
+    opacity.value = withTiming(checked ? 0.45 : 1, { duration: 220, easing: Easing.out(Easing.quad) });
+  }, [checked]);
+  const animStyle = useAnimatedStyle(() => ({ opacity: opacity.value }));
   return (
-    <TouchableOpacity
-      style={[iS.item, { backgroundColor: colors.card }, checked && iS.itemChecked]}
+    <AnimatedTouchableOpacity
+      style={[iS.item, { backgroundColor: colors.card }, animStyle]}
       onPress={() => onToggle(item.id)}
-      activeOpacity={0.75}
+      activeOpacity={0.85}
       accessibilityRole="checkbox"
       accessibilityState={{ checked }}
       accessibilityLabel={item.name}
@@ -101,13 +111,12 @@ const ShoppingItem = memo(function ShoppingItem({ item, checked, onToggle, color
       <Text style={[iS.price, { color: colors.primary }, checked && { color: colors.border }]}>
         {item.subtotal.toFixed(2)} €
       </Text>
-    </TouchableOpacity>
+    </AnimatedTouchableOpacity>
   );
 });
 
 const iS = StyleSheet.create({
   item: { borderRadius: 14, padding: 14, marginBottom: 10, flexDirection: 'row', alignItems: 'center', gap: 10, shadowColor: '#000', shadowOpacity: 0.04, shadowRadius: 5, elevation: 1 },
-  itemChecked: { opacity: 0.45 },
   iconWrap: { width: 36, height: 36, borderRadius: 10, justifyContent: 'center', alignItems: 'center' },
   body: { flex: 1 },
   name: { fontSize: 14, fontWeight: '700', marginBottom: 1 },
@@ -128,6 +137,8 @@ export default function ShoppingListScreen({ route, navigation }) {
   const [checked, setChecked] = useState({});
   const [saving, setSaving] = useState(false);
   const [showBreakdown, setShowBreakdown] = useState(false);
+  const [progressTrackWidth, setProgressTrackWidth] = useState(0);
+  const progressAnim = useSharedValue(0);
 
   const s = useMemo(() => makeStyles(colors, isDark), [colors, isDark]);
 
@@ -142,6 +153,11 @@ export default function ShoppingListScreen({ route, navigation }) {
       progress: list.length > 0 ? cnt / list.length : 0,
     };
   }, [list, budget, checked]);
+
+  useEffect(() => {
+    progressAnim.value = withTiming(progress, { duration: 500, easing: Easing.out(Easing.quart) });
+  }, [progress]);
+  const progressAnimStyle = useAnimatedStyle(() => ({ width: progressAnim.value * progressTrackWidth }));
 
   const toggleCheck = useCallback((id) => {
     Haptics.selectionAsync();
@@ -222,8 +238,11 @@ export default function ShoppingListScreen({ route, navigation }) {
           </TouchableOpacity>
         </View>
 
-        <View style={s.progressTrack}>
-          <View style={[s.progressFill, { width: `${Math.min(progress * 100, 100)}%` }]} />
+        <View
+          style={s.progressTrack}
+          onLayout={e => setProgressTrackWidth(e.nativeEvent.layout.width)}
+        >
+          <Animated.View style={[s.progressFill, progressAnimStyle]} />
         </View>
         <Text style={s.progressText}>{checkedCount} / {list.length} отметнати</Text>
       </View>
