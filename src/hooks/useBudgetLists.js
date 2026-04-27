@@ -3,29 +3,32 @@ import {
   collection, addDoc, deleteDoc, doc,
   onSnapshot, query, where, orderBy, serverTimestamp,
 } from 'firebase/firestore';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { db } from '../config/firebase';
 import { useAuth } from '../context/AuthContext';
 import { sendOverBudgetAlert } from './useNotifications';
+import { PRICE_HISTORY_KEY, MAX_HISTORY_PER_PRODUCT } from './usePriceHistory';
 
-let priceHistoryModule = null;
+const MAX_TRACKED_PRODUCTS = 200;
+
 async function recordPricesAsync(items, store) {
   try {
-    if (!priceHistoryModule) {
-      priceHistoryModule = await import('./usePriceHistory');
-    }
-    // Fire-and-forget — we call the raw AsyncStorage write directly
-    const AsyncStorage = (await import('@react-native-async-storage/async-storage')).default;
-    const KEY = '@price_history_v1';
-    const MAX_PER_PRODUCT = 12;
-    const raw = await AsyncStorage.getItem(KEY);
+    const raw = await AsyncStorage.getItem(PRICE_HISTORY_KEY);
     const history = raw ? JSON.parse(raw) : {};
     const now = Date.now();
     for (const item of items) {
       const key = item.name.toLowerCase();
       const existing = history[key] || [];
-      history[key] = [{ price: item.price, store, date: now }, ...existing].slice(0, MAX_PER_PRODUCT);
+      history[key] = [{ price: item.price, store, date: now }, ...existing].slice(0, MAX_HISTORY_PER_PRODUCT);
     }
-    await AsyncStorage.setItem(KEY, JSON.stringify(history));
+    const keys = Object.keys(history);
+    if (keys.length > MAX_TRACKED_PRODUCTS) {
+      keys
+        .sort((a, b) => (history[b][0]?.date ?? 0) - (history[a][0]?.date ?? 0))
+        .slice(MAX_TRACKED_PRODUCTS)
+        .forEach((k) => delete history[k]);
+    }
+    await AsyncStorage.setItem(PRICE_HISTORY_KEY, JSON.stringify(history));
   } catch {}
 }
 

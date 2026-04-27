@@ -11,7 +11,7 @@
  */
 import { useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { collection, onSnapshot } from 'firebase/firestore';
+import { collection, onSnapshot, query, limit } from 'firebase/firestore';
 import { db } from '../config/firebase';
 
 export const PRODUCTS_KEY = ['products'];
@@ -22,7 +22,7 @@ export function useProducts() {
   useEffect(() => {
     // Real-time listener → writes directly into TanStack Query cache
     const unsubscribe = onSnapshot(
-      collection(db, 'products'),
+      query(collection(db, 'products'), limit(500)),
       (snapshot) => {
         queryClient.setQueryData(
           PRODUCTS_KEY,
