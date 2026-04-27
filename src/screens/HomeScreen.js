@@ -23,6 +23,7 @@ import { useNotificationPermission } from '../hooks/useNotifications';
 import AnimatedPressable from '../components/AnimatedPressable';
 import { uid } from '../utils/uid';
 import { getShadows } from '../theme';
+import { useLayout } from '../hooks/useLayout';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -68,6 +69,7 @@ export default function HomeScreen({ navigation, route }) {
   const { logout } = useAuth();
   const { show: showToast } = useToast();
   const { colors, isDark, toggleTheme } = useTheme();
+  const { isTablet } = useLayout();
   const { saveList } = useBudgetLists();
   const { templates, saveTemplate, deleteTemplate } = useTemplates();
   const { stores, customs, addStore, removeStore } = useCustomStores();
@@ -272,7 +274,7 @@ export default function HomeScreen({ navigation, route }) {
 
   // ─── Dynamic styles + theme-aware trend colors ───────────────────────────────
 
-  const s = useMemo(() => makeStyles(colors, isDark), [colors, isDark]);
+  const s = useMemo(() => makeStyles(colors, isDark, isTablet), [colors, isDark, isTablet]);
   const trendColor = useMemo(
     () => ({ up: colors.red, down: colors.green, same: colors.textTertiary, new: colors.primary }),
     [colors],
@@ -721,12 +723,12 @@ function OverflowItem({ icon, label, onPress, danger, s, colors }) {
 
 // ─── Styles factory ───────────────────────────────────────────────────────────
 
-function makeStyles(c, isDark) {
+function makeStyles(c, isDark, isTablet) {
   const sh = getShadows(isDark);
   return StyleSheet.create({
     safe: { flex: 1, backgroundColor: c.bg },
     container: { flex: 1 },
-    content: { padding: 20, paddingBottom: 40 },
+    content: { padding: 20, paddingBottom: 40, maxWidth: isTablet ? 720 : undefined, alignSelf: isTablet ? 'center' : undefined, width: '100%' },
 
     header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, marginTop: 4 },
     title: { fontSize: 26, fontWeight: '700', color: c.text, letterSpacing: -0.5 },

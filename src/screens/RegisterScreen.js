@@ -10,6 +10,7 @@ import { z } from 'zod';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
+import { useLayout } from '../hooks/useLayout';
 
 const registerSchema = z
   .object({
@@ -25,6 +26,7 @@ const registerSchema = z
 export default function RegisterScreen({ navigation }) {
   const { register } = useAuth();
   const { colors, isDark } = useTheme();
+  const { isTablet } = useLayout();
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
@@ -47,11 +49,12 @@ export default function RegisterScreen({ navigation }) {
     }
   };
 
-  const s = useMemo(() => makeStyles(colors, isDark), [colors, isDark]);
+  const s = useMemo(() => makeStyles(colors, isDark, isTablet), [colors, isDark, isTablet]);
 
   return (
     <KeyboardAvoidingView style={s.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <ScrollView contentContainerStyle={s.scroll} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+        <View style={s.formWrap}>
         <Text style={s.subtitle}>Умно Пазаруване</Text>
         <Text style={s.title}>Регистрирай се 🛒</Text>
 
@@ -147,15 +150,17 @@ export default function RegisterScreen({ navigation }) {
             Вече имате акаунт? <Text style={s.linkBold}>Влез</Text>
           </Text>
         </TouchableOpacity>
+        </View>
       </ScrollView>
     </KeyboardAvoidingView>
   );
 }
 
-function makeStyles(c, isDark) {
+function makeStyles(c, isDark, isTablet) {
   return StyleSheet.create({
     container: { flex: 1, backgroundColor: c.card },
-    scroll: { flexGrow: 1, justifyContent: 'center', padding: 28 },
+    scroll: { flexGrow: 1, justifyContent: 'center', padding: 28, alignItems: isTablet ? 'center' : undefined },
+    formWrap: isTablet ? { width: '100%', maxWidth: 440 } : {},
     subtitle: { fontSize: 13, fontWeight: '700', color: c.primary, textAlign: 'center', letterSpacing: 1, textTransform: 'uppercase', marginBottom: 6 },
     title: { fontSize: 26, fontWeight: '700', color: c.text, marginBottom: 36, textAlign: 'center' },
     fieldWrap: { marginBottom: 18 },

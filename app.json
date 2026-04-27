@@ -3,7 +3,7 @@
     "name": "Пазарувай умно",
     "slug": "smart-budget-shopping",
     "version": "1.0.0",
-    "orientation": "portrait",
+    "orientation": "default",
     "icon": "./assets/icon.png",
     "scheme": "smartbudgetshopping",
     "userInterfaceStyle": "light",
@@ -11,10 +11,10 @@
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#6C63FF"
+      "backgroundColor": "#2B7A5C"
     },
     "ios": {
-      "supportsTablet": false,
+      "supportsTablet": true,
       "bundleIdentifier": "com.smartbudgetshopping.app",
       "buildNumber": "1",
       "infoPlist": {
@@ -24,7 +24,7 @@
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#6C63FF"
+        "backgroundColor": "#2B7A5C"
       },
       "package": "com.smartbudgetshopping.app",
       "versionCode": 1,

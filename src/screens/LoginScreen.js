@@ -10,6 +10,7 @@ import { z } from 'zod';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
+import { useLayout } from '../hooks/useLayout';
 
 const loginSchema = z.object({
   email: z.string().min(1, 'Имейлът е задължителен').email('Невалиден имейл адрес'),
@@ -19,6 +20,7 @@ const loginSchema = z.object({
 export default function LoginScreen({ navigation }) {
   const { login, loginAsGuest } = useAuth();
   const { colors, isDark, toggleTheme } = useTheme();
+  const { isTablet } = useLayout();
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
@@ -38,7 +40,7 @@ export default function LoginScreen({ navigation }) {
     }
   };
 
-  const s = useMemo(() => makeStyles(colors, isDark), [colors, isDark]);
+  const s = useMemo(() => makeStyles(colors, isDark, isTablet), [colors, isDark, isTablet]);
 
   return (
     <KeyboardAvoidingView style={s.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
@@ -47,6 +49,7 @@ export default function LoginScreen({ navigation }) {
       </TouchableOpacity>
 
       <ScrollView contentContainerStyle={s.scroll} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+      <View style={s.formWrap}>
       <Text style={s.subtitle}>Умно Пазаруване</Text>
       <Text style={s.title}>Добре дошли 👋</Text>
 
@@ -113,15 +116,17 @@ export default function LoginScreen({ navigation }) {
       <TouchableOpacity style={s.guestBtn} onPress={loginAsGuest}>
         <Text style={s.guestText}>Тествай без вход →</Text>
       </TouchableOpacity>
+      </View>
       </ScrollView>
     </KeyboardAvoidingView>
   );
 }
 
-function makeStyles(c, isDark) {
+function makeStyles(c, isDark, isTablet) {
   return StyleSheet.create({
     container: { flex: 1, backgroundColor: c.card },
-    scroll: { flexGrow: 1, justifyContent: 'center', padding: 28 },
+    scroll: { flexGrow: 1, justifyContent: 'center', padding: 28, alignItems: isTablet ? 'center' : undefined },
+    formWrap: isTablet ? { width: '100%', maxWidth: 440 } : {},
     themeToggle: { position: 'absolute', top: 60, right: 24, padding: 8, zIndex: 1 },
     subtitle: { fontSize: 13, fontWeight: '700', color: c.primary, textAlign: 'center', letterSpacing: 1, textTransform: 'uppercase', marginBottom: 6 },
     title: { fontSize: 26, fontWeight: '700', color: c.text, marginBottom: 36, textAlign: 'center' },

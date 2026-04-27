@@ -6,6 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
+import { useLayout } from '../hooks/useLayout';
 
 import LoginScreen from '../screens/LoginScreen';
 import RegisterScreen from '../screens/RegisterScreen';
@@ -39,6 +40,8 @@ function AuthStack() {
 
 function MainTabs() {
   const { colors, isDark } = useTheme();
+  const { isLandscape, isTablet } = useLayout();
+  const phoneLandscape = isLandscape && !isTablet;
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
@@ -49,9 +52,9 @@ function MainTabs() {
           backgroundColor: colors.tabBar,
           borderTopColor: colors.tabBarBorder,
           borderTopWidth: 1,
-          height: 70,
-          paddingBottom: 10,
-          paddingTop: 8,
+          height: phoneLandscape ? 52 : 70,
+          paddingBottom: phoneLandscape ? 6 : 10,
+          paddingTop: phoneLandscape ? 5 : 8,
         },
         tabBarLabelStyle: { fontSize: 11, fontWeight: '600', letterSpacing: 0.2 },
         tabBarIcon: ({ focused, color }) => {

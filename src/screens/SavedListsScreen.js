@@ -12,6 +12,7 @@ import { useBudgetLists } from '../hooks/useBudgetLists';
 import { useTemplates } from '../hooks/useTemplates';
 import { useToast } from '../context/ToastContext';
 import { useTheme } from '../context/ThemeContext';
+import { useLayout } from '../hooks/useLayout';
 import { getCategoryEmoji, getCategoryColors } from './HomeScreen';
 import { OrderCardSkeleton } from '../components/Skeleton';
 
@@ -209,11 +210,13 @@ export default function SavedListsScreen({ navigation }) {
   const { saveTemplate } = useTemplates();
   const { show: showToast } = useToast();
   const { colors, isDark } = useTheme();
+  const { isTablet } = useLayout();
   const [deleting, setDeleting] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
   const [storeFilter, setStoreFilter] = useState('Всички');
 
   const s = useMemo(() => makeStyles(colors, isDark), [colors, isDark]);
+  const numColumns = isTablet ? 2 : 1;
 
   const storeOptions = useMemo(() => {
     const stores = new Set(lists.map((l) => l.store).filter(Boolean));
@@ -281,16 +284,18 @@ export default function SavedListsScreen({ navigation }) {
   }, [saveTemplate, showToast]);
 
   const renderItem = useCallback(({ item }) => (
-    <BudgetCard
-      item={item}
-      isDeleting={deleting === item.id}
-      onDelete={() => handleDelete(item)}
-      onOpen={() => handleOpen(item)}
-      onSaveTemplate={() => handleSaveTemplate(item)}
-      colors={colors}
-      isDark={isDark}
-    />
-  ), [deleting, handleDelete, handleOpen, handleSaveTemplate, colors, isDark]);
+    <View style={isTablet && s.tabletCardWrap}>
+      <BudgetCard
+        item={item}
+        isDeleting={deleting === item.id}
+        onDelete={() => handleDelete(item)}
+        onOpen={() => handleOpen(item)}
+        onSaveTemplate={() => handleSaveTemplate(item)}
+        colors={colors}
+        isDark={isDark}
+      />
+    </View>
+  ), [deleting, handleDelete, handleOpen, handleSaveTemplate, colors, isDark, isTablet]);
 
   if (loading) {
     return (
@@ -371,10 +376,12 @@ export default function SavedListsScreen({ navigation }) {
         </View>
       ) : (
         <FlashList
+          key={numColumns}
           data={filtered}
           keyExtractor={(item) => item.id}
           renderItem={renderItem}
           estimatedItemSize={220}
+          numColumns={numColumns}
           ListHeaderComponent={<MonthlySummary lists={lists} colors={colors} />}
           contentContainerStyle={s.list}
           showsVerticalScrollIndicator={false}
@@ -423,6 +430,7 @@ function makeStyles(c, isDark) {
     filterLabelActive: { color: '#fff' },
 
     list: { paddingHorizontal: 16, paddingBottom: 36, paddingTop: 14 },
+    tabletCardWrap: { flex: 1, marginHorizontal: 6, marginBottom: 2 },
 
     emptyState: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 40 },
     emptyTitle: { fontSize: 19, fontWeight: '700', color: c.text, marginBottom: 8, marginTop: 16, textAlign: 'center' },

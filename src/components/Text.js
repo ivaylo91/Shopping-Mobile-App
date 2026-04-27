@@ -12,8 +12,8 @@ const WEIGHT_FAMILY = {
   '900': 'Figtree_900Black',
 };
 
-export default function Text({ style, ...props }) {
+export default function Text({ style, maxFontSizeMultiplier = 1.4, ...props }) {
   const flat = StyleSheet.flatten(style) ?? {};
   const family = WEIGHT_FAMILY[flat.fontWeight ?? '400'] ?? 'Figtree_400Regular';
-  return <RNText style={[{ fontFamily: family }, style]} {...props} />;
+  return <RNText style={[{ fontFamily: family }, style]} maxFontSizeMultiplier={maxFontSizeMultiplier} {...props} />;
 }
