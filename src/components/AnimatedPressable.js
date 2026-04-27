@@ -1,14 +1,3 @@
-/**
- * AnimatedPressable — shared press-scale component using Reanimated 4.
- *
- * Replaces the duplicated Animated.createAnimatedComponent(TouchableOpacity)
- * pattern that existed in HomeScreen and ShoppingListScreen.
- *
- * Reanimated 4 benefits over the old Animated API:
- *  - Runs entirely on the UI thread (no JS bridge round-trips)
- *  - Cleaner `useSharedValue` + `useAnimatedStyle` API
- *  - Better performance on low-end devices
- */
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -18,10 +7,20 @@ import { Pressable } from 'react-native';
 
 const AnimatedPress = Animated.createAnimatedComponent(Pressable);
 
-const SPRING_IN  = { mass: 0.3, damping: 10, stiffness: 200 };
-const SPRING_OUT = { mass: 0.3, damping: 10, stiffness: 200 };
+const SPRING_IN  = { mass: 0.3, damping: 15, stiffness: 200 };
+const SPRING_OUT = { mass: 0.3, damping: 15, stiffness: 200 };
 
-export default function AnimatedPressable({ onPress, style, children, disabled }) {
+export default function AnimatedPressable({
+  onPress,
+  style,
+  children,
+  disabled,
+  accessibilityLabel,
+  accessibilityRole,
+  accessibilityState,
+  accessibilityHint,
+  ...rest
+}) {
   const scale = useSharedValue(1);
 
   const animatedStyle = useAnimatedStyle(() => ({
@@ -35,6 +34,11 @@ export default function AnimatedPressable({ onPress, style, children, disabled }
       onPressOut={() => { scale.value = withSpring(1, SPRING_OUT); }}
       disabled={disabled}
       style={[style, animatedStyle]}
+      accessibilityLabel={accessibilityLabel}
+      accessibilityRole={accessibilityRole ?? 'button'}
+      accessibilityState={{ disabled: !!disabled, ...accessibilityState }}
+      accessibilityHint={accessibilityHint}
+      {...rest}
     >
       {children}
     </AnimatedPress>

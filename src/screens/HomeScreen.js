@@ -19,6 +19,7 @@ import { useFavoriteStores } from '../hooks/useFavoriteStores';
 import { useNotificationPermission } from '../hooks/useNotifications';
 import AnimatedPressable from '../components/AnimatedPressable';
 import { uid } from '../utils/uid';
+import { getShadows } from '../theme';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -56,6 +57,7 @@ export function getCategoryColors(id, isDark) {
 }
 
 const TREND_ICON = { up: '↑', down: '↓', same: '→', new: '★' };
+const STAR_COLOR = '#FFD700';
 
 // ─── Screen ───────────────────────────────────────────────────────────────────
 
@@ -289,6 +291,7 @@ export default function HomeScreen({ navigation, route }) {
               onChangeText={setListName}
               returnKeyType="next"
               keyboardAppearance={isDark ? 'dark' : 'light'}
+              accessibilityLabel="Наименование на списъка"
             />
             <View style={s.setupBudget}>
               <Text style={s.setupCurrency}>€</Text>
@@ -301,17 +304,18 @@ export default function HomeScreen({ navigation, route }) {
                 keyboardType="decimal-pad"
                 returnKeyType="done"
                 keyboardAppearance={isDark ? 'dark' : 'light'}
+                accessibilityLabel="Бюджет в евро"
               />
             </View>
           </View>
           <View style={s.setupBottom}>
-            <TouchableOpacity style={s.storePill} onPress={() => setStoreSheetVisible(true)} activeOpacity={0.75}>
+            <TouchableOpacity style={s.storePill} onPress={() => setStoreSheetVisible(true)} activeOpacity={0.75} accessibilityLabel={`Магазин: ${store}`} accessibilityRole="button">
               <Ionicons name="location-outline" size={13} color={colors.primary} />
               <Text style={s.storePillText} numberOfLines={1}>{store}</Text>
               <Ionicons name="chevron-down" size={13} color={colors.textTertiary} />
             </TouchableOpacity>
             {hasLibrary && (
-              <TouchableOpacity style={s.libraryPill} onPress={() => setLibraryVisible(true)} activeOpacity={0.75}>
+              <TouchableOpacity style={s.libraryPill} onPress={() => setLibraryVisible(true)} activeOpacity={0.75} accessibilityLabel="Библиотека с продукти" accessibilityRole="button">
                 <Ionicons name="library-outline" size={13} color={colors.primary} />
                 <Text style={s.libraryPillText}>
                   {recurring.length > 0 && templates.length > 0
@@ -333,9 +337,10 @@ export default function HomeScreen({ navigation, route }) {
               <TextInput style={s.addNameInput} placeholder="Продукт" placeholderTextColor={colors.textQuaternary}
                 value={itemName} onChangeText={(v) => { setItemName(v); setShowSuggestions(true); }}
                 onFocus={() => setShowSuggestions(true)} returnKeyType="next"
-                keyboardAppearance={isDark ? 'dark' : 'light'} />
+                keyboardAppearance={isDark ? 'dark' : 'light'}
+                accessibilityLabel="Наименование на продукта" />
               {itemName.length > 0 && (
-                <TouchableOpacity onPress={() => { setItemName(''); setShowSuggestions(false); }}>
+                <TouchableOpacity onPress={() => { setItemName(''); setShowSuggestions(false); }} accessibilityLabel="Изчисти" accessibilityRole="button">
                   <Ionicons name="close-circle" size={16} color={colors.textQuaternary} />
                 </TouchableOpacity>
               )}
@@ -348,7 +353,8 @@ export default function HomeScreen({ navigation, route }) {
               <TextInput style={s.priceInput} placeholder="0.00" placeholderTextColor={colors.textQuaternary}
                 value={itemPrice} onChangeText={setItemPrice} keyboardType="decimal-pad"
                 returnKeyType="done" onFocus={() => setShowSuggestions(false)}
-                keyboardAppearance={isDark ? 'dark' : 'light'} />
+                keyboardAppearance={isDark ? 'dark' : 'light'}
+                accessibilityLabel="Цена на продукта" />
             </View>
           </View>
 
@@ -398,19 +404,19 @@ export default function HomeScreen({ navigation, route }) {
           {/* Qty + note + add */}
           <View style={s.addFooter}>
             <View style={s.qtyRow}>
-              <TouchableOpacity style={s.qtyBtn} onPress={() => { Haptics.selectionAsync(); setItemQty((q) => Math.max(1, q - 1)); }}>
+              <TouchableOpacity style={s.qtyBtn} onPress={() => { Haptics.selectionAsync(); setItemQty((q) => Math.max(1, q - 1)); }} accessibilityLabel="Намали количеството" accessibilityRole="button">
                 <Ionicons name="remove" size={16} color={colors.primary} />
               </TouchableOpacity>
               <Text style={s.qtyValue}>{itemQty}</Text>
-              <TouchableOpacity style={s.qtyBtn} onPress={() => { Haptics.selectionAsync(); setItemQty((q) => q + 1); }}>
+              <TouchableOpacity style={s.qtyBtn} onPress={() => { Haptics.selectionAsync(); setItemQty((q) => q + 1); }} accessibilityLabel="Увеличи количеството" accessibilityRole="button">
                 <Ionicons name="add" size={16} color={colors.primary} />
               </TouchableOpacity>
             </View>
-            <TouchableOpacity style={s.noteToggle} onPress={() => { Haptics.selectionAsync(); setShowNote((v) => !v); }}>
+            <TouchableOpacity style={s.noteToggle} onPress={() => { Haptics.selectionAsync(); setShowNote((v) => !v); }} accessibilityLabel="Бележка" accessibilityRole="button" accessibilityState={{ selected: showNote }}>
               <Ionicons name={showNote ? 'chatbubble' : 'chatbubble-outline'} size={14} color={showNote ? colors.primary : colors.textQuaternary} />
               <Text style={[s.noteToggleText, showNote && { color: colors.primary }]}>Бележка</Text>
             </TouchableOpacity>
-            <AnimatedPressable style={s.addBtn} onPress={addItem}>
+            <AnimatedPressable style={s.addBtn} onPress={addItem} accessibilityLabel="Добави продукт">
               <Ionicons name="add-circle" size={17} color="#fff" />
               <Text style={s.addBtnText}>Добави</Text>
             </AnimatedPressable>
@@ -421,7 +427,8 @@ export default function HomeScreen({ navigation, route }) {
               <Ionicons name="pencil-outline" size={14} color={colors.textQuaternary} />
               <TextInput style={s.noteInput} placeholder="напр. само ако е намалено"
                 placeholderTextColor={colors.textQuaternary} value={itemNote} onChangeText={setItemNote}
-                returnKeyType="done" multiline keyboardAppearance={isDark ? 'dark' : 'light'} />
+                returnKeyType="done" multiline keyboardAppearance={isDark ? 'dark' : 'light'}
+                accessibilityLabel="Бележка към продукта" />
             </View>
           )}
         </View>
@@ -462,10 +469,10 @@ export default function HomeScreen({ navigation, route }) {
                         </TouchableOpacity>
                       </View>
                     </View>
-                    <TouchableOpacity onPress={() => toggleItemRecurring(item)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                    <TouchableOpacity onPress={() => toggleItemRecurring(item)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} accessibilityRole="button" accessibilityLabel={isRecurring(item.name) ? 'Премахни от постоянни' : 'Добави в постоянни'}>
                       <Ionicons name={isRecurring(item.name) ? 'repeat' : 'repeat-outline'} size={18} color={isRecurring(item.name) ? colors.primary : colors.borderLight} />
                     </TouchableOpacity>
-                    <TouchableOpacity style={{ padding: 2 }} onPress={() => removeItem(item.id)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                    <TouchableOpacity style={{ padding: 2 }} onPress={() => removeItem(item.id)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} accessibilityRole="button" accessibilityLabel={`Премахни ${item.name}`}>
                       <Ionicons name="close-circle" size={21} color={colors.red} />
                     </TouchableOpacity>
                   </View>
@@ -502,6 +509,8 @@ export default function HomeScreen({ navigation, route }) {
           style={[s.primaryCta, (items.length === 0 || shopping) && s.primaryCtaDisabled]}
           onPress={handleStartShopping}
           disabled={items.length === 0 || shopping}
+          accessibilityLabel="Пазарувай"
+          accessibilityState={{ disabled: items.length === 0 || shopping }}
         >
           {shopping
             ? <ActivityIndicator color="#fff" />
@@ -539,8 +548,9 @@ export default function HomeScreen({ navigation, route }) {
             <View style={s.storeAddRow}>
               <TextInput style={s.storeAddInput} placeholder="Добави магазин..." placeholderTextColor={colors.textQuaternary}
                 value={newStoreName} onChangeText={setNewStoreName} returnKeyType="done"
-                onSubmitEditing={handleAddStore} keyboardAppearance={isDark ? 'dark' : 'light'} />
-              <TouchableOpacity style={s.storeAddBtn} onPress={handleAddStore}>
+                onSubmitEditing={handleAddStore} keyboardAppearance={isDark ? 'dark' : 'light'}
+                accessibilityLabel="Нов магазин" />
+              <TouchableOpacity style={s.storeAddBtn} onPress={handleAddStore} accessibilityLabel="Добави магазин" accessibilityRole="button">
                 <Ionicons name="add" size={20} color="#fff" />
               </TouchableOpacity>
             </View>
@@ -555,8 +565,8 @@ export default function HomeScreen({ navigation, route }) {
                     onPress={() => { Haptics.selectionAsync(); setStore(st); setStoreSheetVisible(false); }}
                     activeOpacity={0.75}
                   >
-                    <TouchableOpacity onPress={() => toggleFavorite(st)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-                      <Ionicons name={fav ? 'star' : 'star-outline'} size={18} color={fav ? '#FFD700' : colors.borderLight} />
+                    <TouchableOpacity onPress={() => toggleFavorite(st)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} accessibilityRole="button" accessibilityLabel={fav ? `Премахни ${st} от любими` : `Добави ${st} в любими`}>
+                      <Ionicons name={fav ? 'star' : 'star-outline'} size={18} color={fav ? STAR_COLOR : colors.borderLight} />
                     </TouchableOpacity>
                     <Text style={[s.storeListName, selected && s.storeListNameActive]}>{st}</Text>
                     {selected && <Ionicons name="checkmark" size={18} color={colors.primary} />}
@@ -564,6 +574,8 @@ export default function HomeScreen({ navigation, route }) {
                       <TouchableOpacity
                         onPress={() => { removeStore(st); if (store === st) setStore('Всички'); }}
                         hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                        accessibilityRole="button"
+                        accessibilityLabel={`Изтрий ${st}`}
                       >
                         <Ionicons name="trash-outline" size={16} color={colors.red} />
                       </TouchableOpacity>
@@ -586,7 +598,7 @@ export default function HomeScreen({ navigation, route }) {
               <View style={{ gap: 10 }}>
                 <View style={s.libSectionRow}>
                   <Text style={s.libSectionLabel}>Постоянни продукти</Text>
-                  <TouchableOpacity onPress={() => { setLibraryVisible(false); addAllRecurring(); }}>
+                  <TouchableOpacity onPress={() => { setLibraryVisible(false); addAllRecurring(); }} accessibilityRole="button" accessibilityLabel="Добави всички постоянни продукти">
                     <Text style={s.libSectionLink}>+ Добави всички</Text>
                   </TouchableOpacity>
                 </View>
@@ -663,12 +675,13 @@ export default function HomeScreen({ navigation, route }) {
               returnKeyType="done"
               onSubmitEditing={confirmSaveTemplate}
               keyboardAppearance={isDark ? 'dark' : 'light'}
+              accessibilityLabel="Наименование на шаблона"
             />
             <View style={s.templateModalBtns}>
-              <TouchableOpacity style={s.templateCancelBtn} onPress={() => setSaveTemplateVisible(false)}>
+              <TouchableOpacity style={s.templateCancelBtn} onPress={() => setSaveTemplateVisible(false)} accessibilityRole="button" accessibilityLabel="Отказ">
                 <Text style={s.templateCancelText}>Отказ</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={s.templateConfirmBtn} onPress={confirmSaveTemplate}>
+              <TouchableOpacity style={s.templateConfirmBtn} onPress={confirmSaveTemplate} accessibilityRole="button" accessibilityLabel="Запази шаблона">
                 <Text style={s.templateConfirmText}>Запази</Text>
               </TouchableOpacity>
             </View>
@@ -684,7 +697,7 @@ export default function HomeScreen({ navigation, route }) {
 
 function OverflowItem({ icon, label, onPress, danger, s, colors }) {
   return (
-    <TouchableOpacity style={s.overflowItem} onPress={onPress} activeOpacity={0.7}>
+    <TouchableOpacity style={s.overflowItem} onPress={onPress} activeOpacity={0.7} accessibilityRole="button" accessibilityLabel={label}>
       <Ionicons name={icon} size={18} color={danger ? colors.red : colors.textSecondary} />
       <Text style={[s.overflowItemText, danger && { color: colors.red }]}>{label}</Text>
     </TouchableOpacity>
@@ -694,6 +707,7 @@ function OverflowItem({ icon, label, onPress, danger, s, colors }) {
 // ─── Styles factory ───────────────────────────────────────────────────────────
 
 function makeStyles(c, isDark) {
+  const sh = getShadows(isDark);
   return StyleSheet.create({
     safe: { flex: 1, backgroundColor: c.bg },
     container: { flex: 1 },
@@ -701,11 +715,11 @@ function makeStyles(c, isDark) {
 
     header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, marginTop: 4 },
     title: { fontSize: 26, fontWeight: '700', color: c.text, letterSpacing: -0.5 },
-    overflowBtn: { width: 38, height: 38, borderRadius: 12, backgroundColor: c.cardAlt, justifyContent: 'center', alignItems: 'center' },
+    overflowBtn: { width: 44, height: 44, borderRadius: 12, backgroundColor: c.cardAlt, justifyContent: 'center', alignItems: 'center' },
 
     setupCard: {
       backgroundColor: c.card, borderRadius: 16, padding: 14, marginBottom: 14, gap: 12,
-      shadowColor: '#000', shadowOpacity: isDark ? 0.3 : 0.05, shadowRadius: 8, elevation: 2,
+      ...sh.sm,
     },
     setupTop: { flexDirection: 'row', alignItems: 'center', gap: 10 },
     setupName: { flex: 1, fontSize: 16, fontWeight: '600', color: c.text, paddingVertical: 4 },
@@ -715,19 +729,19 @@ function makeStyles(c, isDark) {
     setupBottom: { flexDirection: 'row', gap: 8, flexWrap: 'wrap' },
     storePill: {
       flexDirection: 'row', alignItems: 'center', gap: 5,
-      backgroundColor: c.cardAlt, paddingHorizontal: 12, paddingVertical: 7,
+      backgroundColor: c.cardAlt, paddingHorizontal: 12, paddingVertical: 10,
       borderRadius: 20, maxWidth: 180,
     },
     storePillText: { fontSize: 13, fontWeight: '600', color: c.text, maxWidth: 120 },
     libraryPill: {
       flexDirection: 'row', alignItems: 'center', gap: 5,
-      backgroundColor: c.primaryLight, paddingHorizontal: 12, paddingVertical: 7, borderRadius: 20,
+      backgroundColor: c.primaryLight, paddingHorizontal: 12, paddingVertical: 10, borderRadius: 20,
     },
     libraryPillText: { fontSize: 12, fontWeight: '600', color: c.primary },
 
     addCard: {
       backgroundColor: c.card, borderRadius: 16, padding: 14, gap: 12, marginBottom: 14,
-      shadowColor: '#000', shadowOpacity: isDark ? 0.3 : 0.05, shadowRadius: 8, elevation: 2,
+      ...sh.sm,
     },
     addRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
     addNameWrap: {
@@ -750,7 +764,7 @@ function makeStyles(c, isDark) {
     trendBadge: { fontSize: 11, fontWeight: '700' },
 
     catRow: { gap: 6, paddingRight: 4 },
-    catChip: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 11, paddingVertical: 6, borderRadius: 20, backgroundColor: c.cardAlt },
+    catChip: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 11, paddingVertical: 10, borderRadius: 20, backgroundColor: c.cardAlt },
     catLabel: { fontSize: 12, fontWeight: '600', color: c.textTertiary },
 
     addFooter: { flexDirection: 'row', alignItems: 'center', gap: 8 },
@@ -766,7 +780,7 @@ function makeStyles(c, isDark) {
 
     itemsWrap: { marginBottom: 14, gap: 8 },
     itemsLabel: { fontSize: 11, fontWeight: '700', color: c.textTertiary, letterSpacing: 0.8, textTransform: 'uppercase' },
-    itemsList: { backgroundColor: c.card, borderRadius: 16, overflow: 'hidden', shadowColor: '#000', shadowOpacity: isDark ? 0.3 : 0.05, shadowRadius: 8, elevation: 2 },
+    itemsList: { backgroundColor: c.card, borderRadius: 16, overflow: 'hidden', ...sh.sm },
     itemRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 12, gap: 8 },
     itemRowBorder: { borderBottomWidth: 1, borderBottomColor: c.borderLight },
     itemIconWrap: { width: 34, height: 34, borderRadius: 10, justifyContent: 'center', alignItems: 'center' },
@@ -782,7 +796,7 @@ function makeStyles(c, isDark) {
 
     summaryCard: {
       backgroundColor: c.card, borderRadius: 16, padding: 16, marginBottom: 14, gap: 10,
-      shadowColor: '#000', shadowOpacity: isDark ? 0.3 : 0.06, shadowRadius: 8, elevation: 2,
+      ...sh.sm,
     },
     summaryCardOver: { backgroundColor: c.redLight },
     summaryTop: { flexDirection: 'row', alignItems: 'baseline', gap: 8 },
