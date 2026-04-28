@@ -260,7 +260,7 @@ export default function SharedListScreen({ route, navigation }) {
                 <Ionicons name="qr-code-outline" size={11} color={colors.primary} />
                 <Text style={{ fontSize: 11, fontWeight: '700', color: colors.primary, letterSpacing: 1 }}>{code}</Text>
               </View>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: colors.greenLight ?? '#F0FFF4', borderRadius: 8, paddingHorizontal: 7, paddingVertical: 2 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: colors.greenLight, borderRadius: 8, paddingHorizontal: 7, paddingVertical: 2 }}>
                 <Ionicons name="people-outline" size={11} color={colors.green} />
                 <Text style={{ fontSize: 11, fontWeight: '700', color: colors.green }}>{participantCount} участника</Text>
               </View>

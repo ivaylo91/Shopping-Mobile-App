@@ -3,10 +3,9 @@ import {
   StyleSheet,
   ActivityIndicator,
   RefreshControl,
-  TouchableOpacity,
 } from 'react-native';
 import Animated, {
-  useSharedValue, useAnimatedStyle, withTiming, withRepeat, withSequence, Easing, ReduceMotion,
+  useSharedValue, useAnimatedStyle, withTiming, withRepeat, withSequence, Easing, ReduceMotion, cancelAnimation,
 } from 'react-native-reanimated';
 import { FlashList } from '@shopify/flash-list';
 import Text from '../components/Text';
@@ -19,6 +18,7 @@ import { useTheme } from '../context/ThemeContext';
 import { useLayout } from '../hooks/useLayout';
 import { getCategoryIcon, GOAL_META } from '../utils/ui';
 import { OrderCardSkeleton } from '../components/Skeleton';
+import AnimatedPressable from '../components/AnimatedPressable';
 
 function FloatingIcon({ name, size, color }) {
   const translateY = useSharedValue(0);
@@ -31,6 +31,7 @@ function FloatingIcon({ name, size, color }) {
       -1,
       false,
     );
+    return () => cancelAnimation(translateY);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   const animStyle = useAnimatedStyle(() => ({ transform: [{ translateY: translateY.value }] }));
@@ -181,15 +182,13 @@ export default function OrdersScreen({ navigation }) {
             <Text style={s.emptyDesc}>
               Направете своята първа поръчка от генерирания списък.
             </Text>
-            <TouchableOpacity
+            <AnimatedPressable
               style={s.emptyBtn}
               onPress={() => navigation.navigate('Home')}
-              activeOpacity={0.85}
               accessibilityLabel="Към начало"
-              accessibilityRole="button"
             >
               <Text style={s.emptyBtnText}>Към начало</Text>
-            </TouchableOpacity>
+            </AnimatedPressable>
           </View>
         </View>
       </SafeAreaView>

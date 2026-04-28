@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import Animated, {
-  useSharedValue, useAnimatedStyle, withTiming, Easing, ReduceMotion,
+  useSharedValue, useAnimatedStyle, withTiming, Easing, ReduceMotion, cancelAnimation,
 } from 'react-native-reanimated';
 
 export default function FadeInView({ delay = 0, duration = 250, style, children }) {
@@ -16,9 +16,10 @@ export default function FadeInView({ delay = 0, duration = 250, style, children 
     };
     if (delay > 0) {
       const t = setTimeout(run, delay);
-      return () => clearTimeout(t);
+      return () => { clearTimeout(t); cancelAnimation(opacity); };
     }
     run();
+    return () => cancelAnimation(opacity);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

@@ -294,18 +294,16 @@ export default function ShoppingListScreen({ route, navigation }) {
         showsVerticalScrollIndicator={false}
       />
 
-      <TouchableOpacity
+      <AnimatedPressable
         style={s.breakdownToggle}
         onPress={() => { Haptics.selectionAsync(); setShowBreakdown((v) => !v); }}
-        activeOpacity={0.8}
         accessibilityLabel={showBreakdown ? 'Скрий разбивката' : 'Виж разбивка по категории'}
-        accessibilityRole="button"
       >
         <Ionicons name={showBreakdown ? 'chevron-down' : 'pie-chart-outline'} size={15} color={colors.primary} />
         <Text style={s.breakdownToggleText}>
           {showBreakdown ? 'Скрий разбивката' : 'Виж разбивка по категории'}
         </Text>
-      </TouchableOpacity>
+      </AnimatedPressable>
 
       {showBreakdown && <CategoryBreakdown items={list} colors={colors} />}
 
@@ -364,7 +362,7 @@ function makeStyles(c, isDark, isTablet) {
 
     list: { padding: 14, paddingBottom: 4 },
 
-    breakdownToggle: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 10, marginHorizontal: 14, marginBottom: 4 },
+    breakdownToggle: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 14, marginHorizontal: 14, marginBottom: 4 },
     breakdownToggleText: { fontSize: 13, fontWeight: '600', color: c.primary },
 
     summaryCard: { backgroundColor: c.card, marginHorizontal: 14, marginBottom: 10, borderRadius: 16, padding: 16, shadowColor: '#000', shadowOpacity: isDark ? 0.3 : 0.06, shadowRadius: 8, elevation: 2 },

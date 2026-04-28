@@ -1,5 +1,8 @@
 import { createContext, useCallback, useContext, useRef, useState } from 'react';
-import { Animated, StyleSheet } from 'react-native';
+import { StyleSheet } from 'react-native';
+import Animated, {
+  useSharedValue, useAnimatedStyle, withSpring, withTiming, ReduceMotion, runOnJS,
+} from 'react-native-reanimated';
 import Text from '../components/Text';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -19,35 +22,44 @@ const TYPE_ICONS = {
   info:    'ℹ',
 };
 
+const SPRING = { mass: 0.3, stiffness: 200, damping: 18, reduceMotion: ReduceMotion.System };
+
 export function ToastProvider({ children }) {
   const [toast, setToast] = useState(null);
-  const opacity = useRef(new Animated.Value(0)).current;
-  const translateY = useRef(new Animated.Value(16)).current;
+  const opacity = useSharedValue(0);
+  const translateY = useSharedValue(16);
   const timerRef = useRef(null);
   const insets = useSafeAreaInsets();
+
+  const clearToast = useCallback(() => setToast(null), []);
 
   const show = useCallback(
     (message, type = 'success') => {
       if (timerRef.current) clearTimeout(timerRef.current);
       setToast({ message, type });
 
-      opacity.setValue(0);
-      translateY.setValue(16);
+      opacity.value = 0;
+      translateY.value = 16;
 
-      Animated.parallel([
-        Animated.spring(opacity, { toValue: 1, useNativeDriver: true, tension: 80, friction: 8 }),
-        Animated.spring(translateY, { toValue: 0, useNativeDriver: true, tension: 80, friction: 8 }),
-      ]).start();
+      opacity.value = withSpring(1, SPRING);
+      translateY.value = withSpring(0, SPRING);
 
       timerRef.current = setTimeout(() => {
-        Animated.parallel([
-          Animated.timing(opacity, { toValue: 0, duration: 280, useNativeDriver: true }),
-          Animated.timing(translateY, { toValue: 16, duration: 280, useNativeDriver: true }),
-        ]).start(() => setToast(null));
+        opacity.value = withTiming(0, { duration: 280, reduceMotion: ReduceMotion.System });
+        translateY.value = withTiming(
+          16,
+          { duration: 280, reduceMotion: ReduceMotion.System },
+          (finished) => { if (finished) runOnJS(clearToast)(); },
+        );
       }, 2600);
     },
-    [opacity, translateY]
+    [opacity, translateY, clearToast],
   );
+
+  const animStyle = useAnimatedStyle(() => ({
+    opacity: opacity.value,
+    transform: [{ translateY: translateY.value }],
+  }));
 
   return (
     <ToastContext.Provider value={{ show }}>
@@ -58,7 +70,8 @@ export function ToastProvider({ children }) {
           style={[
             styles.toast,
             TYPE_STYLES[toast.type],
-            { bottom: insets.bottom + 72, opacity, transform: [{ translateY }] },
+            { bottom: insets.bottom + 72 },
+            animStyle,
           ]}
         >
           <Text style={styles.icon}>{TYPE_ICONS[toast.type]}</Text>
