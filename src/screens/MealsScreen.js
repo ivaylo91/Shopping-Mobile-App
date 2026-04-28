@@ -14,6 +14,7 @@ import { generateMealPlan, generateSingleMeal, hasApiKey } from '../services/mea
 import { SkeletonBox } from '../components/Skeleton';
 import { useToast } from '../context/ToastContext';
 import { useTheme } from '../context/ThemeContext';
+import { useLayout } from '../hooks/useLayout';
 import { useBudgetLists } from '../hooks/useBudgetLists';
 
 // ─── Fallback recipes ──────────────────────────────────────────────────────────
@@ -235,7 +236,8 @@ export default function MealsScreen({ route }) {
   const [excludedBySlot, setExcludedBySlot] = useState({});
   const [selectedSlot, setSelectedSlot] = useState(null);
 
-  const s = useMemo(() => makeStyles(colors, isDark), [colors, isDark]);
+  const { isTablet } = useLayout();
+  const s = useMemo(() => makeStyles(colors, isDark, isTablet), [colors, isDark, isTablet]);
 
   const loadPlan = useCallback(async (currentFilters) => {
     setPlan(null);
@@ -463,7 +465,7 @@ export default function MealsScreen({ route }) {
   );
 }
 
-function makeStyles(c, isDark) {
+function makeStyles(c, isDark, isTablet) {
   return StyleSheet.create({
     container: { flex: 1, backgroundColor: c.bg },
 
@@ -479,7 +481,7 @@ function makeStyles(c, isDark) {
     fallbackBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 20, borderWidth: 1.5 },
     fallbackText: { fontSize: 11, fontWeight: '600' },
 
-    scroll: { padding: 16 },
+    scroll: { padding: 16, maxWidth: isTablet ? 720 : undefined, alignSelf: isTablet ? 'center' : undefined, width: '100%' },
     sectionLabel: { fontSize: 12, fontWeight: '600', color: c.textTertiary, letterSpacing: 1, textTransform: 'uppercase', marginBottom: 12 },
 
     card: { backgroundColor: c.card, borderRadius: 16, padding: 16, marginBottom: 16, borderWidth: 1.5, borderColor: c.borderLight, shadowColor: '#000', shadowOpacity: isDark ? 0.3 : 0.06, shadowRadius: 8, elevation: 2 },

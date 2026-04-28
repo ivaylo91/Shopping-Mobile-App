@@ -14,6 +14,7 @@ import * as Haptics from 'expo-haptics';
 import { useBudgetLists } from '../hooks/useBudgetLists';
 import { useToast } from '../context/ToastContext';
 import { useTheme } from '../context/ThemeContext';
+import { useLayout } from '../hooks/useLayout';
 import { getCategoryEmoji, getCategoryColors, CATEGORIES } from './HomeScreen';
 import AnimatedPressable from '../components/AnimatedPressable';
 
@@ -134,6 +135,7 @@ export default function ShoppingListScreen({ route, navigation }) {
   const { saveList } = useBudgetLists();
   const { show: showToast } = useToast();
   const { colors, isDark } = useTheme();
+  const { isTablet } = useLayout();
 
   const [checked, setChecked] = useState({});
   const [saving, setSaving] = useState(false);
@@ -141,7 +143,7 @@ export default function ShoppingListScreen({ route, navigation }) {
   const progressTrackWidth = useSharedValue(0);
   const progressAnim = useSharedValue(0);
 
-  const s = useMemo(() => makeStyles(colors, isDark), [colors, isDark]);
+  const s = useMemo(() => makeStyles(colors, isDark, isTablet), [colors, isDark, isTablet]);
 
   const { total, spent, budgetRemaining, checkedCount, progress } = useMemo(() => {
     const t = list.reduce((s, i) => s + i.subtotal, 0);
@@ -214,6 +216,7 @@ export default function ShoppingListScreen({ route, navigation }) {
 
   return (
     <SafeAreaView style={s.container}>
+      <View style={s.inner}>
 
       {/* Header */}
       <View style={s.header}>
@@ -317,13 +320,15 @@ export default function ShoppingListScreen({ route, navigation }) {
         </View>
       )}
 
+      </View>
     </SafeAreaView>
   );
 }
 
-function makeStyles(c, isDark) {
+function makeStyles(c, isDark, isTablet) {
   return StyleSheet.create({
     container: { flex: 1, backgroundColor: c.bg },
+    inner: { flex: 1, maxWidth: isTablet ? 720 : undefined, alignSelf: isTablet ? 'center' : undefined, width: '100%' },
 
     header: { backgroundColor: c.card, paddingHorizontal: 18, paddingTop: 14, paddingBottom: 12, borderBottomWidth: 1, borderBottomColor: c.border },
     headerTop: { flexDirection: 'row', alignItems: 'center', marginBottom: 12, gap: 10 },

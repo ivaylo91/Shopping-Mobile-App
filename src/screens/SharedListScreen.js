@@ -15,6 +15,7 @@ import { db } from '../config/firebase';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { useTheme } from '../context/ThemeContext';
+import { useLayout } from '../hooks/useLayout';
 import { getCategoryEmoji } from './HomeScreen';
 import AnimatedPressable from '../components/AnimatedPressable';
 
@@ -69,6 +70,7 @@ export function JoinSharedListScreen({ navigation }) {
   const { show: showToast } = useToast();
   const { user } = useAuth();
   const { colors, isDark } = useTheme();
+  const { isTablet } = useLayout();
 
   const handleJoin = async () => {
     const c = code.trim().toUpperCase();
@@ -95,7 +97,7 @@ export function JoinSharedListScreen({ navigation }) {
       <TouchableOpacity onPress={() => navigation.goBack()} style={{ padding: 4, alignSelf: 'flex-start' }} accessibilityLabel="Назад" accessibilityRole="button">
         <Ionicons name="arrow-back" size={22} color={colors.text} />
       </TouchableOpacity>
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', gap: 14 }}>
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', gap: 14, width: '100%', maxWidth: isTablet ? 440 : undefined, alignSelf: isTablet ? 'center' : undefined }}>
         <View style={{ width: 80, height: 80, borderRadius: 24, backgroundColor: colors.primaryLight, justifyContent: 'center', alignItems: 'center', marginBottom: 8 }}>
           <Ionicons name="people-outline" size={40} color={colors.primary} />
         </View>
@@ -144,6 +146,7 @@ export default function SharedListScreen({ route, navigation }) {
   const { user } = useAuth();
   const { show: showToast } = useToast();
   const { colors } = useTheme();
+  const { isTablet } = useLayout();
 
   const [sharedData, setSharedData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -242,6 +245,7 @@ export default function SharedListScreen({ route, navigation }) {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.bg }}>
+      <View style={{ flex: 1, maxWidth: isTablet ? 720 : undefined, alignSelf: isTablet ? 'center' : undefined, width: '100%' }}>
 
       {/* Header */}
       <View style={{ backgroundColor: colors.card, paddingHorizontal: 18, paddingTop: 14, paddingBottom: 12, borderBottomWidth: 1, borderBottomColor: colors.border }}>
@@ -326,6 +330,7 @@ export default function SharedListScreen({ route, navigation }) {
         contentContainerStyle={{ padding: 14, paddingBottom: 20 }}
         showsVerticalScrollIndicator={false}
       />
+      </View>
     </SafeAreaView>
   );
 }

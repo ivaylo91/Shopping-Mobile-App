@@ -13,6 +13,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useOrders } from '../hooks/useOrders';
 import { useTheme } from '../context/ThemeContext';
+import { useLayout } from '../hooks/useLayout';
 import { getCategoryIcon, GOAL_META } from '../utils/ui';
 import { OrderCardSkeleton } from '../components/Skeleton';
 
@@ -93,9 +94,10 @@ const OrderCard = memo(function OrderCard({ item, s, colors }) {
 export default function OrdersScreen({ navigation }) {
   const { orders, loading, error } = useOrders();
   const { colors, isDark } = useTheme();
+  const { isTablet } = useLayout();
   const [refreshing, setRefreshing] = useState(false);
 
-  const s = useMemo(() => makeStyles(colors, isDark), [colors, isDark]);
+  const s = useMemo(() => makeStyles(colors, isDark, isTablet), [colors, isDark, isTablet]);
 
   const handleRefresh = useCallback(() => {
     Haptics.selectionAsync();
@@ -117,11 +119,13 @@ export default function OrdersScreen({ navigation }) {
   if (loading) {
     return (
       <SafeAreaView style={s.container}>
-        <View style={s.header}>
-          <Text style={s.headerTitle}>Поръчки</Text>
-          <Text style={s.headerSub}>Зарежда се…</Text>
+        <View style={s.inner}>
+          <View style={s.header}>
+            <Text style={s.headerTitle}>Поръчки</Text>
+            <Text style={s.headerSub}>Зарежда се…</Text>
+          </View>
+          {renderSkeletons()}
         </View>
-        {renderSkeletons()}
       </SafeAreaView>
     );
   }
@@ -129,10 +133,12 @@ export default function OrdersScreen({ navigation }) {
   if (error) {
     return (
       <SafeAreaView style={s.container}>
-        <View style={s.centered}>
-          <Ionicons name="cloud-offline-outline" size={56} color={colors.border} />
-          <Text style={s.errorText}>Грешка при зареждане</Text>
-          <Text style={s.errorSub}>{error}</Text>
+        <View style={s.inner}>
+          <View style={s.centered}>
+            <Ionicons name="cloud-offline-outline" size={56} color={colors.border} />
+            <Text style={s.errorText}>Грешка при зареждане</Text>
+            <Text style={s.errorSub}>{error}</Text>
+          </View>
         </View>
       </SafeAreaView>
     );
@@ -141,24 +147,26 @@ export default function OrdersScreen({ navigation }) {
   if (orders.length === 0) {
     return (
       <SafeAreaView style={s.container}>
-        <View style={s.header}>
-          <Text style={s.headerTitle}>Поръчки</Text>
-        </View>
-        <View style={s.emptyState}>
-          <Ionicons name="bag-outline" size={72} color={colors.border} />
-          <Text style={s.emptyTitle}>Все още нямате поръчки</Text>
-          <Text style={s.emptyDesc}>
-            Направете своята първа поръчка от генерирания списък.
-          </Text>
-          <TouchableOpacity
-            style={s.emptyBtn}
-            onPress={() => navigation.navigate('Home')}
-            activeOpacity={0.85}
-            accessibilityLabel="Към начало"
-            accessibilityRole="button"
-          >
-            <Text style={s.emptyBtnText}>Към начало</Text>
-          </TouchableOpacity>
+        <View style={s.inner}>
+          <View style={s.header}>
+            <Text style={s.headerTitle}>Поръчки</Text>
+          </View>
+          <View style={s.emptyState}>
+            <Ionicons name="bag-outline" size={72} color={colors.border} />
+            <Text style={s.emptyTitle}>Все още нямате поръчки</Text>
+            <Text style={s.emptyDesc}>
+              Направете своята първа поръчка от генерирания списък.
+            </Text>
+            <TouchableOpacity
+              style={s.emptyBtn}
+              onPress={() => navigation.navigate('Home')}
+              activeOpacity={0.85}
+              accessibilityLabel="Към начало"
+              accessibilityRole="button"
+            >
+              <Text style={s.emptyBtnText}>Към начало</Text>
+            </TouchableOpacity>
+          </View>
         </View>
       </SafeAreaView>
     );
@@ -166,33 +174,36 @@ export default function OrdersScreen({ navigation }) {
 
   return (
     <SafeAreaView style={s.container}>
-      <View style={s.header}>
-        <Text style={s.headerTitle}>Поръчки</Text>
-        <Text style={s.headerSub}>{orders.length} поръчки</Text>
+      <View style={s.inner}>
+        <View style={s.header}>
+          <Text style={s.headerTitle}>Поръчки</Text>
+          <Text style={s.headerSub}>{orders.length} поръчки</Text>
+        </View>
+        <FlashList
+          data={orders}
+          keyExtractor={(item) => item.id}
+          renderItem={renderItem}
+          estimatedItemSize={200}
+          contentContainerStyle={s.list}
+          showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={handleRefresh}
+              tintColor={colors.primary}
+              colors={[colors.primary]}
+            />
+          }
+        />
       </View>
-      <FlashList
-        data={orders}
-        keyExtractor={(item) => item.id}
-        renderItem={renderItem}
-        estimatedItemSize={200}
-        contentContainerStyle={s.list}
-        showsVerticalScrollIndicator={false}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={handleRefresh}
-            tintColor={colors.primary}
-            colors={[colors.primary]}
-          />
-        }
-      />
     </SafeAreaView>
   );
 }
 
-function makeStyles(c, isDark) {
+function makeStyles(c, isDark, isTablet) {
   return StyleSheet.create({
     container: { flex: 1, backgroundColor: c.bg },
+    inner: { flex: 1, maxWidth: isTablet ? 720 : undefined, alignSelf: isTablet ? 'center' : undefined, width: '100%' },
     centered: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20, gap: 8 },
     errorText: { fontSize: 16, color: c.red, fontWeight: '700', marginTop: 12 },
     errorSub: { fontSize: 13, color: c.textTertiary, textAlign: 'center' },

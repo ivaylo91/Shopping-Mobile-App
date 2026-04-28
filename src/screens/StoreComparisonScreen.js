@@ -9,6 +9,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import AnimatedPressable from '../components/AnimatedPressable';
 import { useTheme } from '../context/ThemeContext';
+import { useLayout } from '../hooks/useLayout';
 import { uid } from '../utils/uid';
 import { getCategoryEmoji } from './HomeScreen';
 
@@ -16,7 +17,8 @@ const PRESET_STORES = ['Lidl', 'Kaufland', 'Billa', 'OMV', 'Fantastico'];
 
 export default function StoreComparisonScreen({ navigation }) {
   const { colors, isDark } = useTheme();
-  const s = useMemo(() => makeStyles(colors, isDark), [colors, isDark]);
+  const { isTablet } = useLayout();
+  const s = useMemo(() => makeStyles(colors, isDark, isTablet), [colors, isDark, isTablet]);
 
   const [stores, setStores] = useState(['Lidl', 'Kaufland']);
   const [newStore, setNewStore] = useState('');
@@ -275,10 +277,10 @@ export default function StoreComparisonScreen({ navigation }) {
   );
 }
 
-function makeStyles(c, isDark) {
+function makeStyles(c, isDark, isTablet) {
   return StyleSheet.create({
     container: { flex: 1, backgroundColor: c.bg },
-    content: { padding: 20, paddingBottom: 48 },
+    content: { padding: 20, paddingBottom: 48, maxWidth: isTablet ? 720 : undefined, alignSelf: isTablet ? 'center' : undefined, width: '100%' },
 
     header: { flexDirection: 'row', alignItems: 'center', gap: 14, marginBottom: 24, marginTop: 4 },
     title: { fontSize: 20, fontWeight: '700', color: c.text },
