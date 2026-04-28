@@ -55,101 +55,101 @@ export default function RegisterScreen({ navigation }) {
     <KeyboardAvoidingView style={s.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <ScrollView contentContainerStyle={s.scroll} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
         <View style={s.formWrap}>
-        <Text style={s.subtitle}>Умно Пазаруване</Text>
-        <Text style={s.title}>Регистрирай се 🛒</Text>
+          <Text style={s.subtitle}>Умно Пазаруване</Text>
+          <Text style={s.title}>Регистрирай се 🛒</Text>
 
-        <Controller
-          control={control}
-          name="email"
-          render={({ field: { onChange, value } }) => (
-            <View style={s.fieldWrap}>
-              <Text style={s.label}>Имейл адрес</Text>
-              <TextInput
-                style={[s.input, errors.email && s.inputError]}
-                placeholder="вашият@имейл.com"
-                placeholderTextColor={colors.textQuaternary}
-                value={value}
-                onChangeText={onChange}
-                autoCapitalize="none"
-                keyboardType="email-address"
-                autoComplete="email"
-                keyboardAppearance={isDark ? 'dark' : 'light'}
-                accessibilityLabel="Имейл адрес"
-              />
-              {errors.email && <Text style={s.errorText}>{errors.email.message}</Text>}
-            </View>
-          )}
-        />
-
-        <Controller
-          control={control}
-          name="password"
-          render={({ field: { onChange, value } }) => (
-            <View style={s.fieldWrap}>
-              <Text style={s.label}>Парола</Text>
-              <View style={[s.passwordRow, errors.password && s.passwordRowError]}>
+          <Controller
+            control={control}
+            name="email"
+            render={({ field: { onChange, value } }) => (
+              <View style={s.fieldWrap}>
+                <Text style={s.label}>Имейл адрес</Text>
                 <TextInput
-                  style={s.passwordInput}
-                  placeholder="Минимум 6 символа"
+                  style={[s.input, errors.email && s.inputError]}
+                  placeholder="вашият@имейл.com"
                   placeholderTextColor={colors.textQuaternary}
                   value={value}
                   onChangeText={onChange}
-                  secureTextEntry={!showPassword}
-                  autoComplete="new-password"
+                  autoCapitalize="none"
+                  keyboardType="email-address"
+                  autoComplete="email"
                   keyboardAppearance={isDark ? 'dark' : 'light'}
-                  accessibilityLabel="Парола"
+                  accessibilityLabel="Имейл адрес"
                 />
-                <TouchableOpacity style={s.eyeBtn} onPress={() => setShowPassword((v) => !v)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} accessibilityLabel={showPassword ? 'Скрий паролата' : 'Покажи паролата'} accessibilityRole="button">
-                  <Ionicons name={showPassword ? 'eye-off-outline' : 'eye-outline'} size={20} color={colors.textTertiary} />
-                </TouchableOpacity>
+                {errors.email && <Text style={s.errorText}>{errors.email.message}</Text>}
               </View>
-              {errors.password && <Text style={s.errorText}>{errors.password.message}</Text>}
-              {!errors.password && value.length > 0 && value.length < 6 && (
-                <Text style={[s.hintWarn, { color: colors.orange }]}>Паролата трябва да е поне 6 символа</Text>
-              )}
-            </View>
-          )}
-        />
+            )}
+          />
 
-        <Controller
-          control={control}
-          name="confirm"
-          render={({ field: { onChange, value } }) => (
-            <View style={s.fieldWrap}>
-              <Text style={s.label}>Потвърди паролата</Text>
-              <View style={[s.passwordRow, errors.confirm && s.passwordRowError]}>
-                <TextInput
-                  style={s.passwordInput}
-                  placeholder="Повторете паролата"
-                  placeholderTextColor={colors.textQuaternary}
-                  value={value}
-                  onChangeText={onChange}
-                  secureTextEntry={!showConfirm}
-                  autoComplete="new-password"
-                  keyboardAppearance={isDark ? 'dark' : 'light'}
-                  accessibilityLabel="Потвърди паролата"
-                />
-                <TouchableOpacity style={s.eyeBtn} onPress={() => setShowConfirm((v) => !v)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} accessibilityLabel={showConfirm ? 'Скрий паролата' : 'Покажи паролата'} accessibilityRole="button">
-                  <Ionicons name={showConfirm ? 'eye-off-outline' : 'eye-outline'} size={20} color={colors.textTertiary} />
-                </TouchableOpacity>
+          <Controller
+            control={control}
+            name="password"
+            render={({ field: { onChange, value } }) => (
+              <View style={s.fieldWrap}>
+                <Text style={s.label}>Парола</Text>
+                <View style={[s.passwordRow, errors.password && s.passwordRowError]}>
+                  <TextInput
+                    style={s.passwordInput}
+                    placeholder="Минимум 6 символа"
+                    placeholderTextColor={colors.textQuaternary}
+                    value={value}
+                    onChangeText={onChange}
+                    secureTextEntry={!showPassword}
+                    autoComplete="new-password"
+                    keyboardAppearance={isDark ? 'dark' : 'light'}
+                    accessibilityLabel="Парола"
+                  />
+                  <TouchableOpacity style={s.eyeBtn} onPress={() => setShowPassword((v) => !v)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} accessibilityLabel={showPassword ? 'Скрий паролата' : 'Покажи паролата'} accessibilityRole="button">
+                    <Ionicons name={showPassword ? 'eye-off-outline' : 'eye-outline'} size={20} color={colors.textTertiary} />
+                  </TouchableOpacity>
+                </View>
+                {errors.password && <Text style={s.errorText}>{errors.password.message}</Text>}
+                {!errors.password && value.length > 0 && value.length < 6 && (
+                  <Text style={[s.hintWarn, { color: colors.orange }]}>Паролата трябва да е поне 6 символа</Text>
+                )}
               </View>
-              {errors.confirm && <Text style={s.errorText}>{errors.confirm.message}</Text>}
-              {!errors.confirm && value.length > 0 && value === passwordValue && (
-                <Text style={[s.hintOk, { color: colors.green }]}>Паролите съвпадат ✓</Text>
-              )}
-            </View>
-          )}
-        />
+            )}
+          />
 
-        <TouchableOpacity style={[s.button, loading && s.buttonDisabled]} onPress={handleSubmit(onSubmit)} disabled={loading} activeOpacity={0.85}>
-          {loading ? <ActivityIndicator color="#fff" /> : <Text style={s.buttonText}>Регистрирай се</Text>}
-        </TouchableOpacity>
+          <Controller
+            control={control}
+            name="confirm"
+            render={({ field: { onChange, value } }) => (
+              <View style={s.fieldWrap}>
+                <Text style={s.label}>Потвърди паролата</Text>
+                <View style={[s.passwordRow, errors.confirm && s.passwordRowError]}>
+                  <TextInput
+                    style={s.passwordInput}
+                    placeholder="Повторете паролата"
+                    placeholderTextColor={colors.textQuaternary}
+                    value={value}
+                    onChangeText={onChange}
+                    secureTextEntry={!showConfirm}
+                    autoComplete="new-password"
+                    keyboardAppearance={isDark ? 'dark' : 'light'}
+                    accessibilityLabel="Потвърди паролата"
+                  />
+                  <TouchableOpacity style={s.eyeBtn} onPress={() => setShowConfirm((v) => !v)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} accessibilityLabel={showConfirm ? 'Скрий паролата' : 'Покажи паролата'} accessibilityRole="button">
+                    <Ionicons name={showConfirm ? 'eye-off-outline' : 'eye-outline'} size={20} color={colors.textTertiary} />
+                  </TouchableOpacity>
+                </View>
+                {errors.confirm && <Text style={s.errorText}>{errors.confirm.message}</Text>}
+                {!errors.confirm && value.length > 0 && value === passwordValue && (
+                  <Text style={[s.hintOk, { color: colors.green }]}>Паролите съвпадат ✓</Text>
+                )}
+              </View>
+            )}
+          />
 
-        <TouchableOpacity onPress={() => navigation.navigate('Login')}>
-          <Text style={s.link}>
-            Вече имате акаунт? <Text style={s.linkBold}>Влез</Text>
-          </Text>
-        </TouchableOpacity>
+          <TouchableOpacity style={[s.button, loading && s.buttonDisabled]} onPress={handleSubmit(onSubmit)} disabled={loading} activeOpacity={0.85}>
+            {loading ? <ActivityIndicator color="#fff" /> : <Text style={s.buttonText}>Регистрирай се</Text>}
+          </TouchableOpacity>
+
+          <TouchableOpacity onPress={() => navigation.navigate('Login')}>
+            <Text style={s.link}>
+              Вече имате акаунт? <Text style={s.linkBold}>Влез</Text>
+            </Text>
+          </TouchableOpacity>
         </View>
       </ScrollView>
     </KeyboardAvoidingView>

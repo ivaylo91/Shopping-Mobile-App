@@ -75,6 +75,7 @@ function FadeInView({ delay = 0, duration = 250, style, children }) {
       return () => clearTimeout(t);
     }
     opacity.value = withTiming(1, { duration, easing: Easing.out(Easing.quad) });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   const animStyle = useAnimatedStyle(() => ({ opacity: opacity.value }));
   return <Animated.View style={[style, animStyle]}>{children}</Animated.View>;

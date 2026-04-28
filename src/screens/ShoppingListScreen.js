@@ -10,14 +10,14 @@ import Text from '../components/Text';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useState, useMemo, useCallback, memo, useEffect } from 'react';
 import { Ionicons } from '@expo/vector-icons';
-
-const AnimatedTouchableOpacity = Animated.createAnimatedComponent(TouchableOpacity);
 import * as Haptics from 'expo-haptics';
 import { useBudgetLists } from '../hooks/useBudgetLists';
 import { useToast } from '../context/ToastContext';
 import { useTheme } from '../context/ThemeContext';
 import { getCategoryEmoji, getCategoryColors, CATEGORIES } from './HomeScreen';
 import AnimatedPressable from '../components/AnimatedPressable';
+
+const AnimatedTouchableOpacity = Animated.createAnimatedComponent(TouchableOpacity);
 
 // ─── Category Breakdown ───────────────────────────────────────────────────────
 
@@ -82,6 +82,7 @@ const ShoppingItem = memo(function ShoppingItem({ item, checked, onToggle, color
   const opacity = useSharedValue(checked ? 0.45 : 1);
   useEffect(() => {
     opacity.value = withTiming(checked ? 0.45 : 1, { duration: 220, easing: Easing.out(Easing.quad) });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [checked]);
   const animStyle = useAnimatedStyle(() => ({ opacity: opacity.value }));
   return (

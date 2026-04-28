@@ -49,74 +49,74 @@ export default function LoginScreen({ navigation }) {
       </TouchableOpacity>
 
       <ScrollView contentContainerStyle={s.scroll} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
-      <View style={s.formWrap}>
-      <Text style={s.subtitle}>Умно Пазаруване</Text>
-      <Text style={s.title}>Добре дошли 👋</Text>
+        <View style={s.formWrap}>
+          <Text style={s.subtitle}>Умно Пазаруване</Text>
+          <Text style={s.title}>Добре дошли 👋</Text>
 
-      <Controller
-        control={control}
-        name="email"
-        render={({ field: { onChange, value } }) => (
-          <View style={s.fieldWrap}>
-            <Text style={s.label}>Имейл адрес</Text>
-            <TextInput
-              style={[s.input, errors.email && s.inputError]}
-              placeholder="вашият@имейл.com"
-              placeholderTextColor={colors.textQuaternary}
-              value={value}
-              onChangeText={onChange}
-              autoCapitalize="none"
-              keyboardType="email-address"
-              autoComplete="email"
-              keyboardAppearance={isDark ? 'dark' : 'light'}
-              accessibilityLabel="Имейл адрес"
-            />
-            {errors.email && <Text style={s.errorText}>{errors.email.message}</Text>}
-          </View>
-        )}
-      />
+          <Controller
+            control={control}
+            name="email"
+            render={({ field: { onChange, value } }) => (
+              <View style={s.fieldWrap}>
+                <Text style={s.label}>Имейл адрес</Text>
+                <TextInput
+                  style={[s.input, errors.email && s.inputError]}
+                  placeholder="вашият@имейл.com"
+                  placeholderTextColor={colors.textQuaternary}
+                  value={value}
+                  onChangeText={onChange}
+                  autoCapitalize="none"
+                  keyboardType="email-address"
+                  autoComplete="email"
+                  keyboardAppearance={isDark ? 'dark' : 'light'}
+                  accessibilityLabel="Имейл адрес"
+                />
+                {errors.email && <Text style={s.errorText}>{errors.email.message}</Text>}
+              </View>
+            )}
+          />
 
-      <Controller
-        control={control}
-        name="password"
-        render={({ field: { onChange, value } }) => (
-          <View style={s.fieldWrap}>
-            <Text style={s.label}>Парола</Text>
-            <View style={[s.passwordRow, errors.password && s.passwordRowError]}>
-              <TextInput
-                style={s.passwordInput}
-                placeholder="Въведете паролата си"
-                placeholderTextColor={colors.textQuaternary}
-                value={value}
-                onChangeText={onChange}
-                secureTextEntry={!showPassword}
-                autoComplete="password"
-                keyboardAppearance={isDark ? 'dark' : 'light'}
-                accessibilityLabel="Парола"
-              />
-              <TouchableOpacity style={s.eyeBtn} onPress={() => setShowPassword((v) => !v)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} accessibilityLabel={showPassword ? 'Скрий паролата' : 'Покажи паролата'} accessibilityRole="button">
-                <Ionicons name={showPassword ? 'eye-off-outline' : 'eye-outline'} size={20} color={colors.textTertiary} />
-              </TouchableOpacity>
-            </View>
-            {errors.password && <Text style={s.errorText}>{errors.password.message}</Text>}
-          </View>
-        )}
-      />
+          <Controller
+            control={control}
+            name="password"
+            render={({ field: { onChange, value } }) => (
+              <View style={s.fieldWrap}>
+                <Text style={s.label}>Парола</Text>
+                <View style={[s.passwordRow, errors.password && s.passwordRowError]}>
+                  <TextInput
+                    style={s.passwordInput}
+                    placeholder="Въведете паролата си"
+                    placeholderTextColor={colors.textQuaternary}
+                    value={value}
+                    onChangeText={onChange}
+                    secureTextEntry={!showPassword}
+                    autoComplete="password"
+                    keyboardAppearance={isDark ? 'dark' : 'light'}
+                    accessibilityLabel="Парола"
+                  />
+                  <TouchableOpacity style={s.eyeBtn} onPress={() => setShowPassword((v) => !v)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} accessibilityLabel={showPassword ? 'Скрий паролата' : 'Покажи паролата'} accessibilityRole="button">
+                    <Ionicons name={showPassword ? 'eye-off-outline' : 'eye-outline'} size={20} color={colors.textTertiary} />
+                  </TouchableOpacity>
+                </View>
+                {errors.password && <Text style={s.errorText}>{errors.password.message}</Text>}
+              </View>
+            )}
+          />
 
-      <TouchableOpacity style={[s.button, loading && s.buttonDisabled]} onPress={handleSubmit(onSubmit)} disabled={loading} activeOpacity={0.85}>
-        {loading ? <ActivityIndicator color="#fff" /> : <Text style={s.buttonText}>Влез</Text>}
-      </TouchableOpacity>
+          <TouchableOpacity style={[s.button, loading && s.buttonDisabled]} onPress={handleSubmit(onSubmit)} disabled={loading} activeOpacity={0.85}>
+            {loading ? <ActivityIndicator color="#fff" /> : <Text style={s.buttonText}>Влез</Text>}
+          </TouchableOpacity>
 
-      <TouchableOpacity onPress={() => navigation.navigate('Register')}>
-        <Text style={s.link}>
-          Нямате акаунт? <Text style={s.linkBold}>Регистрирай се</Text>
-        </Text>
-      </TouchableOpacity>
+          <TouchableOpacity onPress={() => navigation.navigate('Register')}>
+            <Text style={s.link}>
+              Нямате акаунт? <Text style={s.linkBold}>Регистрирай се</Text>
+            </Text>
+          </TouchableOpacity>
 
-      <TouchableOpacity style={s.guestBtn} onPress={loginAsGuest}>
-        <Text style={s.guestText}>Тествай без вход →</Text>
-      </TouchableOpacity>
-      </View>
+          <TouchableOpacity style={s.guestBtn} onPress={loginAsGuest}>
+            <Text style={s.guestText}>Тествай без вход →</Text>
+          </TouchableOpacity>
+        </View>
       </ScrollView>
     </KeyboardAvoidingView>
   );
