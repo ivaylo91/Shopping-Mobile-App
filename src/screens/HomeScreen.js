@@ -4,7 +4,7 @@ import {
   ScrollView, ActivityIndicator, Alert, Modal,
 } from 'react-native';
 import Animated, {
-  FadeIn, FadeInDown, useSharedValue, useAnimatedStyle, withTiming, Easing,
+  useSharedValue, useAnimatedStyle, withTiming, Easing,
 } from 'react-native-reanimated';
 import Text from '../components/Text';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -62,6 +62,23 @@ export function getCategoryColors(id, isDark) {
 
 const TREND_ICON = { up: '↑', down: '↓', same: '→', new: '★' };
 const STAR_COLOR = '#FFD700';
+
+// ─── Fade-in helper (avoids layout animation system on new arch) ──────────────
+
+function FadeInView({ delay = 0, duration = 250, style, children }) {
+  const opacity = useSharedValue(0);
+  useEffect(() => {
+    if (delay > 0) {
+      const t = setTimeout(() => {
+        opacity.value = withTiming(1, { duration, easing: Easing.out(Easing.quad) });
+      }, delay);
+      return () => clearTimeout(t);
+    }
+    opacity.value = withTiming(1, { duration, easing: Easing.out(Easing.quad) });
+  }, []);
+  const animStyle = useAnimatedStyle(() => ({ opacity: opacity.value }));
+  return <Animated.View style={[style, animStyle]}>{children}</Animated.View>;
+}
 
 // ─── Screen ───────────────────────────────────────────────────────────────────
 
@@ -457,7 +474,7 @@ export default function HomeScreen({ navigation, route }) {
               {items.map((item, idx) => {
                 const info = getPriceInfo(item.name);
                 return (
-                  <Animated.View key={item.id} entering={FadeInDown.duration(250).delay(Math.min(idx * 30, 120))} style={[s.itemRow, idx < items.length - 1 && s.itemRowBorder]}>
+                  <FadeInView key={item.id} delay={Math.min(idx * 30, 120)} style={[s.itemRow, idx < items.length - 1 && s.itemRowBorder]}>
                     <View style={[s.itemIconWrap, { backgroundColor: getCategoryColors(item.category, isDark).bg }]}>
                       <Text style={{ fontSize: 18 }}>{getCategoryEmoji(item.category)}</Text>
                     </View>
@@ -491,7 +508,7 @@ export default function HomeScreen({ navigation, route }) {
                     <TouchableOpacity style={{ padding: 2 }} onPress={() => removeItem(item.id)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} accessibilityRole="button" accessibilityLabel={`Премахни ${item.name}`}>
                       <Ionicons name="close-circle" size={21} color={colors.red} />
                     </TouchableOpacity>
-                  </Animated.View>
+                  </FadeInView>
                 );
               })}
             </View>
@@ -500,7 +517,7 @@ export default function HomeScreen({ navigation, route }) {
 
         {/* Budget summary — the single progress surface */}
         {items.length > 0 && (
-          <Animated.View entering={FadeIn.duration(300)} style={[s.summaryCard, overBudget && s.summaryCardOver]}>
+          <FadeInView duration={300} style={[s.summaryCard, overBudget && s.summaryCardOver]}>
             <View style={s.summaryTop}>
               <Text style={s.summaryTotal}>{total.toFixed(2)} €</Text>
               <Text style={s.summaryOf}>от {budgetNum.toFixed(2)} €</Text>
@@ -518,7 +535,7 @@ export default function HomeScreen({ navigation, route }) {
             <Text style={[s.summaryDelta, { color: overBudget ? colors.red : colors.green }]}>
               {overBudget ? `Над бюджета с ${Math.abs(remaining).toFixed(2)} €` : `Остават ${remaining.toFixed(2)} €`}
             </Text>
-          </Animated.View>
+          </FadeInView>
         )}
 
         {/* Primary CTA — single action */}
