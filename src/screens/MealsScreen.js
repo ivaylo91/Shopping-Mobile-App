@@ -8,7 +8,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useState, useCallback, useEffect, useMemo } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
-import Animated, { FadeIn } from 'react-native-reanimated';
+import FadeInView from '../components/FadeInView';
 import { getCategoryIcon } from '../utils/ui';
 import { generateMealPlan, generateSingleMeal, hasApiKey } from '../services/mealAI';
 import { SkeletonBox } from '../components/Skeleton';
@@ -374,7 +374,7 @@ export default function MealsScreen({ route }) {
         {/* Recipe cards */}
         <Text style={s.sectionLabel}>Дневен план</Text>
 
-        {MEAL_SLOTS.map(({ key, label, icon, colorKey }) => {
+        {MEAL_SLOTS.map(({ key, label, icon, colorKey }, idx) => {
           const color = colors[colorKey];
           const recipe = plan?.[key];
           const isLoading = !plan || loadingSlot === key;
@@ -382,8 +382,7 @@ export default function MealsScreen({ route }) {
           if (isLoading) return <RecipeCardSkeleton key={key} />;
 
           return (
-            <Animated.View key={`${key}-${recipe.title}`} entering={FadeIn.duration(300)}
-              style={s.card}>
+            <FadeInView key={`${key}-${recipe.title}`} delay={idx * 60} style={s.card}>
 
               <View style={s.cardTopRow}>
                 <View style={[s.badge, { backgroundColor: color }]}>
@@ -446,7 +445,7 @@ export default function MealsScreen({ route }) {
                   <Text style={s.linkBtnText}>YouTube</Text>
                 </TouchableOpacity>
               </View>
-            </Animated.View>
+            </FadeInView>
           );
         })}
 

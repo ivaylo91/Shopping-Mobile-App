@@ -5,10 +5,13 @@ import {
   RefreshControl,
   TouchableOpacity,
 } from 'react-native';
+import Animated, {
+  useSharedValue, useAnimatedStyle, withTiming, withRepeat, withSequence, Easing, ReduceMotion,
+} from 'react-native-reanimated';
 import { FlashList } from '@shopify/flash-list';
 import Text from '../components/Text';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useCallback, useMemo, useState, memo } from 'react';
+import { useCallback, useMemo, useState, memo, useEffect } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useOrders } from '../hooks/useOrders';
@@ -16,6 +19,27 @@ import { useTheme } from '../context/ThemeContext';
 import { useLayout } from '../hooks/useLayout';
 import { getCategoryIcon, GOAL_META } from '../utils/ui';
 import { OrderCardSkeleton } from '../components/Skeleton';
+
+function FloatingIcon({ name, size, color }) {
+  const translateY = useSharedValue(0);
+  useEffect(() => {
+    translateY.value = withRepeat(
+      withSequence(
+        withTiming(-7, { duration: 1500, easing: Easing.inOut(Easing.sin), reduceMotion: ReduceMotion.System }),
+        withTiming(0, { duration: 1500, easing: Easing.inOut(Easing.sin), reduceMotion: ReduceMotion.System }),
+      ),
+      -1,
+      false,
+    );
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  const animStyle = useAnimatedStyle(() => ({ transform: [{ translateY: translateY.value }] }));
+  return (
+    <Animated.View style={animStyle}>
+      <Ionicons name={name} size={size} color={color} />
+    </Animated.View>
+  );
+}
 
 function getStatusConfig(colors) {
   return {
@@ -152,7 +176,7 @@ export default function OrdersScreen({ navigation }) {
             <Text style={s.headerTitle}>Поръчки</Text>
           </View>
           <View style={s.emptyState}>
-            <Ionicons name="bag-outline" size={72} color={colors.border} />
+            <FloatingIcon name="bag-outline" size={72} color={colors.border} />
             <Text style={s.emptyTitle}>Все още нямате поръчки</Text>
             <Text style={s.emptyDesc}>
               Направете своята първа поръчка от генерирания списък.

@@ -4,7 +4,7 @@ import {
   ScrollView, ActivityIndicator, Alert, Modal,
 } from 'react-native';
 import Animated, {
-  useSharedValue, useAnimatedStyle, withTiming, Easing,
+  useSharedValue, useAnimatedStyle, withTiming, Easing, ReduceMotion,
 } from 'react-native-reanimated';
 import Text from '../components/Text';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -21,6 +21,7 @@ import { usePriceHistory } from '../hooks/usePriceHistory';
 import { useFavoriteStores } from '../hooks/useFavoriteStores';
 import { useNotificationPermission } from '../hooks/useNotifications';
 import AnimatedPressable from '../components/AnimatedPressable';
+import FadeInView from '../components/FadeInView';
 import { uid } from '../utils/uid';
 import { getShadows } from '../theme';
 import { useLayout } from '../hooks/useLayout';
@@ -62,24 +63,6 @@ export function getCategoryColors(id, isDark) {
 
 const TREND_ICON = { up: '↑', down: '↓', same: '→', new: '★' };
 const STAR_COLOR = '#FFD700';
-
-// ─── Fade-in helper (avoids layout animation system on new arch) ──────────────
-
-function FadeInView({ delay = 0, duration = 250, style, children }) {
-  const opacity = useSharedValue(0);
-  useEffect(() => {
-    if (delay > 0) {
-      const t = setTimeout(() => {
-        opacity.value = withTiming(1, { duration, easing: Easing.out(Easing.quad) });
-      }, delay);
-      return () => clearTimeout(t);
-    }
-    opacity.value = withTiming(1, { duration, easing: Easing.out(Easing.quad) });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-  const animStyle = useAnimatedStyle(() => ({ opacity: opacity.value }));
-  return <Animated.View style={[style, animStyle]}>{children}</Animated.View>;
-}
 
 // ─── Screen ───────────────────────────────────────────────────────────────────
 
@@ -142,10 +125,12 @@ export default function HomeScreen({ navigation, route }) {
   useEffect(() => {
     barProgress.value = withTiming(
       Math.min(budgetNum > 0 ? total / budgetNum : 0, 1),
-      { duration: 600, easing: Easing.out(Easing.quart) }
+      { duration: 600, easing: Easing.out(Easing.quart), reduceMotion: ReduceMotion.System }
     );
   }, [total, budgetNum]);
-  const barAnimStyle = useAnimatedStyle(() => ({ width: barProgress.value * barTrackWidth.value }));
+  const barAnimStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: -(1 - barProgress.value) * barTrackWidth.value }],
+  }));
 
   const sortedStores = useMemo(() => sortStores(stores), [stores, sortStores]);
 
@@ -838,7 +823,7 @@ function makeStyles(c, isDark, isTablet) {
     summaryTotal: { fontSize: 26, fontWeight: '700', color: c.text, letterSpacing: -0.5 },
     summaryOf: { fontSize: 14, color: c.textTertiary, fontWeight: '600' },
     summaryBarTrack: { height: 6, borderRadius: 3, overflow: 'hidden' },
-    summaryBarFill: { height: 6, borderRadius: 3 },
+    summaryBarFill: { height: 6, width: '100%', borderRadius: 3 },
     summaryDelta: { fontSize: 13, fontWeight: '700' },
 
     primaryCta: {

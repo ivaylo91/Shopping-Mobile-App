@@ -3,12 +3,12 @@ import {
   ActivityIndicator, Share,
 } from 'react-native';
 import Animated, {
-  useSharedValue, useAnimatedStyle, withTiming, Easing,
+  useSharedValue, useAnimatedStyle, withTiming, withSequence, Easing, ReduceMotion,
 } from 'react-native-reanimated';
 import { FlashList } from '@shopify/flash-list';
 import Text from '../components/Text';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useState, useMemo, useCallback, memo, useEffect } from 'react';
+import { useState, useMemo, useCallback, memo, useEffect, useRef } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useBudgetLists } from '../hooks/useBudgetLists';
@@ -81,11 +81,23 @@ const bdS = StyleSheet.create({
 const ShoppingItem = memo(function ShoppingItem({ item, checked, onToggle, colors, isDark }) {
   const catColors = getCategoryColors(item.category, isDark);
   const opacity = useSharedValue(checked ? 0.45 : 1);
+  const scale = useSharedValue(1);
+  const isFirstRender = useRef(true);
   useEffect(() => {
-    opacity.value = withTiming(checked ? 0.45 : 1, { duration: 220, easing: Easing.out(Easing.quad) });
+    opacity.value = withTiming(checked ? 0.45 : 1, { duration: 220, easing: Easing.out(Easing.quad), reduceMotion: ReduceMotion.System });
+    if (!isFirstRender.current) {
+      scale.value = withSequence(
+        withTiming(0.96, { duration: 90, easing: Easing.out(Easing.quad), reduceMotion: ReduceMotion.System }),
+        withTiming(1, { duration: 180, easing: Easing.out(Easing.cubic), reduceMotion: ReduceMotion.System }),
+      );
+    }
+    isFirstRender.current = false;
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [checked]);
-  const animStyle = useAnimatedStyle(() => ({ opacity: opacity.value }));
+  const animStyle = useAnimatedStyle(() => ({
+    opacity: opacity.value,
+    transform: [{ scale: scale.value }],
+  }));
   return (
     <AnimatedTouchableOpacity
       style={[iS.item, { backgroundColor: colors.card }, animStyle]}
@@ -158,9 +170,11 @@ export default function ShoppingListScreen({ route, navigation }) {
   }, [list, budget, checked]);
 
   useEffect(() => {
-    progressAnim.value = withTiming(progress, { duration: 500, easing: Easing.out(Easing.quart) });
+    progressAnim.value = withTiming(progress, { duration: 500, easing: Easing.out(Easing.quart), reduceMotion: ReduceMotion.System });
   }, [progress]);
-  const progressAnimStyle = useAnimatedStyle(() => ({ width: progressAnim.value * progressTrackWidth.value }));
+  const progressAnimStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: -(1 - progressAnim.value) * progressTrackWidth.value }],
+  }));
 
   const toggleCheck = useCallback((id) => {
     Haptics.selectionAsync();
@@ -339,7 +353,7 @@ function makeStyles(c, isDark, isTablet) {
     shareLiveBtnText: { fontSize: 12, fontWeight: '700', color: '#fff' },
 
     progressTrack: { height: 6, backgroundColor: c.primaryLight, borderRadius: 3, overflow: 'hidden', marginBottom: 6 },
-    progressFill: { height: 6, backgroundColor: c.primary, borderRadius: 3 },
+    progressFill: { height: 6, width: '100%', backgroundColor: c.primary, borderRadius: 3 },
     progressText: { fontSize: 12, color: c.textTertiary, fontWeight: '600' },
 
     budgetBar: { flexDirection: 'row', backgroundColor: c.card, marginHorizontal: 14, marginTop: 12, borderRadius: 14, paddingVertical: 12, shadowColor: '#000', shadowOpacity: isDark ? 0.3 : 0.05, shadowRadius: 6, elevation: 2 },
