@@ -133,11 +133,11 @@ function RecipeModal({ recipe, slotColor, visible, onClose, onYouTube, colors })
     <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
       <SafeAreaView style={{ flex: 1, backgroundColor: colors.bg }}>
         <View style={[rmS.header, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
-          <TouchableOpacity style={[rmS.closeBtn, { backgroundColor: colors.cardAlt }]} onPress={onClose}>
+          <TouchableOpacity style={[rmS.closeBtn, { backgroundColor: colors.cardAlt }]} onPress={onClose} accessibilityLabel="Затвори рецептата" accessibilityRole="button">
             <Ionicons name="close" size={22} color={colors.textSecondary} />
           </TouchableOpacity>
           <Text style={[rmS.title, { color: colors.text }]} numberOfLines={2}>{recipe.title}</Text>
-          <TouchableOpacity style={rmS.ytBtn} onPress={onYouTube}>
+          <TouchableOpacity style={rmS.ytBtn} onPress={onYouTube} accessibilityLabel="Гледай в YouTube" accessibilityRole="button">
             <Ionicons name="logo-youtube" size={20} color="#fff" />
           </TouchableOpacity>
         </View>
@@ -436,11 +436,11 @@ export default function MealsScreen({ route }) {
               </View>
 
               <View style={{ flexDirection: 'row', gap: 10 }}>
-                <TouchableOpacity style={[s.linkBtn, { backgroundColor: color }]} onPress={() => openRecipe(key)} activeOpacity={0.85}>
+                <TouchableOpacity style={[s.linkBtn, { backgroundColor: color }]} onPress={() => openRecipe(key)} activeOpacity={0.85} accessibilityRole="button" accessibilityLabel={`Виж рецепта за ${label}`}>
                   <Ionicons name="book-outline" size={15} color="#fff" style={{ marginRight: 6 }} />
                   <Text style={s.linkBtnText}>Виж рецепта</Text>
                 </TouchableOpacity>
-                <TouchableOpacity style={s.ytBtn} onPress={() => Linking.openURL(youtubeUrl(recipe.title)).catch(() => {})} activeOpacity={0.85}>
+                <TouchableOpacity style={s.ytBtn} onPress={() => Linking.openURL(youtubeUrl(recipe.title)).catch(() => {})} activeOpacity={0.85} accessibilityRole="button" accessibilityLabel={`YouTube рецепта за ${label}`}>
                   <Ionicons name="logo-youtube" size={15} color="#fff" style={{ marginRight: 6 }} />
                   <Text style={s.linkBtnText}>YouTube</Text>
                 </TouchableOpacity>
@@ -471,10 +471,10 @@ function makeStyles(c, isDark, isTablet) {
     header: { backgroundColor: c.card, paddingHorizontal: 20, paddingTop: 16, paddingBottom: 16, borderBottomWidth: 1, borderBottomColor: c.border, flexDirection: 'row', alignItems: 'center' },
     headerTitle: { fontSize: 20, fontWeight: '700', color: c.text, marginBottom: 2 },
     headerSub: { fontSize: 12, color: c.textTertiary },
-    regenBtn: { width: 38, height: 38, borderRadius: 19, backgroundColor: c.primaryLight, justifyContent: 'center', alignItems: 'center', marginLeft: 12 },
+    regenBtn: { width: 44, height: 44, borderRadius: 22, backgroundColor: c.primaryLight, justifyContent: 'center', alignItems: 'center', marginLeft: 12 },
 
     filterRow: { flexDirection: 'row', flexWrap: 'wrap', paddingHorizontal: 16, paddingVertical: 10, gap: 8, backgroundColor: c.card, borderBottomWidth: 1, borderBottomColor: c.border },
-    filterChip: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, borderWidth: 1.5, borderColor: c.border, backgroundColor: c.card },
+    filterChip: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 12, paddingVertical: 10, borderRadius: 20, borderWidth: 1.5, borderColor: c.border, backgroundColor: c.card },
     filterChipActive: { backgroundColor: c.primary, borderColor: c.primary },
     filterChipText: { fontSize: 12, fontWeight: '600', color: c.textSecondary },
     fallbackBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 20, borderWidth: 1.5 },

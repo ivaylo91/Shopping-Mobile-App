@@ -2,13 +2,14 @@ import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withSpring,
+  ReduceMotion,
 } from 'react-native-reanimated';
 import { Pressable } from 'react-native';
 
 const AnimatedPress = Animated.createAnimatedComponent(Pressable);
 
-const SPRING_IN  = { mass: 0.3, damping: 15, stiffness: 200 };
-const SPRING_OUT = { mass: 0.3, damping: 15, stiffness: 200 };
+const SPRING_IN  = { mass: 0.3, damping: 15, stiffness: 200, reduceMotion: ReduceMotion.System };
+const SPRING_OUT = { mass: 0.3, damping: 15, stiffness: 200, reduceMotion: ReduceMotion.System };
 
 export default function AnimatedPressable({
   onPress,

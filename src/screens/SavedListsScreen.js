@@ -121,10 +121,10 @@ const BudgetCard = memo(function BudgetCard({ item, isDeleting, onDelete, onOpen
           )}
         </View>
         <View style={cS.cardActions}>
-          <TouchableOpacity onPress={onSaveTemplate} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+          <TouchableOpacity onPress={onSaveTemplate} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Запази като шаблон" accessibilityRole="button">
             <Ionicons name="copy-outline" size={19} color={colors.primary} />
           </TouchableOpacity>
-          <TouchableOpacity onPress={onDelete} disabled={isDeleting} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+          <TouchableOpacity onPress={onDelete} disabled={isDeleting} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Изтрий списъка" accessibilityRole="button">
             {isDeleting
               ? <ActivityIndicator size="small" color={colors.red} />
               : <Ionicons name="trash-outline" size={19} color={colors.red} />}
@@ -171,7 +171,7 @@ const BudgetCard = memo(function BudgetCard({ item, isDeleting, onDelete, onOpen
         </View>
       </View>
 
-      <TouchableOpacity style={[cS.openBtn, { backgroundColor: colors.primary }]} onPress={onOpen} activeOpacity={0.85}>
+      <TouchableOpacity style={[cS.openBtn, { backgroundColor: colors.primary }]} onPress={onOpen} activeOpacity={0.85} accessibilityRole="button" accessibilityLabel="Отвори за пазаруване">
         <Text style={cS.openBtnText}>Отвори за пазаруване</Text>
         <Ionicons name="cart-outline" size={16} color="#fff" />
       </TouchableOpacity>
@@ -417,11 +417,11 @@ function makeStyles(c, isDark) {
     headerBtns: { flexDirection: 'row', alignItems: 'center', gap: 8 },
     joinBtn: {
       flexDirection: 'row', alignItems: 'center', gap: 5,
-      backgroundColor: c.primaryLight, paddingHorizontal: 12, paddingVertical: 9,
+      backgroundColor: c.primaryLight, paddingHorizontal: 12, paddingVertical: 12,
       borderRadius: 12, borderWidth: 1.5, borderColor: c.border,
     },
     joinBtnText: { color: c.primary, fontWeight: '600', fontSize: 13 },
-    newBtn: { flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: c.primary, paddingHorizontal: 16, paddingVertical: 9, borderRadius: 12 },
+    newBtn: { flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: c.primary, paddingHorizontal: 16, paddingVertical: 12, borderRadius: 12 },
     newBtnText: { color: '#fff', fontWeight: '700', fontSize: 14 },
 
     filterRow: { gap: 8, paddingRight: 4 },

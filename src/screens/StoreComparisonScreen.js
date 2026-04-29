@@ -132,6 +132,7 @@ export default function StoreComparisonScreen({ navigation }) {
                 onSubmitEditing={addStore}
                 returnKeyType="done"
                 keyboardAppearance={isDark ? 'dark' : 'light'}
+                accessibilityLabel="Добави магазин"
               />
             </View>
           </View>
@@ -159,6 +160,7 @@ export default function StoreComparisonScreen({ navigation }) {
                 onChangeText={setItemName}
                 returnKeyType="next"
                 keyboardAppearance={isDark ? 'dark' : 'light'}
+                accessibilityLabel="Наименование на продукта"
               />
             </View>
             <View style={s.priceColumns}>
@@ -176,6 +178,7 @@ export default function StoreComparisonScreen({ navigation }) {
                       keyboardType="decimal-pad"
                       returnKeyType="next"
                       keyboardAppearance={isDark ? 'dark' : 'light'}
+                      accessibilityLabel={`Цена в ${st}`}
                     />
                   </View>
                 </View>
@@ -218,6 +221,7 @@ export default function StoreComparisonScreen({ navigation }) {
                           placeholder="—"
                           placeholderTextColor={colors.textQuaternary}
                           keyboardAppearance={isDark ? 'dark' : 'light'}
+                          accessibilityLabel={`Цена на ${item.name} в ${st}`}
                         />
                         {isCheapest && <Ionicons name="arrow-down" size={10} color={colors.green} />}
                       </View>
