@@ -66,7 +66,7 @@ function MainTabs() {
       <Tab.Screen name="Home" component={HomeScreen} options={{ tabBarLabel: 'Нов списък' }} />
       <Tab.Screen name="SavedLists" component={SavedListsScreen} options={{ tabBarLabel: 'Запазени' }} />
       <Tab.Screen name="Meals" component={MealsScreen} options={{ tabBarLabel: 'Ястия' }} />
-      <Tab.Screen name="Shared" component={SharedListScreen} options={{ tabBarLabel: 'Споделен' }} />
+      <Tab.Screen name="Shared" component={JoinSharedListScreen} options={{ tabBarLabel: 'Споделен' }} />
     </Tab.Navigator>
   );
 }

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
   collection,
   addDoc,
@@ -16,6 +16,13 @@ export function useOrders() {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [tick, setTick] = useState(0);
+
+  const refresh = useCallback(() => {
+    setLoading(true);
+    setError(null);
+    setTick((t) => t + 1);
+  }, []);
 
   useEffect(() => {
     if (!user) {
@@ -45,7 +52,7 @@ export function useOrders() {
     );
 
     return unsubscribe;
-  }, [user]);
+  }, [user, tick]);
 
   const placeOrder = async (cart, total, goal = null, store = null) => {
     if (!user) throw new Error('Трябва да сте влезли в профила си');
@@ -60,5 +67,5 @@ export function useOrders() {
     });
   };
 
-  return { orders, loading, error, placeOrder };
+  return { orders, loading, error, placeOrder, refresh };
 }

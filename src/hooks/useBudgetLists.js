@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
   collection, addDoc, deleteDoc, doc,
   onSnapshot, query, where, orderBy, serverTimestamp,
@@ -37,6 +37,13 @@ export function useBudgetLists() {
   const [lists, setLists] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [tick, setTick] = useState(0);
+
+  const refresh = useCallback(() => {
+    setLoading(true);
+    setError(null);
+    setTick((t) => t + 1);
+  }, []);
 
   useEffect(() => {
     if (!user) { setLists([]); setLoading(false); return; }
@@ -62,7 +69,7 @@ export function useBudgetLists() {
     );
 
     return unsubscribe;
-  }, [user]);
+  }, [user, tick]);
 
   const saveList = async ({ name, budget, store, items }) => {
     if (!user) throw new Error('Трябва да сте влезли в профила си');
@@ -91,5 +98,5 @@ export function useBudgetLists() {
     await deleteDoc(doc(db, 'budgetLists', id));
   };
 
-  return { lists, loading, error, saveList, deleteList };
+  return { lists, loading, error, saveList, deleteList, refresh };
 }

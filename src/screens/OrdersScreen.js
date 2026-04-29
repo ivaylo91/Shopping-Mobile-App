@@ -117,7 +117,7 @@ const OrderCard = memo(function OrderCard({ item, s, colors }) {
 });
 
 export default function OrdersScreen({ navigation }) {
-  const { orders, loading, error } = useOrders();
+  const { orders, loading, error, refresh } = useOrders();
   const { colors, isDark } = useTheme();
   const { isTablet } = useLayout();
   const [refreshing, setRefreshing] = useState(false);
@@ -127,8 +127,9 @@ export default function OrdersScreen({ navigation }) {
   const handleRefresh = useCallback(() => {
     Haptics.selectionAsync();
     setRefreshing(true);
+    refresh();
     setTimeout(() => setRefreshing(false), 800);
-  }, []);
+  }, [refresh]);
 
   const renderItem = useCallback(
     ({ item }) => <OrderCard item={item} s={s} colors={colors} />,

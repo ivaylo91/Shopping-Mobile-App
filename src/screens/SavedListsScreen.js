@@ -206,7 +206,7 @@ const cS = StyleSheet.create({
 // ─── Screen ───────────────────────────────────────────────────────────────────
 
 export default function SavedListsScreen({ navigation }) {
-  const { lists, loading, error, deleteList } = useBudgetLists();
+  const { lists, loading, error, deleteList, refresh } = useBudgetLists();
   const { saveTemplate } = useTemplates();
   const { show: showToast } = useToast();
   const { colors, isDark } = useTheme();
@@ -231,8 +231,9 @@ export default function SavedListsScreen({ navigation }) {
   const handleRefresh = useCallback(() => {
     Haptics.selectionAsync();
     setRefreshing(true);
+    refresh();
     setTimeout(() => setRefreshing(false), 800);
-  }, []);
+  }, [refresh]);
 
   const handleDelete = useCallback((list) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
