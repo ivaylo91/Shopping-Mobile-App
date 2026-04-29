@@ -316,49 +316,53 @@ export default function MealsScreen({ route }) {
 
       {/* Header */}
       <View style={s.header}>
-        <View style={{ flex: 1 }}>
-          <Text style={s.headerTitle}>Идеи за ястия 🍽️</Text>
-          <Text style={s.headerSub}>
-            {hasApiKey() ? 'Генерирано от AI по вашите продукти' : 'Примерни рецепти'}
-          </Text>
+        <View style={s.headerInner}>
+          <View style={{ flex: 1 }}>
+            <Text style={s.headerTitle}>Идеи за ястия 🍽️</Text>
+            <Text style={s.headerSub}>
+              {hasApiKey() ? 'Генерирано от AI по вашите продукти' : 'Примерни рецепти'}
+            </Text>
+          </View>
+          <TouchableOpacity
+            style={[s.regenBtn, !plan && { backgroundColor: colors.cardAlt }]}
+            onPress={regenerateAll}
+            disabled={!plan}
+            accessibilityLabel="Обнови всички рецепти"
+            accessibilityRole="button"
+          >
+            <Ionicons name="shuffle-outline" size={18} color={plan ? colors.primary : colors.textQuaternary} />
+          </TouchableOpacity>
         </View>
-        <TouchableOpacity
-          style={[s.regenBtn, !plan && { backgroundColor: colors.cardAlt }]}
-          onPress={regenerateAll}
-          disabled={!plan}
-          accessibilityLabel="Обнови всички рецепти"
-          accessibilityRole="button"
-        >
-          <Ionicons name="shuffle-outline" size={18} color={plan ? colors.primary : colors.textQuaternary} />
-        </TouchableOpacity>
       </View>
 
       {/* Filter chips */}
       <View style={s.filterRow}>
-        {FILTERS.map(({ key, label, icon }) => {
-          const active = filters[key];
-          return (
-            <TouchableOpacity
-              key={key}
-              style={[s.filterChip, active && s.filterChipActive]}
-              onPress={() => toggleFilter(key)}
-              activeOpacity={0.8}
-              disabled={!plan}
-              accessibilityRole="checkbox"
-              accessibilityState={{ checked: active }}
-              accessibilityLabel={label}
-            >
-              <Text style={{ fontSize: 12 }}>{icon}</Text>
-              <Text style={[s.filterChipText, active && { color: '#fff' }]}>{label}</Text>
-            </TouchableOpacity>
-          );
-        })}
-        {planError && (
-          <View style={[s.fallbackBadge, { backgroundColor: colors.orangeLight, borderColor: colors.orange }]}>
-            <Ionicons name="warning-outline" size={12} color={colors.orange} />
-            <Text style={[s.fallbackText, { color: colors.orange }]}>Примерни рецепти</Text>
-          </View>
-        )}
+        <View style={s.filterRowInner}>
+          {FILTERS.map(({ key, label, icon }) => {
+            const active = filters[key];
+            return (
+              <TouchableOpacity
+                key={key}
+                style={[s.filterChip, active && s.filterChipActive]}
+                onPress={() => toggleFilter(key)}
+                activeOpacity={0.8}
+                disabled={!plan}
+                accessibilityRole="checkbox"
+                accessibilityState={{ checked: active }}
+                accessibilityLabel={label}
+              >
+                <Text style={{ fontSize: 12 }}>{icon}</Text>
+                <Text style={[s.filterChipText, active && { color: '#fff' }]}>{label}</Text>
+              </TouchableOpacity>
+            );
+          })}
+          {planError && (
+            <View style={[s.fallbackBadge, { backgroundColor: colors.orangeLight, borderColor: colors.orange }]}>
+              <Ionicons name="warning-outline" size={12} color={colors.orange} />
+              <Text style={[s.fallbackText, { color: colors.orange }]}>Примерни рецепти</Text>
+            </View>
+          )}
+        </View>
       </View>
 
       <ScrollView contentContainerStyle={s.scroll} showsVerticalScrollIndicator={false}>
@@ -468,12 +472,14 @@ function makeStyles(c, isDark, isTablet) {
   return StyleSheet.create({
     container: { flex: 1, backgroundColor: c.bg },
 
-    header: { backgroundColor: c.card, paddingHorizontal: 20, paddingTop: 16, paddingBottom: 16, borderBottomWidth: 1, borderBottomColor: c.border, flexDirection: 'row', alignItems: 'center' },
+    header: { backgroundColor: c.card, paddingTop: 16, paddingBottom: 16, borderBottomWidth: 1, borderBottomColor: c.border },
+    headerInner: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, maxWidth: isTablet ? 720 : undefined, alignSelf: isTablet ? 'center' : undefined, width: '100%' },
     headerTitle: { fontSize: 20, fontWeight: '700', color: c.text, marginBottom: 2 },
     headerSub: { fontSize: 12, color: c.textTertiary },
     regenBtn: { width: 44, height: 44, borderRadius: 22, backgroundColor: c.primaryLight, justifyContent: 'center', alignItems: 'center', marginLeft: 12 },
 
-    filterRow: { flexDirection: 'row', flexWrap: 'wrap', paddingHorizontal: 16, paddingVertical: 10, gap: 8, backgroundColor: c.card, borderBottomWidth: 1, borderBottomColor: c.border },
+    filterRow: { paddingVertical: 10, backgroundColor: c.card, borderBottomWidth: 1, borderBottomColor: c.border },
+    filterRowInner: { flexDirection: 'row', flexWrap: 'wrap', paddingHorizontal: 16, gap: 8, maxWidth: isTablet ? 720 : undefined, alignSelf: isTablet ? 'center' : undefined, width: '100%' },
     filterChip: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 12, paddingVertical: 10, borderRadius: 20, borderWidth: 1.5, borderColor: c.border, backgroundColor: c.card },
     filterChipActive: { backgroundColor: c.primary, borderColor: c.primary },
     filterChipText: { fontSize: 12, fontWeight: '600', color: c.textSecondary },
