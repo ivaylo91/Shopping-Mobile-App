@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useRef, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { StyleSheet } from 'react-native';
 import Animated, {
   useSharedValue, useAnimatedStyle, withSpring, withTiming, ReduceMotion, runOnJS,
@@ -32,6 +32,10 @@ export function ToastProvider({ children }) {
   const insets = useSafeAreaInsets();
 
   const clearToast = useCallback(() => setToast(null), []);
+
+  useEffect(() => {
+    return () => { if (timerRef.current) clearTimeout(timerRef.current); };
+  }, []);
 
   const show = useCallback(
     (message, type = 'success') => {

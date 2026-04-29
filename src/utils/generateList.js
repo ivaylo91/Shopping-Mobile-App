@@ -51,6 +51,7 @@ function buildCheapestList(products, budget) {
   // Second pass: fill remaining budget with cheapest items (add quantity)
   // Re-uses the already-sorted array — no double sort
   for (const p of sorted) {
+    if (!p.price) continue;
     const remaining = budget - spent;
     if (remaining <= 0) break;
     const existing = result.find((r) => r.id === p.id);
@@ -81,7 +82,7 @@ function buildHealthyList(products, budget) {
   const healthySortedByCalories = [...healthy].sort(
     (a, b) => (a.calories || 999) - (b.calories || 999)
   );
-  const healthySortedByPrice = [...healthy].sort((a, b) => a.price - b.price);
+  const healthySortedByPrice = [...healthy].filter((p) => p.price > 0).sort((a, b) => a.price - b.price);
 
   const sorted = [
     ...healthySortedByCalories,
@@ -101,7 +102,7 @@ function buildHealthyList(products, budget) {
     }
   }
 
-  // Fill remaining with healthy extras — reuse cached sorted array
+  // Fill remaining with healthy extras — reuse cached sorted array (already price > 0 filtered)
   for (const p of healthySortedByPrice) {
     const remaining = budget - spent;
     if (remaining <= 0) break;
@@ -129,10 +130,10 @@ function buildHighProteinList(products, budget) {
   const proteinProducts = products.filter((p) => (p.protein || 0) >= 5);
   const others = products.filter((p) => (p.protein || 0) < 5);
 
-  // Cache sort by protein/price ratio for reuse in second pass
-  const proteinSortedByRatio = [...proteinProducts].sort(
-    (a, b) => b.protein / b.price - a.protein / a.price
-  );
+  // Cache sort by protein/price ratio for reuse in second pass (guard zero price)
+  const proteinSortedByRatio = [...proteinProducts]
+    .filter((p) => p.price > 0)
+    .sort((a, b) => b.protein / b.price - a.protein / a.price);
 
   const sorted = [
     ...proteinSortedByRatio,
@@ -152,7 +153,7 @@ function buildHighProteinList(products, budget) {
     }
   }
 
-  // Add more high-protein items — reuse cached sorted array
+  // Add more high-protein items — reuse cached sorted array (already price > 0 filtered)
   for (const p of proteinSortedByRatio) {
     const remaining = budget - spent;
     if (remaining <= 0) break;

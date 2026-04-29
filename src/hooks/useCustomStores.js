@@ -8,9 +8,11 @@ export function useCustomStores() {
   const [customs, setCustoms] = useState([]);
 
   useEffect(() => {
-    AsyncStorage.getItem(KEY).then((raw) => {
-      if (raw) setCustoms(JSON.parse(raw));
-    });
+    AsyncStorage.getItem(KEY)
+      .then((raw) => {
+        if (raw) setCustoms(JSON.parse(raw));
+      })
+      .catch(() => {});
   }, []);
 
   const stores = [...DEFAULTS, ...customs];

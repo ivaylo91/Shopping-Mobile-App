@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { View, StyleSheet, TouchableOpacity, ActivityIndicator, useWindowDimensions } from 'react-native';
 import Text from '../components/Text';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -9,12 +9,13 @@ import { useTheme } from '../context/ThemeContext';
 import { CATEGORIES, getCategoryColors } from './HomeScreen';
 
 const BARCODE_TYPES = ['ean13', 'ean8', 'upc_a', 'upc_e'];
+const LOOKUP_TIMEOUT_MS = 8_000;
 
-async function lookupBarcode(barcode) {
+async function lookupBarcode(barcode, signal) {
   try {
     const res = await fetch(
       `https://world.openfoodfacts.org/api/v0/product/${barcode}.json`,
-      { headers: { 'User-Agent': 'BudgetShoppingApp/1.0' } }
+      { headers: { 'User-Agent': 'BudgetShoppingApp/1.0' }, signal }
     );
     const json = await res.json();
     if (json.status !== 1) return { name: '', barcode, found: false };
@@ -134,6 +135,11 @@ export default function BarcodeScannerScreen({ navigation }) {
   const [loading, setLoading] = useState(false);
   const [lastCode, setLastCode] = useState('');
   const [scannedResult, setScannedResult] = useState(null);
+  const isMounted = useRef(true);
+
+  useEffect(() => {
+    return () => { isMounted.current = false; };
+  }, []);
 
   const handleBarcodeScanned = async ({ data }) => {
     if (scanned || data === lastCode) return;
@@ -141,11 +147,14 @@ export default function BarcodeScannerScreen({ navigation }) {
     setLastCode(data);
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     setLoading(true);
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), LOOKUP_TIMEOUT_MS);
     try {
-      const result = await lookupBarcode(data);
-      setScannedResult(result);
+      const result = await lookupBarcode(data, controller.signal);
+      if (isMounted.current) setScannedResult(result);
     } finally {
-      setLoading(false);
+      clearTimeout(timeoutId);
+      if (isMounted.current) setLoading(false);
     }
   };
 
