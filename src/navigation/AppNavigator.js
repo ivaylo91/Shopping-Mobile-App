@@ -3,6 +3,7 @@ import { createStackNavigator } from '@react-navigation/stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { ActivityIndicator, View, StatusBar } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useEffect, useState } from 'react';
 
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
@@ -10,6 +11,7 @@ import { useLayout } from '../hooks/useLayout';
 
 import LoginScreen from '../screens/LoginScreen';
 import RegisterScreen from '../screens/RegisterScreen';
+import OnboardingScreen, { hasSeenOnboarding } from '../screens/OnboardingScreen';
 import HomeScreen from '../screens/HomeScreen';
 import ShoppingListScreen from '../screens/ShoppingListScreen';
 import SavedListsScreen from '../screens/SavedListsScreen';
@@ -28,10 +30,13 @@ const TAB_ICONS = {
   Shared:     { focused: 'people',       outline: 'people-outline' },
 };
 
-function AuthStack() {
+function AuthStack({ showOnboarding }) {
   const { colors } = useTheme();
   return (
     <Stack.Navigator screenOptions={{ headerShown: false, cardStyle: { backgroundColor: colors.card } }}>
+      {showOnboarding && (
+        <Stack.Screen name="Onboarding" component={OnboardingScreen} />
+      )}
       <Stack.Screen name="Login" component={LoginScreen} />
       <Stack.Screen name="Register" component={RegisterScreen} />
     </Stack.Navigator>
@@ -96,8 +101,17 @@ function AppStack() {
 export default function AppNavigator() {
   const { user, loading } = useAuth();
   const { colors, isDark } = useTheme();
+  const [onboardingChecked, setOnboardingChecked] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(false);
 
-  if (loading) {
+  useEffect(() => {
+    hasSeenOnboarding().then((seen) => {
+      setShowOnboarding(!seen);
+      setOnboardingChecked(true);
+    });
+  }, []);
+
+  if (loading || !onboardingChecked) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.bg }}>
         <ActivityIndicator size="large" color={colors.primary} />
@@ -108,7 +122,7 @@ export default function AppNavigator() {
   return (
     <NavigationContainer>
       <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor={colors.bg} />
-      {user ? <AppStack /> : <AuthStack />}
+      {user ? <AppStack /> : <AuthStack showOnboarding={showOnboarding} />}
     </NavigationContainer>
   );
 }
