@@ -125,7 +125,7 @@ export default function HomeScreen({ navigation, route }) {
   useEffect(() => {
     barProgress.value = withTiming(
       Math.min(budgetNum > 0 ? total / budgetNum : 0, 1),
-      { duration: 600, easing: Easing.out(Easing.quart), reduceMotion: ReduceMotion.System }
+      { duration: 350, easing: Easing.out(Easing.quart), reduceMotion: ReduceMotion.System }
     );
   }, [total, budgetNum]);
   const barAnimStyle = useAnimatedStyle(() => ({

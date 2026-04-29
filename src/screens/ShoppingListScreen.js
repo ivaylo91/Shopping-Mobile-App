@@ -170,7 +170,7 @@ export default function ShoppingListScreen({ route, navigation }) {
   }, [list, budget, checked]);
 
   useEffect(() => {
-    progressAnim.value = withTiming(progress, { duration: 500, easing: Easing.out(Easing.quart), reduceMotion: ReduceMotion.System });
+    progressAnim.value = withTiming(progress, { duration: 300, easing: Easing.out(Easing.quart), reduceMotion: ReduceMotion.System });
   }, [progress]);
   const progressAnimStyle = useAnimatedStyle(() => ({
     transform: [{ translateX: -(1 - progressAnim.value) * progressTrackWidth.value }],

@@ -386,7 +386,7 @@ export default function MealsScreen({ route }) {
           if (isLoading) return <RecipeCardSkeleton key={key} />;
 
           return (
-            <FadeInView key={`${key}-${recipe.title}`} delay={idx * 60} style={s.card}>
+            <FadeInView key={`${key}-${recipe.title}`} delay={idx * 50} style={s.card}>
 
               <View style={s.cardTopRow}>
                 <View style={[s.badge, { backgroundColor: color }]}>
