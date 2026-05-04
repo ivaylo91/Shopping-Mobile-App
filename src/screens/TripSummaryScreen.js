@@ -187,7 +187,7 @@ export default function TripSummaryScreen({ route, navigation }) {
 
 function makeStyles(c, isDark, isTablet) {
   return StyleSheet.create({
-    safe: { flex: 1 },
+    safe: { flex: 1, backgroundColor: c.bg },
     content: {
       padding: 20, paddingBottom: 44,
       maxWidth: isTablet ? 720 : undefined,

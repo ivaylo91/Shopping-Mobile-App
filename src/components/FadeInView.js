@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useLayoutEffect } from 'react';
 import Animated, {
   useSharedValue, useAnimatedStyle, withTiming, Easing, ReduceMotion, cancelAnimation,
 } from 'react-native-reanimated';
@@ -10,18 +10,25 @@ export default function FadeInView({ delay = 0, duration = 260, style, children 
   const opacity = useSharedValue(0);
   const translateY = useSharedValue(6);
 
-  useEffect(() => {
+  // useLayoutEffect fires before the first paint, eliminating the 1-frame grey flash
+  // for delay=0 items. Delayed items still use useEffect + setTimeout.
+  useLayoutEffect(() => {
+    if (delay > 0) return;
     const cfg = { duration, easing: EASING, reduceMotion: ReduceMotion.System };
-    const run = () => {
+    opacity.value = withTiming(1, cfg);
+    translateY.value = withTiming(0, cfg);
+    return () => { cancelAnimation(opacity); cancelAnimation(translateY); };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    if (delay === 0) return;
+    const cfg = { duration, easing: EASING, reduceMotion: ReduceMotion.System };
+    const t = setTimeout(() => {
       opacity.value = withTiming(1, cfg);
       translateY.value = withTiming(0, cfg);
-    };
-    if (delay > 0) {
-      const t = setTimeout(run, delay);
-      return () => { clearTimeout(t); cancelAnimation(opacity); cancelAnimation(translateY); };
-    }
-    run();
-    return () => { cancelAnimation(opacity); cancelAnimation(translateY); };
+    }, delay);
+    return () => { clearTimeout(t); cancelAnimation(opacity); cancelAnimation(translateY); };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

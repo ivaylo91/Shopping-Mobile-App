@@ -225,7 +225,7 @@ export default function SpendingInsightsScreen() {
 function makeStyles(c, isDark, isTablet) {
   const shadow = { shadowColor: '#000', shadowOpacity: isDark ? 0.3 : 0.04, shadowRadius: 6, elevation: 1 };
   return StyleSheet.create({
-    safe: { flex: 1 },
+    safe: { flex: 1, backgroundColor: c.bg },
     content: {
       padding: 20, paddingBottom: 44,
       maxWidth: isTablet ? 720 : undefined,

@@ -196,7 +196,7 @@ export default function StorePickerScreen({ route, navigation }) {
 function makeStyles(c, isDark, isTablet) {
   const sh = getShadows(isDark);
   return StyleSheet.create({
-    safe: { flex: 1 },
+    safe: { flex: 1, backgroundColor: c.bg },
     header: {
       flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
       paddingHorizontal: 18, paddingVertical: 14,
