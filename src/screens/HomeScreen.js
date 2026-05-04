@@ -112,6 +112,20 @@ export default function HomeScreen({ navigation, route }) {
       if (route.params.preloadedStore) setStore(route.params.preloadedStore);
       navigation.setParams({ preloadedItems: undefined, preloadedStore: undefined });
     }
+    if (route.params?.addedItem) {
+      setItems((prev) => [...prev, route.params.addedItem]);
+      navigation.setParams({ addedItem: undefined });
+    }
+    if (route.params?.selectedStore) {
+      setStore(route.params.selectedStore);
+      navigation.setParams({ selectedStore: undefined });
+    }
+    if (route.params?.prefillBudget) {
+      setBudget(route.params.prefillBudget);
+      if (route.params.prefillStore) setStore(route.params.prefillStore);
+      if (route.params.prefillListName) setListName(route.params.prefillListName);
+      navigation.setParams({ prefillBudget: undefined, prefillStore: undefined, prefillListName: undefined });
+    }
   }, [route.params]);
 
   const total = items.reduce((s, i) => s + i.subtotal, 0);
@@ -546,6 +560,8 @@ export default function HomeScreen({ navigation, route }) {
       <Modal visible={overflowVisible} animationType="fade" transparent onRequestClose={() => setOverflowVisible(false)}>
         <TouchableOpacity style={s.overflowBackdrop} activeOpacity={1} onPress={() => setOverflowVisible(false)}>
           <View style={s.overflowMenu}>
+            <OverflowItem icon="bar-chart-outline" label="Статистики"
+              onPress={() => { setOverflowVisible(false); navigation.navigate('SpendingInsights'); }} s={s} colors={colors} />
             <OverflowItem icon="stats-chart-outline" label="Сравнение по магазини"
               onPress={() => { setOverflowVisible(false); navigation.navigate('StoreComparison'); }} s={s} colors={colors} />
             <OverflowItem icon={isDark ? 'sunny-outline' : 'moon-outline'} label={isDark ? 'Светла тема' : 'Тъмна тема'}

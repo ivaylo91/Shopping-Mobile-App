@@ -181,6 +181,13 @@ export default function ShoppingListScreen({ route, navigation }) {
     setChecked((prev) => ({ ...prev, [id]: !prev[id] }));
   }, []);
 
+  const handleFinish = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    const checkedItems = list.filter((i) => checked[i.id]);
+    const skippedItems = list.filter((i) => !checked[i.id]);
+    navigation.navigate('TripSummary', { budget, spent, listName, store, checkedItems, skippedItems });
+  };
+
   const handleSave = async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     setSaving(true);
@@ -323,6 +330,10 @@ export default function ShoppingListScreen({ route, navigation }) {
 
       {!readOnly && (
         <View style={s.actions}>
+          <AnimatedPressable style={s.btnFinish} onPress={handleFinish} accessibilityLabel="Завърши пазаруването">
+            <Ionicons name="checkmark-circle-outline" size={18} color="#fff" />
+            <Text style={s.btnFinishText}>Завърши пазаруването</Text>
+          </AnimatedPressable>
           <AnimatedPressable style={[s.btnSave, saving && s.btnDisabled]} onPress={handleSave} disabled={saving}>
             {saving
               ? <ActivityIndicator color="#fff" size="small" />
@@ -372,9 +383,11 @@ function makeStyles(c, isDark, isTablet) {
     summaryRemaining: { fontSize: 18, fontWeight: '700' },
     summaryDivider: { height: 1, backgroundColor: c.borderLight, marginVertical: 4 },
 
-    actions: { paddingHorizontal: 14, paddingBottom: 16 },
-    btnSave: { backgroundColor: c.primary, borderRadius: 16, paddingVertical: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, shadowColor: c.primary, shadowOpacity: 0.28, shadowRadius: 10, shadowOffset: { width: 0, height: 4 }, elevation: 5 },
-    btnSaveText: { color: '#fff', fontWeight: '700', fontSize: 16 },
-    btnDisabled: { opacity: 0.6, shadowOpacity: 0 },
+    actions: { paddingHorizontal: 14, paddingBottom: 16, gap: 10 },
+    btnFinish: { backgroundColor: c.primary, borderRadius: 16, paddingVertical: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, shadowColor: c.primary, shadowOpacity: 0.28, shadowRadius: 10, shadowOffset: { width: 0, height: 4 }, elevation: 5 },
+    btnFinishText: { color: '#fff', fontWeight: '700', fontSize: 16 },
+    btnSave: { backgroundColor: c.cardAlt, borderRadius: 16, paddingVertical: 14, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
+    btnSaveText: { color: c.textSecondary, fontWeight: '700', fontSize: 15 },
+    btnDisabled: { opacity: 0.6 },
   });
 }

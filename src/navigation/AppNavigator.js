@@ -19,6 +19,11 @@ import BarcodeScannerScreen from '../screens/BarcodeScannerScreen';
 import StoreComparisonScreen from '../screens/StoreComparisonScreen';
 import SharedListScreen, { JoinSharedListScreen } from '../screens/SharedListScreen';
 import MealsScreen from '../screens/MealsScreen';
+import TripSummaryScreen from '../screens/TripSummaryScreen';
+import SpendingInsightsScreen from '../screens/SpendingInsightsScreen';
+import BudgetSetupScreen from '../screens/BudgetSetupScreen';
+import StorePickerScreen from '../screens/StorePickerScreen';
+import AddItemScreen from '../screens/AddItemScreen';
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -94,6 +99,11 @@ function AppStack() {
       <Stack.Screen name="StoreComparison" component={StoreComparisonScreen} options={{ headerShown: false }} />
       <Stack.Screen name="SharedList" component={SharedListScreen} options={{ headerShown: false }} />
       <Stack.Screen name="JoinSharedList" component={JoinSharedListScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="TripSummary" component={TripSummaryScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="SpendingInsights" component={SpendingInsightsScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="BudgetSetup" component={BudgetSetupScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="StorePicker" component={StorePickerScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="AddItemScreen" component={AddItemScreen} options={{ headerShown: false }} />
     </Stack.Navigator>
   );
 }
