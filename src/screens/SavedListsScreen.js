@@ -16,14 +16,21 @@ import { useLayout } from '../hooks/useLayout';
 import { getCategoryEmoji, getCategoryColors } from './HomeScreen';
 import { OrderCardSkeleton } from '../components/Skeleton';
 
-function formatDate(timestamp) {
-  if (!timestamp?.toDate) return '—';
-  return timestamp.toDate().toLocaleDateString('bg-BG', { day: '2-digit', month: 'long', year: 'numeric' });
+function parseDate(val) {
+  if (!val) return null;
+  try { return val.toDate ? val.toDate() : new Date(val); } catch { return null; }
 }
 
-function formatMonth(timestamp) {
-  if (!timestamp?.toDate) return null;
-  return timestamp.toDate().toLocaleDateString('bg-BG', { month: 'long', year: 'numeric' });
+function formatDate(val) {
+  const d = parseDate(val);
+  if (!d) return '—';
+  return d.toLocaleDateString('bg-BG', { day: '2-digit', month: 'long', year: 'numeric' });
+}
+
+function formatMonth(val) {
+  const d = parseDate(val);
+  if (!d) return null;
+  return d.toLocaleDateString('bg-BG', { month: 'long', year: 'numeric' });
 }
 
 // ─── Monthly Summary ───────────────────────────────────────────────────────────
@@ -32,14 +39,13 @@ function MonthlySummary({ lists, colors }) {
   const stats = useMemo(() => {
     const now = new Date();
     const thisMonth = lists.filter((l) => {
-      if (!l.createdAt?.toDate) return false;
-      const d = l.createdAt.toDate();
-      return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+      const d = parseDate(l.createdAt);
+      return d && d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
     });
     const totalSpent = thisMonth.reduce((s, l) => s + (l.total || 0), 0);
     const totalBudget = thisMonth.reduce((s, l) => s + (l.budget || 0), 0);
     const overCount = thisMonth.filter((l) => (l.total || 0) > (l.budget || 0)).length;
-    const firstWithDate = thisMonth.find((l) => l.createdAt?.toDate);
+    const firstWithDate = thisMonth.find((l) => l.createdAt);
     const monthName = firstWithDate ? formatMonth(firstWithDate.createdAt) : null;
     return { count: thisMonth.length, totalSpent, totalBudget, overCount, monthName };
   }, [lists]);
@@ -206,7 +212,7 @@ const cS = StyleSheet.create({
 // ─── Screen ───────────────────────────────────────────────────────────────────
 
 export default function SavedListsScreen({ navigation }) {
-  const { lists, loading, error, deleteList, refresh } = useBudgetLists();
+  const { lists, loading, deleteList, refresh } = useBudgetLists();
   const { saveTemplate } = useTemplates();
   const { show: showToast } = useToast();
   const { colors, isDark } = useTheme();
@@ -310,18 +316,6 @@ export default function SavedListsScreen({ navigation }) {
     );
   }
 
-  if (error) {
-    return (
-      <SafeAreaView style={s.container}>
-        <View style={s.centered}>
-          <Ionicons name="cloud-offline-outline" size={56} color={colors.border} />
-          <Text style={[s.errorText, { color: colors.red }]}>Грешка при зареждане</Text>
-          <Text style={[s.errorSub, { color: colors.textTertiary }]}>{error}</Text>
-        </View>
-      </SafeAreaView>
-    );
-  }
-
   return (
     <SafeAreaView style={s.container}>
       <View style={s.header}>
@@ -332,16 +326,10 @@ export default function SavedListsScreen({ navigation }) {
               {lists.length > 0 ? `${lists.length} запазени` : 'Все още нямате списъци'}
             </Text>
           </View>
-          <View style={s.headerBtns}>
-            <TouchableOpacity style={s.joinBtn} onPress={() => navigation.navigate('JoinSharedList')} activeOpacity={0.85} accessibilityLabel="Присъедини се към споделен списък" accessibilityRole="button">
-              <Ionicons name="people-outline" size={16} color={colors.primary} />
-              <Text style={s.joinBtnText}>Присъедини</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={s.newBtn} onPress={() => navigation.navigate('Home')} activeOpacity={0.85} accessibilityLabel="Нов списък" accessibilityRole="button">
-              <Ionicons name="add" size={18} color="#fff" />
-              <Text style={s.newBtnText}>Нов</Text>
-            </TouchableOpacity>
-          </View>
+          <TouchableOpacity style={s.newBtn} onPress={() => navigation.navigate('Home')} activeOpacity={0.85} accessibilityLabel="Нов списък" accessibilityRole="button">
+            <Ionicons name="add" size={18} color="#fff" />
+            <Text style={s.newBtnText}>Нов</Text>
+          </TouchableOpacity>
         </View>
 
         {storeOptions.length > 1 && (
@@ -403,9 +391,6 @@ export default function SavedListsScreen({ navigation }) {
 function makeStyles(c, isDark) {
   return StyleSheet.create({
     container: { flex: 1, backgroundColor: c.bg },
-    centered: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20, gap: 8 },
-    errorText: { fontSize: 16, fontWeight: '700', marginTop: 12 },
-    errorSub: { fontSize: 13, textAlign: 'center' },
 
     header: {
       backgroundColor: c.card, paddingHorizontal: 20, paddingTop: 16, paddingBottom: 14,
@@ -414,13 +399,6 @@ function makeStyles(c, isDark) {
     headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
     headerTitle: { fontSize: 22, fontWeight: '700', color: c.text, marginBottom: 2 },
     headerSub: { fontSize: 13, color: c.textTertiary },
-    headerBtns: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-    joinBtn: {
-      flexDirection: 'row', alignItems: 'center', gap: 5,
-      backgroundColor: c.primaryLight, paddingHorizontal: 12, paddingVertical: 12,
-      borderRadius: 12, borderWidth: 1.5, borderColor: c.border,
-    },
-    joinBtnText: { color: c.primary, fontWeight: '600', fontSize: 13 },
     newBtn: { flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: c.primary, paddingHorizontal: 16, paddingVertical: 12, borderRadius: 12 },
     newBtnText: { color: '#fff', fontWeight: '700', fontSize: 14 },
 

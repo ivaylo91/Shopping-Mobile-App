@@ -10,7 +10,6 @@ import Text from '../components/Text';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
-import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { useTheme } from '../context/ThemeContext';
 import { useBudgetLists } from '../hooks/useBudgetLists';
@@ -19,7 +18,6 @@ import { useCustomStores } from '../hooks/useCustomStores';
 import { useRecurringItems } from '../hooks/useRecurringItems';
 import { usePriceHistory } from '../hooks/usePriceHistory';
 import { useFavoriteStores } from '../hooks/useFavoriteStores';
-import { useNotificationPermission } from '../hooks/useNotifications';
 import AnimatedPressable from '../components/AnimatedPressable';
 import FadeInView from '../components/FadeInView';
 import { uid } from '../utils/uid';
@@ -67,7 +65,6 @@ const STAR_COLOR = '#FFD700';
 // ─── Screen ───────────────────────────────────────────────────────────────────
 
 export default function HomeScreen({ navigation, route }) {
-  const { logout } = useAuth();
   const { show: showToast } = useToast();
   const { colors, isDark, toggleTheme } = useTheme();
   const { isTablet } = useLayout();
@@ -77,8 +74,6 @@ export default function HomeScreen({ navigation, route }) {
   const { recurring, addRecurring, removeRecurring, isRecurring } = useRecurringItems();
   const { getPriceInfo } = usePriceHistory();
   const { isFavorite, toggleFavorite, sortStores } = useFavoriteStores();
-  useNotificationPermission();
-
   const [listName, setListName] = useState('');
   const [budget, setBudget] = useState('');
   const [store, setStore] = useState('Всички');
@@ -560,18 +555,14 @@ export default function HomeScreen({ navigation, route }) {
       <Modal visible={overflowVisible} animationType="fade" transparent onRequestClose={() => setOverflowVisible(false)}>
         <TouchableOpacity style={s.overflowBackdrop} activeOpacity={1} onPress={() => setOverflowVisible(false)}>
           <View style={s.overflowMenu}>
-            <OverflowItem icon="bar-chart-outline" label="Статистики"
-              onPress={() => { setOverflowVisible(false); navigation.navigate('SpendingInsights'); }} s={s} colors={colors} />
-            <OverflowItem icon="stats-chart-outline" label="Сравнение по магазини"
-              onPress={() => { setOverflowVisible(false); navigation.navigate('StoreComparison'); }} s={s} colors={colors} />
+            <OverflowItem icon="calculator-outline" label="Планиране на бюджет"
+              onPress={() => { setOverflowVisible(false); navigation.navigate('BudgetSetup'); }} s={s} colors={colors} />
             <OverflowItem icon={isDark ? 'sunny-outline' : 'moon-outline'} label={isDark ? 'Светла тема' : 'Тъмна тема'}
               onPress={() => { toggleTheme(); }} s={s} colors={colors} />
             {items.length > 0 && (
               <OverflowItem icon="bookmark-outline" label="Запази като шаблон"
                 onPress={handleSaveTemplate} s={s} colors={colors} />
             )}
-            <OverflowItem icon="log-out-outline" label="Изход" danger
-              onPress={() => { setOverflowVisible(false); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); logout(); }} s={s} colors={colors} />
           </View>
         </TouchableOpacity>
       </Modal>

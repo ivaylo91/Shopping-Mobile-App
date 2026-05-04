@@ -1,14 +1,9 @@
 import { useCallback, useEffect, useState } from 'react';
-import {
-  collection, addDoc, deleteDoc, doc,
-  onSnapshot, query, where, orderBy, serverTimestamp,
-} from 'firebase/firestore';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { db } from '../config/firebase';
-import { useAuth } from '../context/AuthContext';
-import { sendOverBudgetAlert } from './useNotifications';
+import { uid } from '../utils/uid';
 import { PRICE_HISTORY_KEY, MAX_HISTORY_PER_PRODUCT } from './usePriceHistory';
 
+const LISTS_KEY = '@budget_lists_v2';
 const MAX_TRACKED_PRODUCTS = 200;
 
 async function recordPricesAsync(items, store) {
@@ -33,70 +28,49 @@ async function recordPricesAsync(items, store) {
 }
 
 export function useBudgetLists() {
-  const { user } = useAuth();
   const [lists, setLists] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [tick, setTick] = useState(0);
 
-  const refresh = useCallback(() => {
+  const load = useCallback(async () => {
     setLoading(true);
-    setError(null);
-    setTick((t) => t + 1);
+    try {
+      const raw = await AsyncStorage.getItem(LISTS_KEY);
+      setLists(raw ? JSON.parse(raw) : []);
+    } catch {}
+    setLoading(false);
   }, []);
 
-  useEffect(() => {
-    if (!user) { setLists([]); setLoading(false); return; }
+  useEffect(() => { load(); }, [load]);
 
-    const q = query(
-      collection(db, 'budgetLists'),
-      where('userId', '==', user.uid),
-      orderBy('createdAt', 'desc')
-    );
-
-    const unsubscribe = onSnapshot(
-      q,
-      (snapshot) => {
-        setLists(snapshot.docs.map((d) => ({ id: d.id, ...d.data() })));
-        setLoading(false);
-        setError(null);
-      },
-      (err) => {
-        console.error('useBudgetLists error:', err);
-        setError(err.message);
-        setLoading(false);
-      }
-    );
-
-    return unsubscribe;
-  }, [user, tick]);
-
-  const saveList = async ({ name, budget, store, items }) => {
-    if (!user) throw new Error('Трябва да сте влезли в профила си');
-    const total = items.reduce((sum, i) => sum + i.subtotal, 0);
-    const remaining = budget - total;
-
-    await addDoc(collection(db, 'budgetLists'), {
-      userId: user.uid,
+  const saveList = useCallback(async ({ name, budget, store, items }) => {
+    const total = items.reduce((s, i) => s + i.subtotal, 0);
+    const newList = {
+      id: uid(),
       name: name || 'Моят списък',
       budget,
       store,
       items,
       total,
-      remaining,
-      createdAt: serverTimestamp(),
-    });
-
-    // Side effects (non-blocking)
+      remaining: budget - total,
+      createdAt: new Date().toISOString(),
+    };
+    const raw = await AsyncStorage.getItem(LISTS_KEY);
+    const current = raw ? JSON.parse(raw) : [];
+    const updated = [newList, ...current];
+    await AsyncStorage.setItem(LISTS_KEY, JSON.stringify(updated));
+    setLists(updated);
     recordPricesAsync(items, store);
-    if (remaining < 0) {
-      sendOverBudgetAlert(name, Math.abs(remaining));
-    }
-  };
+  }, []);
 
-  const deleteList = async (id) => {
-    await deleteDoc(doc(db, 'budgetLists', id));
-  };
+  const deleteList = useCallback(async (id) => {
+    const raw = await AsyncStorage.getItem(LISTS_KEY);
+    const current = raw ? JSON.parse(raw) : [];
+    const updated = current.filter((l) => l.id !== id);
+    await AsyncStorage.setItem(LISTS_KEY, JSON.stringify(updated));
+    setLists(updated);
+  }, []);
 
-  return { lists, loading, error, saveList, deleteList, refresh };
+  const refresh = useCallback(() => { load(); }, [load]);
+
+  return { lists, loading, saveList, deleteList, refresh };
 }
