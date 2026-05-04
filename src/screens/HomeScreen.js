@@ -11,6 +11,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useToast } from '../context/ToastContext';
+import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { useBudgetLists } from '../hooks/useBudgetLists';
 import { useTemplates } from '../hooks/useTemplates';
@@ -65,6 +66,7 @@ const STAR_COLOR = '#FFD700';
 // ─── Screen ───────────────────────────────────────────────────────────────────
 
 export default function HomeScreen({ navigation, route }) {
+  const { logout } = useAuth();
   const { show: showToast } = useToast();
   const { colors, isDark, toggleTheme } = useTheme();
   const { isTablet } = useLayout();
@@ -563,6 +565,8 @@ export default function HomeScreen({ navigation, route }) {
               <OverflowItem icon="bookmark-outline" label="Запази като шаблон"
                 onPress={handleSaveTemplate} s={s} colors={colors} />
             )}
+            <OverflowItem icon="log-out-outline" label="Изход" danger
+              onPress={() => { setOverflowVisible(false); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); logout(); }} s={s} colors={colors} />
           </View>
         </TouchableOpacity>
       </Modal>
