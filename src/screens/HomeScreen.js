@@ -1,7 +1,7 @@
 import { useState, useCallback, useMemo, useEffect } from 'react';
 import {
   View, TextInput, TouchableOpacity, StyleSheet,
-  ScrollView, ActivityIndicator, Alert, Modal,
+  ScrollView, ActivityIndicator, Alert, Modal, FlatList,
 } from 'react-native';
 import Animated, {
   useSharedValue, useAnimatedStyle, withTiming, Easing, ReduceMotion,
@@ -10,6 +10,7 @@ import Text from '../components/Text';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
+import * as Location from 'expo-location';
 import { useToast } from '../context/ToastContext';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
@@ -90,12 +91,35 @@ export default function HomeScreen({ navigation, route }) {
   const [showNote, setShowNote] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
 
+  const [lastRemovedItem, setLastRemovedItem] = useState(null);
+  const [editingItemId, setEditingItemId] = useState(null);
+
   const [overflowVisible, setOverflowVisible] = useState(false);
   const [storeSheetVisible, setStoreSheetVisible] = useState(false);
   const [newStoreName, setNewStoreName] = useState('');
   const [libraryVisible, setLibraryVisible] = useState(false);
   const [saveTemplateVisible, setSaveTemplateVisible] = useState(false);
   const [saveTemplateName, setSaveTemplateName] = useState('');
+
+  const [nearbySuggest, setNearbySuggest] = useState(null);
+
+  useEffect(() => {
+    const checkNearby = async () => {
+      try {
+        const { status } = await Location.getForegroundPermissionsAsync();
+        if (status === 'granted') {
+          const loc = await Location.getCurrentPositionAsync({});
+          const query = `[out:json];node["shop"~"supermarket|convenience|grocery"](around:500,${loc.coords.latitude},${loc.coords.longitude});out;`;
+          const res = await fetch(`https://overpass-api.de/api/interpreter?data=${encodeURIComponent(query)}`);
+          const data = await res.json();
+          if (data.elements?.[0]?.tags?.name) {
+            setNearbySuggest(data.elements[0].tags.name);
+          }
+        }
+      } catch (e) {}
+    };
+    checkNearby();
+  }, []);
 
   useEffect(() => {
     if (route.params?.scannedProduct) {
@@ -105,12 +129,12 @@ export default function HomeScreen({ navigation, route }) {
       navigation.setParams({ scannedProduct: undefined });
     }
     if (route.params?.preloadedItems) {
-      setItems(route.params.preloadedItems.map((i) => ({ ...i, id: uid() })));
+      setItems(route.params.preloadedItems.map((i) => ({ ...i, id: uid() })).reverse());
       if (route.params.preloadedStore) setStore(route.params.preloadedStore);
       navigation.setParams({ preloadedItems: undefined, preloadedStore: undefined });
     }
     if (route.params?.addedItem) {
-      setItems((prev) => [...prev, route.params.addedItem]);
+      setItems((prev) => [route.params.addedItem, ...prev]);
       navigation.setParams({ addedItem: undefined });
     }
     if (route.params?.selectedStore) {
@@ -125,10 +149,10 @@ export default function HomeScreen({ navigation, route }) {
     }
   }, [route.params]);
 
-  const total = items.reduce((s, i) => s + i.subtotal, 0);
-  const budgetNum = parseFloat(budget) || 0;
-  const remaining = budgetNum - total;
-  const overBudget = budgetNum > 0 && total > budgetNum;
+  const total = useMemo(() => items.reduce((s, i) => s + i.subtotal, 0), [items]);
+  const budgetNum = useMemo(() => parseFloat(budget) || 0, [budget]);
+  const remaining = useMemo(() => budgetNum - total, [budgetNum, total]);
+  const overBudget = useMemo(() => budgetNum > 0 && total > budgetNum, [budgetNum, total]);
 
   // ─── Budget bar animation ─────────────────────────────────────────────────────
   const barTrackWidth = useSharedValue(0);
@@ -170,25 +194,85 @@ export default function HomeScreen({ navigation, route }) {
     const price = parseFloat(itemPrice);
     if (!name) { showToast('Въведете наименование', 'warning'); return; }
     if (!price || price <= 0) { showToast('Въведете валидна цена', 'warning'); return; }
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    setItems((prev) => [...prev, {
-      id: uid(), name, price, quantity: itemQty,
-      subtotal: price * itemQty, category: itemCategory, note: itemNote.trim(),
-    }]);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+
+    if (editingItemId) {
+      setItems((prev) => prev.map(i => i.id === editingItemId ? {
+        ...i, name, price, quantity: itemQty,
+        subtotal: price * itemQty, category: itemCategory, note: itemNote.trim(),
+      } : i));
+      setEditingItemId(null);
+      showToast('Продуктът е обновен', 'success');
+    } else {
+      setItems((prev) => [{
+        id: uid(), name, price, quantity: itemQty,
+        subtotal: price * itemQty, category: itemCategory, note: itemNote.trim(),
+      }, ...prev]);
+    }
     setItemName(''); setItemPrice(''); setItemQty(1); setItemNote('');
     setShowNote(false); setShowSuggestions(false);
-  }, [itemName, itemPrice, itemQty, itemCategory, itemNote, showToast]);
+  }, [itemName, itemPrice, itemQty, itemCategory, itemNote, showToast, editingItemId]);
 
   const removeItem = useCallback((id) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    setItems((prev) => prev.filter((i) => i.id !== id));
+    setItems((prev) => {
+      const item = prev.find(i => i.id === id);
+      if (item) setLastRemovedItem(item);
+      return prev.filter((i) => i.id !== id);
+    });
+    showToast('Продуктът е премахнат', 'info');
+  }, [showToast]);
+
+  const undoRemove = useCallback(() => {
+    if (lastRemovedItem) {
+      setItems(prev => [lastRemovedItem, ...prev]);
+      setLastRemovedItem(null);
+      showToast('Възстановено', 'success');
+    }
+  }, [lastRemovedItem, showToast]);
+
+  const clearAll = useCallback(() => {
+    if (items.length === 0) return;
+    Alert.alert(
+      'Изчистване',
+      'Сигурни ли сте, че искате да премахнете всички продукти?',
+      [
+        { text: 'Отказ', style: 'cancel' },
+        {
+          text: 'Изчисти',
+          style: 'destructive',
+          onPress: () => {
+            setItems([]);
+            showToast('Списъкът е изчистен', 'info');
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+          },
+        },
+      ]
+    );
+  }, [items.length, showToast]);
+
+  const startEdit = useCallback((item) => {
+    setEditingItemId(item.id);
+    setItemName(item.name);
+    setItemPrice(item.price.toString());
+    setItemQty(item.quantity);
+    setItemCategory(item.category);
+    setItemNote(item.note || '');
+    setShowNote(!!item.note);
+    // Scroll to top might be needed but let's see
+  }, []);
+
+  const cancelEdit = useCallback(() => {
+    setEditingItemId(null);
+    setItemName(''); setItemPrice(''); setItemQty(1); setItemNote('');
+    setShowNote(false);
   }, []);
 
   const changeQty = useCallback((id, delta) => {
-    Haptics.selectionAsync();
     setItems((prev) => prev.map((i) => {
       if (i.id !== id) return i;
       const qty = Math.max(1, i.quantity + delta);
+      if (qty !== i.quantity) Haptics.selectionAsync();
       return { ...i, quantity: qty, subtotal: i.price * qty };
     }));
   }, []);
@@ -198,37 +282,50 @@ export default function HomeScreen({ navigation, route }) {
     setItemPrice(s.price.toString());
     setItemCategory(s.category || 'other');
     setShowSuggestions(false);
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
   }, []);
 
   const addRecurringItem = useCallback((r) => {
-    if (items.some((i) => i.name.toLowerCase() === r.name.toLowerCase())) return;
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    setItems((prev) => [...prev, {
-      id: uid(), name: r.name, price: r.price, quantity: r.quantity,
-      subtotal: r.price * r.quantity, category: r.category, note: r.note || '',
-    }]);
-  }, [items]);
+    setItems((prev) => {
+      const exists = prev.some((i) => i.name.toLowerCase() === r.name.toLowerCase());
+      if (exists) {
+        showToast(`"${r.name}" вече е в списъка`, 'info');
+        return prev;
+      }
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      return [{
+        id: uid(), name: r.name, price: r.price, quantity: r.quantity,
+        subtotal: r.price * r.quantity, category: r.category, note: r.note || '',
+      }, ...prev];
+    });
+  }, []);
 
   const addAllRecurring = useCallback(() => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    const toAdd = recurring.filter((r) => !items.some((i) => i.name.toLowerCase() === r.name.toLowerCase()));
-    if (toAdd.length === 0) { showToast('Всички постоянни продукти вече са добавени', 'info'); return; }
-    setItems((prev) => [...prev, ...toAdd.map((r) => ({
-      id: uid(), name: r.name, price: r.price, quantity: r.quantity,
-      subtotal: r.price * r.quantity, category: r.category, note: r.note || '',
-    }))]);
-    showToast(`Добавени ${toAdd.length} продукта`, 'success');
-  }, [recurring, items, showToast]);
+    setItems((prev) => {
+      const toAdd = recurring.filter((r) => !prev.some((i) => i.name.toLowerCase() === r.name.toLowerCase()));
+      if (toAdd.length === 0) {
+        showToast('Всички постоянни продукти вече са добавени', 'info');
+        return prev;
+      }
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      showToast(`Добавени ${toAdd.length} продукта`, 'success');
+      return [...toAdd.map((r) => ({
+        id: uid(), name: r.name, price: r.price, quantity: r.quantity,
+        subtotal: r.price * r.quantity, category: r.category, note: r.note || '',
+      })), ...prev];
+    });
+  }, [recurring, showToast]);
 
   const toggleItemRecurring = useCallback((item) => {
     if (isRecurring(item.name)) {
       removeRecurring(item.name);
       showToast(`"${item.name}" е премахнат от постоянни`, 'info');
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     } else {
       addRecurring(item);
       showToast(`"${item.name}" е добавен в постоянни`, 'success');
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     }
-    Haptics.selectionAsync();
   }, [isRecurring, addRecurring, removeRecurring, showToast]);
 
   const persistList = async () => {
@@ -277,7 +374,7 @@ export default function HomeScreen({ navigation, route }) {
     setStore(tpl.store || 'Всички');
     if (!listName) setListName(tpl.name);
     setLibraryVisible(false);
-    showToast(`Шаблонът "${tpl.name}" е зареден`, 'info');
+    showToast(`Шаблонът "${tpl.name}" е зареден`, 'success');
   };
 
   const handleAddStore = async () => {
@@ -305,9 +402,16 @@ export default function HomeScreen({ navigation, route }) {
         {/* Header */}
         <View style={s.header}>
           <Text style={s.title}>Нов списък</Text>
-          <TouchableOpacity style={s.overflowBtn} onPress={() => setOverflowVisible(true)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} accessibilityLabel="Меню" accessibilityRole="button">
-            <Ionicons name="ellipsis-horizontal" size={20} color={colors.textSecondary} />
-          </TouchableOpacity>
+          <View style={{ flexDirection: 'row', gap: 8 }}>
+            {items.length > 0 && (
+              <TouchableOpacity style={s.overflowBtn} onPress={clearAll} accessibilityLabel="Изчисти всичко" accessibilityRole="button">
+                <Ionicons name="trash-outline" size={20} color={colors.red} />
+              </TouchableOpacity>
+            )}
+            <TouchableOpacity style={s.overflowBtn} onPress={() => setOverflowVisible(true)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} accessibilityLabel="Меню" accessibilityRole="button">
+              <Ionicons name="ellipsis-horizontal" size={20} color={colors.textSecondary} />
+            </TouchableOpacity>
+          </View>
         </View>
 
         {/* Setup row: name + budget + store */}
@@ -321,6 +425,7 @@ export default function HomeScreen({ navigation, route }) {
               onChangeText={setListName}
               returnKeyType="next"
               keyboardAppearance={isDark ? 'dark' : 'light'}
+              onSubmitEditing={() => { /* maybe focus price? but next is fine */ }}
               accessibilityLabel="Наименование на списъка"
             />
             <View style={s.setupBudget}>
@@ -339,11 +444,21 @@ export default function HomeScreen({ navigation, route }) {
             </View>
           </View>
           <View style={s.setupBottom}>
-            <TouchableOpacity style={s.storePill} onPress={() => setStoreSheetVisible(true)} activeOpacity={0.75} accessibilityLabel={`Магазин: ${store}`} accessibilityRole="button">
+            <TouchableOpacity style={s.storePill} onPress={() => navigation.navigate('StorePicker')} activeOpacity={0.75} accessibilityLabel={`Магазин: ${store}`} accessibilityRole="button">
               <Ionicons name="location-outline" size={13} color={colors.primary} />
               <Text style={s.storePillText} numberOfLines={1}>{store}</Text>
               <Ionicons name="chevron-down" size={13} color={colors.textTertiary} />
             </TouchableOpacity>
+            {nearbySuggest && store === 'Всички' && (
+              <TouchableOpacity
+                style={[s.storePill, { borderColor: colors.primary, borderWidth: 1 }]}
+                onPress={() => { setStore(nearbySuggest); Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success); }}
+                activeOpacity={0.7}
+              >
+                <Ionicons name="sparkles" size={12} color={colors.primary} />
+                <Text style={[s.storePillText, { color: colors.primary }]}>{nearbySuggest}?</Text>
+              </TouchableOpacity>
+            )}
             {hasLibrary && (
               <TouchableOpacity style={s.libraryPill} onPress={() => setLibraryVisible(true)} activeOpacity={0.75} accessibilityLabel="Библиотека с продукти" accessibilityRole="button">
                 <Ionicons name="library-outline" size={13} color={colors.primary} />
@@ -383,6 +498,7 @@ export default function HomeScreen({ navigation, route }) {
               <TextInput style={s.priceInput} placeholder="0.00" placeholderTextColor={colors.textQuaternary}
                 value={itemPrice} onChangeText={setItemPrice} keyboardType="decimal-pad"
                 returnKeyType="done" onFocus={() => setShowSuggestions(false)}
+                onSubmitEditing={addItem}
                 keyboardAppearance={isDark ? 'dark' : 'light'}
                 accessibilityLabel="Цена на продукта" />
             </View>
@@ -417,7 +533,7 @@ export default function HomeScreen({ navigation, route }) {
               return (
                 <TouchableOpacity
                   key={cat.id}
-                  style={[s.catChip, active && { backgroundColor: catColors.bg }]}
+                  style={[s.catChip, active && { backgroundColor: catColors.bg }, active && s.catChipActive]}
                   onPress={() => { Haptics.selectionAsync(); setItemCategory(cat.id); }}
                   activeOpacity={0.8}
                   accessibilityRole="radio"
@@ -446,11 +562,17 @@ export default function HomeScreen({ navigation, route }) {
               <Ionicons name={showNote ? 'chatbubble' : 'chatbubble-outline'} size={14} color={showNote ? colors.primary : colors.textQuaternary} />
               <Text style={[s.noteToggleText, showNote && { color: colors.primary }]}>Бележка</Text>
             </TouchableOpacity>
-            <AnimatedPressable style={s.addBtn} onPress={addItem} accessibilityLabel="Добави продукт">
-              <Ionicons name="add-circle" size={17} color="#fff" />
-              <Text style={s.addBtnText}>Добави</Text>
+            <AnimatedPressable style={s.addBtn} onPress={addItem} accessibilityLabel={editingItemId ? "Обнови продукт" : "Добави продукт"}>
+              <Ionicons name={editingItemId ? "checkmark-circle" : "add-circle"} size={17} color="#fff" />
+              <Text style={s.addBtnText}>{editingItemId ? 'Обнови' : 'Добави'}</Text>
             </AnimatedPressable>
           </View>
+
+          {editingItemId && (
+            <TouchableOpacity style={s.cancelEditBtn} onPress={cancelEdit}>
+              <Text style={s.cancelEditBtnText}>Отказ от редактиране</Text>
+            </TouchableOpacity>
+          )}
 
           {showNote && (
             <View style={s.noteInputWrap}>
@@ -464,7 +586,7 @@ export default function HomeScreen({ navigation, route }) {
         </View>
 
         {/* Items list */}
-        {items.length > 0 && (
+        {items.length > 0 ? (
           <View style={s.itemsWrap}>
             <Text style={s.itemsLabel}>{items.length} продукта</Text>
             <View style={s.itemsList}>
@@ -476,14 +598,14 @@ export default function HomeScreen({ navigation, route }) {
                       <Text style={{ fontSize: 18 }}>{getCategoryEmoji(item.category)}</Text>
                     </View>
                     <View style={s.itemInfo}>
-                      <View style={s.itemNameRow}>
+                      <TouchableOpacity style={s.itemNameRow} onPress={() => startEdit(item)}>
                         <Text style={s.itemName} numberOfLines={1}>{item.name}</Text>
                         {info && (
                           <Text style={[s.trendBadge, { color: trendColor[info.trend] }]}>
                             {TREND_ICON[info.trend]} {info.trend === 'down' ? 'Намалено' : info.trend === 'up' ? 'Поскъпнало' : ''}
                           </Text>
                         )}
-                      </View>
+                      </TouchableOpacity>
                       {item.note ? <Text style={s.itemNote} numberOfLines={1}>📝 {item.note}</Text> : null}
                       <Text style={s.itemMeta}>{item.price.toFixed(2)} € × {item.quantity}</Text>
                     </View>
@@ -509,6 +631,14 @@ export default function HomeScreen({ navigation, route }) {
                 );
               })}
             </View>
+          </View>
+        ) : (
+          <View style={s.emptyState}>
+            <View style={s.emptyIconWrap}>
+              <Ionicons name="cart-outline" size={48} color={colors.border} />
+            </View>
+            <Text style={s.emptyTitle}>Списъкът е празен</Text>
+            <Text style={s.emptyText}>Добавете продукти, за да започнете вашето пазаруване</Text>
           </View>
         )}
 
@@ -559,8 +689,14 @@ export default function HomeScreen({ navigation, route }) {
           <View style={s.overflowMenu}>
             <OverflowItem icon="calculator-outline" label="Планиране на бюджет"
               onPress={() => { setOverflowVisible(false); navigation.navigate('BudgetSetup'); }} s={s} colors={colors} />
+            <OverflowItem icon="restaurant-outline" label="Идеи за готвене (AI)"
+              onPress={() => { setOverflowVisible(false); navigation.navigate('Meals', { products: items }); }} s={s} colors={colors} />
             <OverflowItem icon={isDark ? 'sunny-outline' : 'moon-outline'} label={isDark ? 'Светла тема' : 'Тъмна тема'}
               onPress={() => { toggleTheme(); }} s={s} colors={colors} />
+            {lastRemovedItem && (
+              <OverflowItem icon="refresh-outline" label="Възстанови последно изтрито"
+                onPress={() => { setOverflowVisible(false); undoRemove(); }} s={s} colors={colors} />
+            )}
             {items.length > 0 && (
               <OverflowItem icon="bookmark-outline" label="Запази като шаблон"
                 onPress={handleSaveTemplate} s={s} colors={colors} />
@@ -779,7 +915,7 @@ function makeStyles(c, isDark, isTablet) {
       flex: 1, flexDirection: 'row', alignItems: 'center', gap: 8,
       backgroundColor: c.cardAlt, borderRadius: 12, paddingHorizontal: 12,
     },
-    addNameInput: { flex: 1, fontSize: 15, color: c.text, paddingVertical: 12 },
+    addNameInput: { flex: 1, fontSize: 16, color: c.text, paddingVertical: 12, fontWeight: '500' },
     cameraBtn: { width: 44, height: 44, borderRadius: 12, backgroundColor: c.primaryLight, justifyContent: 'center', alignItems: 'center' },
     addPriceWrap: {
       flexDirection: 'row', alignItems: 'center', gap: 4,
@@ -795,7 +931,8 @@ function makeStyles(c, isDark, isTablet) {
     trendBadge: { fontSize: 11, fontWeight: '700' },
 
     catRow: { gap: 6, paddingRight: 4 },
-    catChip: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 11, paddingVertical: 10, borderRadius: 20, backgroundColor: c.cardAlt },
+    catChip: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 11, paddingVertical: 10, borderRadius: 20, backgroundColor: c.cardAlt, borderWidth: 1, borderColor: 'transparent' },
+    catChipActive: { borderColor: c.primaryLight, ...sh.sm },
     catLabel: { fontSize: 12, fontWeight: '600', color: c.textTertiary },
 
     addFooter: { flexDirection: 'row', alignItems: 'center', gap: 8 },
@@ -807,7 +944,10 @@ function makeStyles(c, isDark, isTablet) {
     addBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: c.primary, paddingHorizontal: 16, paddingVertical: 10, borderRadius: 12 },
     addBtnText: { color: '#fff', fontWeight: '700', fontSize: 14 },
     noteInputWrap: { flexDirection: 'row', alignItems: 'flex-start', gap: 8, backgroundColor: c.cardAlt, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 8 },
-    noteInput: { flex: 1, fontSize: 13, color: c.text, paddingTop: 0 },
+    noteInput: { flex: 1, fontSize: 14, color: c.text, paddingTop: 0 },
+
+    cancelEditBtn: { alignSelf: 'center', marginTop: -4, marginBottom: 10, padding: 8 },
+    cancelEditBtnText: { color: c.textQuaternary, fontSize: 13, fontWeight: '600', textDecorationLine: 'underline' },
 
     itemsWrap: { marginBottom: 14, gap: 8 },
     itemsLabel: { fontSize: 11, fontWeight: '700', color: c.textTertiary, letterSpacing: 0.8, textTransform: 'uppercase' },
@@ -855,6 +995,11 @@ function makeStyles(c, isDark, isTablet) {
     sheetTitle: { fontSize: 18, fontWeight: '700', color: c.text },
 
     storeAddRow: { flexDirection: 'row', gap: 10 },
+
+    emptyState: { alignItems: 'center', justifyContent: 'center', paddingVertical: 40, opacity: 0.8 },
+    emptyIconWrap: { width: 80, height: 80, borderRadius: 40, backgroundColor: c.card, justifyContent: 'center', alignItems: 'center', marginBottom: 16, ...sh.sm },
+    emptyTitle: { fontSize: 18, fontWeight: '700', color: c.text, marginBottom: 8 },
+    emptyText: { fontSize: 14, color: c.textTertiary, textAlign: 'center', paddingHorizontal: 40, lineHeight: 20 },
     storeAddInput: { flex: 1, backgroundColor: c.cardAlt, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12, fontSize: 15, color: c.text },
     storeAddBtn: { backgroundColor: c.primary, borderRadius: 12, width: 44, height: 44, justifyContent: 'center', alignItems: 'center' },
     storeListRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12, paddingHorizontal: 10, borderRadius: 10 },

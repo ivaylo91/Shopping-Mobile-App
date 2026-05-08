@@ -34,6 +34,14 @@
       "favicon": "./assets/favicon.png",
       "bundler": "metro"
     },
+    "plugins": [
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Позволете на приложението да използва местоположението ви, за да намира близки магазини."
+        }
+      ]
+    ],
     "extra": {
       "eas": {
         "projectId": "1495680b-8d3c-47aa-82fd-bcf17cc78f3c"

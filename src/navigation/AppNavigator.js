@@ -19,6 +19,7 @@ import SpendingInsightsScreen from '../screens/SpendingInsightsScreen';
 import BudgetSetupScreen from '../screens/BudgetSetupScreen';
 import StorePickerScreen from '../screens/StorePickerScreen';
 import AddItemScreen from '../screens/AddItemScreen';
+import MealsScreen from '../screens/MealsScreen';
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -80,6 +81,7 @@ function AppStack() {
       <Stack.Screen name="BudgetSetup" component={BudgetSetupScreen} options={{ headerShown: false }} />
       <Stack.Screen name="StorePicker" component={StorePickerScreen} options={{ headerShown: false }} />
       <Stack.Screen name="AddItemScreen" component={AddItemScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="Meals" component={MealsScreen} options={{ headerShown: false }} />
     </Stack.Navigator>
   );
 }

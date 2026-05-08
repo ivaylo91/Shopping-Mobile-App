@@ -1,5 +1,5 @@
 module.exports = {
-  preset: 'jest-expo/node',
+  preset: 'jest-expo',
   testEnvironment: 'node',
 
   transformIgnorePatterns: [

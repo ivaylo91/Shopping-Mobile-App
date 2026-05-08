@@ -1,8 +1,9 @@
-import { useState, useMemo } from 'react';
-import { View, StyleSheet, TouchableOpacity, TextInput, ScrollView } from 'react-native';
+import { useState, useMemo, useEffect } from 'react';
+import { View, StyleSheet, TouchableOpacity, TextInput, ScrollView, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
+import * as Location from 'expo-location';
 import Text from '../components/Text';
 import FadeInView from '../components/FadeInView';
 import { useTheme } from '../context/ThemeContext';
@@ -22,6 +23,55 @@ export default function StorePickerScreen({ route, navigation }) {
 
   const [search, setSearch] = useState('');
   const [newStoreName, setNewStoreName] = useState('');
+
+  const [nearbyStores, setNearbyStores] = useState([]);
+  const [locationLoading, setLocationLoading] = useState(false);
+  const [locationError, setLocationError] = useState(null);
+  const [hasPermission, setHasPermission] = useState(true);
+
+  const fetchNearby = async () => {
+    setLocationLoading(true);
+    setLocationError(null);
+    try {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        setHasPermission(false);
+        setLocationError('Permission denied');
+        return;
+      }
+      setHasPermission(true);
+      const loc = await Location.getCurrentPositionAsync({});
+      const { latitude: lat, longitude: lon } = loc.coords;
+
+      // Use Overpass API to find supermarkets nearby (radius 2km)
+      const query = `[out:json];node["shop"~"supermarket|convenience|grocery"](around:2000,${lat},${lon});out;`;
+      const url = `https://overpass-api.de/api/interpreter?data=${encodeURIComponent(query)}`;
+
+      const res = await fetch(url);
+      const data = await res.json();
+
+      const uniqueNames = new Set();
+      const shops = data.elements
+        .map(e => e.tags.name)
+        .filter(name => {
+          if (!name || uniqueNames.has(name)) return false;
+          uniqueNames.add(name);
+          return true;
+        })
+        .slice(0, 5);
+
+      setNearbyStores(shops);
+    } catch (err) {
+      console.error(err);
+      setLocationError('Error fetching');
+    } finally {
+      setLocationLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchNearby();
+  }, []);
 
   const s = useMemo(() => makeStyles(colors, isDark, isTablet), [colors, isDark, isTablet]);
 
@@ -97,8 +147,52 @@ export default function StorePickerScreen({ route, navigation }) {
 
       <ScrollView contentContainerStyle={s.content} keyboardShouldPersistTaps="handled">
 
-        {/* Add custom store */}
+        {/* Nearby Stores */}
         <FadeInView delay={0}>
+          <View style={s.sectionHeader}>
+            <Ionicons name="location-outline" size={14} color={colors.textTertiary} />
+            <Text style={[s.sectionTitle, { color: colors.textTertiary }]}>БЛИЗКИ МАГАЗИНИ</Text>
+            {locationLoading && <ActivityIndicator size="small" color={colors.primary} style={{ marginLeft: 4 }} />}
+          </View>
+          <View style={[s.nearbyWrap, { backgroundColor: colors.card }]}>
+            {locationLoading && nearbyStores.length === 0 ? (
+              <View style={s.nearbyPlaceholder}>
+                <Text style={{ color: colors.textQuaternary, fontSize: 13 }}>Търсене на обекти...</Text>
+              </View>
+            ) : locationError ? (
+              <TouchableOpacity style={s.nearbyPlaceholder} onPress={fetchNearby}>
+                <Ionicons name="refresh-outline" size={16} color={colors.textQuaternary} style={{ marginBottom: 4 }} />
+                <Text style={{ color: colors.textQuaternary, fontSize: 13 }}>
+                  {!hasPermission ? 'Разрешете достъп до локация в настройките' : 'Неуспешно зареждане. Опитайте пак.'}
+                </Text>
+              </TouchableOpacity>
+            ) : nearbyStores.length > 0 ? (
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.nearbyScroll}>
+                {nearbyStores.map((st) => (
+                  <TouchableOpacity
+                    key={st}
+                    style={[s.nearbyChip, { backgroundColor: colors.cardAlt }]}
+                    onPress={() => handleSelect(st)}
+                  >
+                    <Ionicons name="navigate-outline" size={14} color={colors.primary} />
+                    <Text style={[s.nearbyChipText, { color: colors.text }]}>{st}</Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            ) : (
+              <View style={s.nearbyPlaceholder}>
+                <Text style={{ color: colors.textQuaternary, fontSize: 13 }}>Няма открити магазини наблизо</Text>
+              </View>
+            )}
+          </View>
+        </FadeInView>
+
+        {/* Add custom store */}
+        <FadeInView delay={60}>
+          <View style={s.sectionHeader}>
+            <Ionicons name="add-circle-outline" size={14} color={colors.textTertiary} />
+            <Text style={[s.sectionTitle, { color: colors.textTertiary }]}>НОВ МАГАЗИН</Text>
+          </View>
           <View style={[s.addCard, { backgroundColor: colors.card }]}>
             <TextInput
               style={[s.addInput, { color: colors.text, backgroundColor: colors.cardAlt }]}
@@ -123,7 +217,11 @@ export default function StorePickerScreen({ route, navigation }) {
         </FadeInView>
 
         {/* Store list */}
-        <FadeInView delay={60}>
+        <FadeInView delay={120}>
+          <View style={s.sectionHeader}>
+            <Ionicons name="list-outline" size={14} color={colors.textTertiary} />
+            <Text style={[s.sectionTitle, { color: colors.textTertiary }]}>ВСИЧКИ МАГАЗИНИ</Text>
+          </View>
           <View style={[s.listCard, { backgroundColor: colors.card }]}>
             {filtered.map((st, i) => {
               const fav = isFavorite(st);
@@ -212,6 +310,15 @@ function makeStyles(c, isDark, isTablet) {
       borderRadius: 12, paddingHorizontal: 12, paddingVertical: 10,
     },
     searchInput: { flex: 1, fontSize: 15, paddingVertical: 0 },
+
+    sectionHeader: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 8, marginTop: 16, paddingHorizontal: 4 },
+    sectionTitle: { fontSize: 11, fontWeight: '700', letterSpacing: 1 },
+
+    nearbyWrap: { borderRadius: 16, overflow: 'hidden', ...sh.sm, marginBottom: 4 },
+    nearbyScroll: { padding: 12, gap: 10 },
+    nearbyChip: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 10, ...sh.sm },
+    nearbyChipText: { fontSize: 14, fontWeight: '600' },
+    nearbyPlaceholder: { padding: 20, alignItems: 'center', justifyContent: 'center' },
 
     content: {
       padding: 16, paddingBottom: 44,
