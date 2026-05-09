@@ -6,7 +6,7 @@ import { CameraView, useCameraPermissions } from 'expo-camera';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useTheme } from '../context/ThemeContext';
-import { CATEGORIES, getCategoryColors } from './HomeScreen';
+import { CATEGORIES, getCategoryColors, guessMappedCategory } from './HomeScreen';
 
 const BARCODE_TYPES = ['ean13', 'ean8', 'upc_a', 'upc_e'];
 const LOOKUP_TIMEOUT_MS = 8_000;
@@ -30,17 +30,6 @@ async function lookupBarcode(barcode, signal) {
   } catch {
     return { name: '', barcode, found: false };
   }
-}
-
-function guessMappedCategory(category = '') {
-  const c = category.toLowerCase();
-  if (c.includes('dairy') || c.includes('milk') || c.includes('cheese')) return 'dairy';
-  if (c.includes('meat') || c.includes('chicken') || c.includes('beef')) return 'meat';
-  if (c.includes('vegetable') || c.includes('veggie')) return 'veggies';
-  if (c.includes('fruit') || c.includes('juice')) return 'fruit';
-  if (c.includes('beverage') || c.includes('drink') || c.includes('water')) return 'drinks';
-  if (c.includes('bread') || c.includes('cereal') || c.includes('pasta')) return 'food';
-  return 'other';
 }
 
 // ─── Bottom Sheet Preview ─────────────────────────────────────────────────────

@@ -1,6 +1,6 @@
 import { render, fireEvent, waitFor } from '@testing-library/react-native';
 import HomeScreen from '../src/screens/HomeScreen';
-import { AuthContext } from '../src/context/AuthContext';
+import { AuthProvider, AuthContext } from '../src/context/AuthContext';
 import { ToastContext } from '../src/context/ToastContext';
 import { ThemeContext } from '../src/context/ThemeContext';
 import { NavigationContainer } from '@react-navigation/native';
@@ -11,9 +11,15 @@ jest.mock('expo-font', () => ({
   isLoaded: jest.fn(() => true),
   loadAsync: jest.fn(),
 }));
+
+// Mock @expo/vector-icons
 jest.mock('@expo/vector-icons', () => ({
   Ionicons: 'Ionicons',
-}));
+}), { virtual: true });
+jest.mock('@react-native-async-storage/async-storage', () =>
+  require('@react-native-async-storage/async-storage/jest/async-storage-mock')
+);
+
 jest.mock('react-native-safe-area-context', () => ({
   SafeAreaView: ({ children }) => children,
 }));

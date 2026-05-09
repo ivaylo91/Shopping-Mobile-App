@@ -5,7 +5,7 @@ import { uid } from '../utils/uid';
 const USERS_KEY = '@auth_users_v1';
 const SESSION_KEY = '@auth_session_v1';
 
-const AuthContext = createContext(null);
+export const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);

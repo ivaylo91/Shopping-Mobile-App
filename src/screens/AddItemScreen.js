@@ -30,9 +30,10 @@ export default function AddItemScreen({ route, navigation }) {
 
   const handleAdd = () => {
     const trimmed = name.trim();
-    const p = parseFloat(price);
+    const priceRaw = price.toString().replace(',', '.');
+    const p = parseFloat(priceRaw);
     if (!trimmed) { showToast('Въведете наименование', 'warning'); return; }
-    if (!p || p <= 0) { showToast('Въведете валидна цена', 'warning'); return; }
+    if (isNaN(p) || p <= 0) { showToast('Въведете валидна цена', 'warning'); return; }
 
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 

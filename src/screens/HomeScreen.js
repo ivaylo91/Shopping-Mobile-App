@@ -64,6 +64,17 @@ export function getCategoryColors(id, isDark) {
 const TREND_ICON = { up: '↑', down: '↓', same: '→', new: '★' };
 const STAR_COLOR = '#FFD700';
 
+export function guessMappedCategory(category = '') {
+  const c = category.toLowerCase();
+  if (c.includes('dairy') || c.includes('milk') || c.includes('cheese')) return 'dairy';
+  if (c.includes('meat') || c.includes('chicken') || c.includes('beef')) return 'meat';
+  if (c.includes('vegetable') || c.includes('veggie')) return 'veggies';
+  if (c.includes('fruit') || c.includes('juice')) return 'fruit';
+  if (c.includes('beverage') || c.includes('drink') || c.includes('water')) return 'drinks';
+  if (c.includes('bread') || c.includes('cereal') || c.includes('pasta')) return 'food';
+  return 'other';
+}
+
 // ─── Screen ───────────────────────────────────────────────────────────────────
 
 export default function HomeScreen({ navigation, route }) {
@@ -123,8 +134,11 @@ export default function HomeScreen({ navigation, route }) {
 
   useEffect(() => {
     if (route.params?.scannedProduct) {
-      const { name, barcode } = route.params.scannedProduct;
-      setItemName(name || barcode);
+      const { name, barcode, category } = route.params.scannedProduct;
+      setItemName(name || barcode || '');
+      if (category) {
+        setItemCategory(guessMappedCategory(category));
+      }
       if (name) setShowSuggestions(false);
       navigation.setParams({ scannedProduct: undefined });
     }
@@ -134,7 +148,10 @@ export default function HomeScreen({ navigation, route }) {
       navigation.setParams({ preloadedItems: undefined, preloadedStore: undefined });
     }
     if (route.params?.addedItem) {
-      setItems((prev) => [route.params.addedItem, ...prev]);
+      const newItem = route.params.addedItem;
+      if (newItem && newItem.id && newItem.name) {
+        setItems((prev) => [newItem, ...prev]);
+      }
       navigation.setParams({ addedItem: undefined });
     }
     if (route.params?.selectedStore) {
@@ -191,9 +208,11 @@ export default function HomeScreen({ navigation, route }) {
 
   const addItem = useCallback(() => {
     const name = itemName.trim();
-    const price = parseFloat(itemPrice);
+    const priceRaw = itemPrice.toString().replace(',', '.');
+    const price = parseFloat(priceRaw);
+    
     if (!name) { showToast('Въведете наименование', 'warning'); return; }
-    if (!price || price <= 0) { showToast('Въведете валидна цена', 'warning'); return; }
+    if (isNaN(price) || price <= 0) { showToast('Въведете валидна цена', 'warning'); return; }
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
     if (editingItemId) {

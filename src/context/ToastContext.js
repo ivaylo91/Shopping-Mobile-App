@@ -6,7 +6,7 @@ import Animated, {
 import Text from '../components/Text';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-const ToastContext = createContext(null);
+export const ToastContext = createContext(null);
 
 const TYPE_STYLES = {
   success: { backgroundColor: '#2ecc71' },

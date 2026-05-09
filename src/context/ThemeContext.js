@@ -2,7 +2,7 @@ import { createContext, useContext, useState, useCallback } from 'react';
 import { useColorScheme } from 'react-native';
 import { LIGHT, DARK, SHADOWS, getShadows } from '../theme';
 
-const ThemeContext = createContext(null);
+export const ThemeContext = createContext(null);
 
 export function ThemeProvider({ children }) {
   const systemScheme = useColorScheme();
