@@ -12,7 +12,7 @@ import { useTheme } from '../context/ThemeContext';
 import { useLayout } from '../hooks/useLayout';
 import { useToast } from '../context/ToastContext';
 import { getShadows } from '../theme';
-import { CATEGORIES, getCategoryColors } from './HomeScreen';
+import { CATEGORIES, getCategoryColors } from '../constants/categories';
 import { uid } from '../utils/uid';
 
 export default function AddItemScreen({ route, navigation }) {

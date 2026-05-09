@@ -6,7 +6,7 @@ import { CameraView, useCameraPermissions } from 'expo-camera';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useTheme } from '../context/ThemeContext';
-import { CATEGORIES, getCategoryColors, guessMappedCategory } from './HomeScreen';
+import { CATEGORIES, getCategoryColors, guessMappedCategory } from '../constants/categories';
 
 const BARCODE_TYPES = ['ean13', 'ean8', 'upc_a', 'upc_e'];
 const LOOKUP_TIMEOUT_MS = 8_000;
@@ -149,7 +149,10 @@ export default function BarcodeScannerScreen({ navigation }) {
 
   const handleAdd = () => {
     if (!scannedResult) return;
-    navigation.navigate('Home', { scannedProduct: scannedResult });
+    navigation.navigate('MainTabs', {
+      screen: 'Home',
+      params: { scannedProduct: scannedResult },
+    });
   };
 
   const handleRescan = () => {

@@ -1,20 +1,19 @@
 import { useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-
-const KEY = '@budget_templates_v1';
+import { STORAGE_KEYS } from '../config/storage';
 
 export function useTemplates() {
   const [templates, setTemplates] = useState([]);
 
   useEffect(() => {
-    AsyncStorage.getItem(KEY).then((raw) => {
+    AsyncStorage.getItem(STORAGE_KEYS.BUDGET_TEMPLATES).then((raw) => {
       if (raw) setTemplates(JSON.parse(raw));
     });
   }, []);
 
   const persist = async (data) => {
     setTemplates(data);
-    await AsyncStorage.setItem(KEY, JSON.stringify(data));
+    await AsyncStorage.setItem(STORAGE_KEYS.BUDGET_TEMPLATES, JSON.stringify(data));
   };
 
   const saveTemplate = async ({ name, store, items }) => {

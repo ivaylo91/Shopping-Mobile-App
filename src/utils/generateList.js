@@ -34,33 +34,41 @@ function filterByStore(products, store) {
  * within budget, prefer variety across categories.
  */
 function buildCheapestList(products, budget) {
+  // Sort once and cache
   const sorted = [...products].sort((a, b) => a.price - b.price);
   const result = [];
   let spent = 0;
   const usedCategories = new Set();
+  const idMap = new Map();
 
   // First pass: one item per category (cheapest)
-  for (const p of sorted) {
+  for (let i = 0; i < sorted.length; i++) {
+    const p = sorted[i];
     if (spent + p.price <= budget && !usedCategories.has(p.category)) {
-      result.push({ ...p, quantity: 1 });
+      const item = { ...p, quantity: 1 };
+      result.push(item);
+      idMap.set(p.id, item);
       spent += p.price;
       usedCategories.add(p.category);
     }
   }
 
   // Second pass: fill remaining budget with cheapest items (add quantity)
-  // Re-uses the already-sorted array — no double sort
-  for (const p of sorted) {
+  for (let i = 0; i < sorted.length; i++) {
+    const p = sorted[i];
     if (!p.price) continue;
     const remaining = budget - spent;
     if (remaining <= 0) break;
-    const existing = result.find((r) => r.id === p.id);
+    
     const extraQty = Math.floor(remaining / p.price);
     if (extraQty > 0) {
+      const existing = idMap.get(p.id);
       if (existing) {
         existing.quantity += extraQty;
       } else {
-        result.push({ ...p, quantity: extraQty });
+        const item = { ...p, quantity: extraQty };
+        result.push(item);
+        idMap.set(p.id, item);
       }
       spent += extraQty * p.price;
     }
@@ -75,44 +83,51 @@ function buildCheapestList(products, budget) {
  * Avoid duplicating categories unless budget allows extras.
  */
 function buildHealthyList(products, budget) {
-  const healthy = products.filter((p) => p.isHealthy);
-  const fallback = products.filter((p) => !p.isHealthy);
+  const healthy = [];
+  const fallback = [];
+  for (let i = 0; i < products.length; i++) {
+    if (products[i].isHealthy) healthy.push(products[i]);
+    else fallback.push(products[i]);
+  }
 
-  // Sort healthy items: low calorie first (value health); cache for second pass
-  const healthySortedByCalories = [...healthy].sort(
-    (a, b) => (a.calories || 999) - (b.calories || 999)
-  );
-  const healthySortedByPrice = [...healthy].filter((p) => p.price > 0).sort((a, b) => a.price - b.price);
+  // Sort healthy items: low calorie first (value health)
+  healthy.sort((a, b) => (a.calories || 999) - (b.calories || 999));
+  fallback.sort((a, b) => a.price - b.price);
 
-  const sorted = [
-    ...healthySortedByCalories,
-    ...fallback.sort((a, b) => a.price - b.price),
-  ];
+  const sorted = [...healthy, ...fallback];
 
   const result = [];
   let spent = 0;
   const usedCategories = new Set();
+  const idMap = new Map();
 
   // One item per category, healthy first
-  for (const p of sorted) {
+  for (let i = 0; i < sorted.length; i++) {
+    const p = sorted[i];
     if (spent + p.price <= budget && !usedCategories.has(p.category)) {
-      result.push({ ...p, quantity: 1 });
+      const item = { ...p, quantity: 1 };
+      result.push(item);
+      idMap.set(p.id, item);
       spent += p.price;
       usedCategories.add(p.category);
     }
   }
 
-  // Fill remaining with healthy extras — reuse cached sorted array (already price > 0 filtered)
-  for (const p of healthySortedByPrice) {
+  // Fill remaining with healthy extras
+  const healthySortedByPrice = healthy.filter((p) => p.price > 0).sort((a, b) => a.price - b.price);
+  for (let i = 0; i < healthySortedByPrice.length; i++) {
+    const p = healthySortedByPrice[i];
     const remaining = budget - spent;
     if (remaining <= 0) break;
-    const existing = result.find((r) => r.id === p.id);
     const extraQty = Math.floor(remaining / p.price);
-    if (extraQty > 0 && p.price <= remaining) {
+    if (extraQty > 0) {
+      const existing = idMap.get(p.id);
       if (existing) {
         existing.quantity += extraQty;
       } else {
-        result.push({ ...p, quantity: extraQty });
+        const item = { ...p, quantity: extraQty };
+        result.push(item);
+        idMap.set(p.id, item);
       }
       spent += extraQty * p.price;
     }
@@ -127,43 +142,52 @@ function buildHealthyList(products, budget) {
  * Fill budget greedily.
  */
 function buildHighProteinList(products, budget) {
-  const proteinProducts = products.filter((p) => (p.protein || 0) >= 5);
-  const others = products.filter((p) => (p.protein || 0) < 5);
+  const proteinProducts = [];
+  const others = [];
+  for (let i = 0; i < products.length; i++) {
+    if ((products[i].protein || 0) >= 5) proteinProducts.push(products[i]);
+    else others.push(products[i]);
+  }
 
-  // Cache sort by protein/price ratio for reuse in second pass (guard zero price)
-  const proteinSortedByRatio = [...proteinProducts]
+  // Cache sort by protein/price ratio (guard zero price)
+  const proteinSortedByRatio = proteinProducts
     .filter((p) => p.price > 0)
     .sort((a, b) => b.protein / b.price - a.protein / a.price);
 
-  const sorted = [
-    ...proteinSortedByRatio,
-    ...others.sort((a, b) => a.price - b.price),
-  ];
+  others.sort((a, b) => a.price - b.price);
+  const sorted = [...proteinSortedByRatio, ...others];
 
   const result = [];
   let spent = 0;
   const usedCategories = new Set();
+  const idMap = new Map();
 
   // One per category first
-  for (const p of sorted) {
+  for (let i = 0; i < sorted.length; i++) {
+    const p = sorted[i];
     if (spent + p.price <= budget && !usedCategories.has(p.category)) {
-      result.push({ ...p, quantity: 1 });
+      const item = { ...p, quantity: 1 };
+      result.push(item);
+      idMap.set(p.id, item);
       spent += p.price;
       usedCategories.add(p.category);
     }
   }
 
-  // Add more high-protein items — reuse cached sorted array (already price > 0 filtered)
-  for (const p of proteinSortedByRatio) {
+  // Add more high-protein items
+  for (let i = 0; i < proteinSortedByRatio.length; i++) {
+    const p = proteinSortedByRatio[i];
     const remaining = budget - spent;
     if (remaining <= 0) break;
     const extraQty = Math.floor(remaining / p.price);
     if (extraQty > 0) {
-      const existing = result.find((r) => r.id === p.id);
+      const existing = idMap.get(p.id);
       if (existing) {
         existing.quantity += extraQty;
       } else {
-        result.push({ ...p, quantity: extraQty });
+        const item = { ...p, quantity: extraQty };
+        result.push(item);
+        idMap.set(p.id, item);
       }
       spent += extraQty * p.price;
     }

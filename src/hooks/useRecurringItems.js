@@ -1,20 +1,19 @@
 import { useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-
-const KEY = '@recurring_items_v1';
+import { STORAGE_KEYS } from '../config/storage';
 
 export function useRecurringItems() {
   const [recurring, setRecurring] = useState([]);
 
   useEffect(() => {
-    AsyncStorage.getItem(KEY).then((raw) => {
+    AsyncStorage.getItem(STORAGE_KEYS.RECURRING_ITEMS).then((raw) => {
       if (raw) setRecurring(JSON.parse(raw));
     });
   }, []);
 
   const persist = async (data) => {
     setRecurring(data);
-    await AsyncStorage.setItem(KEY, JSON.stringify(data));
+    await AsyncStorage.setItem(STORAGE_KEYS.RECURRING_ITEMS, JSON.stringify(data));
   };
 
   const addRecurring = async (item) => {

@@ -10,7 +10,7 @@ jest.mock('expo-haptics', () => ({}));
 jest.mock('react-native-safe-area-context', () => ({}));
 jest.mock('@react-native-async-storage/async-storage', () => ({}));
 
-import { guessMappedCategory } from '../../src/screens/HomeScreen';
+import { guessMappedCategory } from '../../src/constants/categories';
 
 describe('guessMappedCategory', () => {
   it('should guess dairy correctly', () => {

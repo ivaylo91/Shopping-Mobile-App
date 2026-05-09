@@ -1,14 +1,14 @@
 import { useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { STORAGE_KEYS } from '../config/storage';
 
-const KEY = '@custom_stores_v1';
 const DEFAULTS = ['Всички', 'Lidl', 'Kaufland', 'Billa', 'OMV', 'Fantastico'];
 
 export function useCustomStores() {
   const [customs, setCustoms] = useState([]);
 
   useEffect(() => {
-    AsyncStorage.getItem(KEY)
+    AsyncStorage.getItem(STORAGE_KEYS.CUSTOM_STORES)
       .then((raw) => {
         if (raw) setCustoms(JSON.parse(raw));
       })
@@ -22,7 +22,7 @@ export function useCustomStores() {
     if (!trimmed || stores.includes(trimmed)) return false;
     const next = [...customs, trimmed];
     setCustoms(next);
-    await AsyncStorage.setItem(KEY, JSON.stringify(next));
+    await AsyncStorage.setItem(STORAGE_KEYS.CUSTOM_STORES, JSON.stringify(next));
     return true;
   };
 
@@ -30,7 +30,7 @@ export function useCustomStores() {
     if (DEFAULTS.includes(name)) return;
     const next = customs.filter((s) => s !== name);
     setCustoms(next);
-    await AsyncStorage.setItem(KEY, JSON.stringify(next));
+    await AsyncStorage.setItem(STORAGE_KEYS.CUSTOM_STORES, JSON.stringify(next));
   };
 
   return { stores, customs, addStore, removeStore };
