@@ -40,7 +40,7 @@ const STAR_COLOR = '#FFD700';
 // ─── Screen ───────────────────────────────────────────────────────────────────
 
 export default function HomeScreen({ navigation, route }) {
-  const { logout } = useAuth();
+  const { logout, user } = useAuth();
   const { show: showToast } = useToast();
   const { colors, isDark, toggleTheme } = useTheme();
   const { isTablet } = useLayout();
@@ -86,10 +86,10 @@ export default function HomeScreen({ navigation, route }) {
 
   // Sync items to shared list when items change
   useEffect(() => {
-    if (shareCode && items.length >= 0) {
+    if (shareCode && items.length > 0) {
       updateSharedItems(shareCode, items, user);
     }
-  }, [items, shareCode]);
+  }, [items, shareCode, updateSharedItems, user]);
 
   // Sync items FROM shared list into local state (when remote updates arrive)
   useEffect(() => {
@@ -348,13 +348,13 @@ export default function HomeScreen({ navigation, route }) {
     });
   }, [recurring, showToast]);
 
-  const toggleItemRecurring = useCallback((item) => {
+  const toggleItemRecurring = useCallback(async (item) => {
     if (isRecurring(item.name)) {
-      removeRecurring(item.name);
+      await removeRecurring(item.name);
       showToast(`"${item.name}" е премахнат от постоянни`, 'info');
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     } else {
-      addRecurring(item);
+      await addRecurring(item);
       showToast(`"${item.name}" е добавен в постоянни`, 'success');
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     }

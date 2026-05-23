@@ -12,7 +12,7 @@ export function useBudgetLists() {
     try {
       const raw = await AsyncStorage.getItem(STORAGE_KEYS.BUDGET_LISTS);
       setLists(raw ? JSON.parse(raw) : []);
-    } catch {}
+    } catch (e) { console.error('Budget lists load failed:', e); }
     setLoading(false);
   }, []);
 
@@ -61,7 +61,7 @@ export function useBudgetLists() {
           .forEach((k) => delete history[k]);
       }
       await AsyncStorage.setItem(STORAGE_KEYS.PRICE_HISTORY, JSON.stringify(history));
-    } catch {}
+    } catch (e) { console.error('Price history write failed:', e); }
   }, []);
 
   const deleteList = useCallback(async (id) => {

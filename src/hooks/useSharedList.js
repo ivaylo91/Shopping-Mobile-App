@@ -24,7 +24,7 @@ export function useSharedList() {
     const docRef = doc(db, 'sharedLists', code);
     unsubRef.current = onSnapshot(docRef, (snap) => {
       if (snap.exists()) setSharedList({ id: snap.id, ...snap.data() });
-    }, () => {});
+    }, (err) => { setError(err.message); });
   }, []);
 
   const createSharedList = useCallback(async ({ name, budget, store, items }, user) => {
