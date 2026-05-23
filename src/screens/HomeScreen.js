@@ -76,6 +76,13 @@ export default function HomeScreen({ navigation, route }) {
 
   const [nearbySuggest, setNearbySuggest] = useState(null);
 
+  const [catalogVisible, setCatalogVisible] = useState(false);
+  const [catalogQuery, setCatalogQuery] = useState('');
+  const [catalogStoreFilter, setCatalogStoreFilter] = useState('Всички');
+
+  const [compareVisible, setCompareVisible] = useState(false);
+  const [compareQuery, setCompareQuery] = useState('');
+
   // ─── Shared list ──────────────────────────────────────────────────────────────
   const { sharedList, shareCode, loading: shareLoading, error: shareError,
     createSharedList, joinSharedList, updateItems: updateSharedItems, disconnect } = useSharedList();
@@ -191,6 +198,40 @@ export default function HomeScreen({ navigation, route }) {
   }));
 
   const sortedStores = useMemo(() => sortStores(stores), [stores, sortStores]);
+
+  const CATALOG_STORES = useMemo(
+    () => ['Всички', ...new Set(PRODUCT_CATALOG.map((p) => p.store).filter(Boolean))],
+    [],
+  );
+
+  const STORE_COLORS = {
+    Kaufland:   { bg: '#FDECEA', text: '#C0392B' },
+    Metro:      { bg: '#E8EEF8', text: '#1A3A6E' },
+    Fantastico: { bg: '#E8F5EE', text: '#1A7A44' },
+    Lidl:       { bg: '#E8EEF8', text: '#0050AA' },
+    Billa:      { bg: '#FFF3E0', text: '#E65100' },
+  };
+
+  const compareResults = useMemo(() => {
+    const q = compareQuery.trim().toLowerCase();
+    if (q.length < 2) return [];
+    return PRODUCT_CATALOG
+      .filter((p) => p.name.toLowerCase().includes(q))
+      .sort((a, b) => a.price - b.price)
+      .slice(0, 60);
+  }, [compareQuery]);
+
+  const filteredCatalog = useMemo(() => {
+    let results = PRODUCT_CATALOG;
+    if (catalogStoreFilter !== 'Всички') {
+      results = results.filter((p) => p.store === catalogStoreFilter);
+    }
+    if (catalogQuery.trim()) {
+      const q = catalogQuery.toLowerCase();
+      results = results.filter((p) => p.name.toLowerCase().includes(q));
+    }
+    return results.slice(0, 200);
+  }, [catalogQuery, catalogStoreFilter]);
 
   const suggestions = useMemo(() => {
     const map = {};
@@ -316,6 +357,32 @@ export default function HomeScreen({ navigation, route }) {
     setShowSuggestions(false);
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
   }, []);
+
+  const addFromCatalog = useCallback((product) => {
+    const alreadyIn = items.some((i) => i.name.toLowerCase() === product.name.toLowerCase());
+    if (alreadyIn) {
+      showToast(`"${product.name}" вече е в списъка`, 'info');
+      return;
+    }
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    setItems((prev) => [{
+      id: uid(),
+      name: product.name,
+      price: product.price,
+      quantity: 1,
+      subtotal: product.price,
+      category: product.category || 'other',
+      note: '',
+    }, ...prev]);
+    showToast(`Добавено: ${product.name}`, 'success');
+  }, [items, showToast]);
+
+  const openCatalog = useCallback(() => {
+    const knownStores = ['Kaufland', 'Metro', 'Fantastico', 'Lidl', 'Billa'];
+    setCatalogStoreFilter(knownStores.includes(store) ? store : 'Всички');
+    setCatalogQuery('');
+    setCatalogVisible(true);
+  }, [store]);
 
   const addRecurringItem = useCallback((r) => {
     setItems((prev) => {
@@ -570,6 +637,18 @@ export default function HomeScreen({ navigation, route }) {
                 keyboardAppearance={isDark ? 'dark' : 'light'}
                 accessibilityLabel="Цена на продукта" />
             </View>
+          </View>
+
+          {/* Browse / Compare buttons */}
+          <View style={s.catalogBtnRow}>
+            <TouchableOpacity style={s.catalogBtn} onPress={openCatalog} activeOpacity={0.75} accessibilityLabel="Избери от магазин" accessibilityRole="button">
+              <Ionicons name="storefront-outline" size={15} color={colors.primary} />
+              <Text style={s.catalogBtnText}>От магазин</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={s.compareBtn} onPress={() => { setCompareQuery(''); setCompareVisible(true); }} activeOpacity={0.75} accessibilityLabel="Сравни цени" accessibilityRole="button">
+              <Ionicons name="git-compare-outline" size={15} color={colors.orange} />
+              <Text style={s.compareBtnText}>Сравни цени</Text>
+            </TouchableOpacity>
           </View>
 
           {/* Autocomplete */}
@@ -978,6 +1057,198 @@ export default function HomeScreen({ navigation, route }) {
         </View>
       </Modal>
 
+      {/* Store catalog picker */}
+      <Modal visible={catalogVisible} animationType="slide" transparent onRequestClose={() => setCatalogVisible(false)}>
+        <View style={s.sheetBackdrop}>
+          <View style={[s.sheet, s.catalogSheet]}>
+            <View style={s.catalogHeader}>
+              <Text style={s.sheetTitle}>Каталог на магазини</Text>
+              <TouchableOpacity onPress={() => setCatalogVisible(false)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} accessibilityLabel="Затвори" accessibilityRole="button">
+                <Ionicons name="close" size={22} color={colors.textSecondary} />
+              </TouchableOpacity>
+            </View>
+
+            <View style={s.catalogSearch}>
+              <Ionicons name="search-outline" size={16} color={colors.textQuaternary} />
+              <TextInput
+                style={s.catalogSearchInput}
+                placeholder="Търсене на продукт..."
+                placeholderTextColor={colors.textQuaternary}
+                value={catalogQuery}
+                onChangeText={setCatalogQuery}
+                returnKeyType="search"
+                keyboardAppearance={isDark ? 'dark' : 'light'}
+                accessibilityLabel="Търси в каталога"
+              />
+              {catalogQuery.length > 0 && (
+                <TouchableOpacity onPress={() => setCatalogQuery('')} accessibilityLabel="Изчисти" accessibilityRole="button">
+                  <Ionicons name="close-circle" size={16} color={colors.textQuaternary} />
+                </TouchableOpacity>
+              )}
+            </View>
+
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.catalogStoreFilters} keyboardShouldPersistTaps="handled">
+              {CATALOG_STORES.map((st) => (
+                <TouchableOpacity
+                  key={st}
+                  style={[s.catalogStoreChip, catalogStoreFilter === st && s.catalogStoreChipActive]}
+                  onPress={() => { Haptics.selectionAsync(); setCatalogStoreFilter(st); }}
+                  activeOpacity={0.75}
+                  accessibilityRole="radio"
+                  accessibilityState={{ selected: catalogStoreFilter === st }}
+                  accessibilityLabel={st}
+                >
+                  <Text style={[s.catalogStoreChipText, catalogStoreFilter === st && { color: colors.primary }]}>{st}</Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+
+            <FlatList
+              data={filteredCatalog}
+              keyExtractor={(item, idx) => `${item.name}-${item.store}-${idx}`}
+              renderItem={({ item: p }) => {
+                const added = items.some((i) => i.name.toLowerCase() === p.name.toLowerCase());
+                return (
+                  <TouchableOpacity
+                    style={s.catalogRow}
+                    onPress={() => addFromCatalog(p)}
+                    activeOpacity={0.7}
+                    accessibilityLabel={`Добави ${p.name} ${p.price.toFixed(2)} лв от ${p.store}`}
+                    accessibilityRole="button"
+                  >
+                    <View style={[s.catalogIcon, { backgroundColor: getCategoryColors(p.category, isDark).bg }]}>
+                      <Text style={{ fontSize: 16 }}>{getCategoryEmoji(p.category)}</Text>
+                    </View>
+                    <View style={s.catalogInfo}>
+                      <Text style={s.catalogName} numberOfLines={1}>{p.name}</Text>
+                      <View style={s.catalogStoreBadge}>
+                        <Text style={s.catalogStoreBadgeText}>{p.store}</Text>
+                      </View>
+                    </View>
+                    <Text style={[s.catalogPrice, added && { color: colors.textTertiary }]}>{p.price.toFixed(2)} лв</Text>
+                    <View style={[s.catalogAddBtn, added && { backgroundColor: colors.greenLight }]}>
+                      <Ionicons name={added ? 'checkmark' : 'add'} size={18} color={added ? colors.green : '#fff'} />
+                    </View>
+                  </TouchableOpacity>
+                );
+              }}
+              ItemSeparatorComponent={() => <View style={{ height: 1, backgroundColor: colors.borderLight, marginLeft: 52 }} />}
+              style={{ flex: 1 }}
+              showsVerticalScrollIndicator={false}
+              keyboardShouldPersistTaps="handled"
+              ListEmptyComponent={
+                <View style={{ alignItems: 'center', paddingVertical: 40, opacity: 0.5 }}>
+                  <Ionicons name="search-outline" size={32} color={colors.border} />
+                  <Text style={{ color: colors.textTertiary, marginTop: 8, fontSize: 14 }}>Няма намерени продукти</Text>
+                </View>
+              }
+            />
+          </View>
+        </View>
+      </Modal>
+
+      {/* Price comparison modal */}
+      <Modal visible={compareVisible} animationType="slide" transparent onRequestClose={() => setCompareVisible(false)}>
+        <View style={s.sheetBackdrop}>
+          <View style={[s.sheet, s.catalogSheet]}>
+            <View style={s.catalogHeader}>
+              <View>
+                <Text style={s.sheetTitle}>Сравнение на цени</Text>
+                <Text style={s.compareSubtitle}>Намерете най-евтиния продукт</Text>
+              </View>
+              <TouchableOpacity onPress={() => setCompareVisible(false)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} accessibilityLabel="Затвори" accessibilityRole="button">
+                <Ionicons name="close" size={22} color={colors.textSecondary} />
+              </TouchableOpacity>
+            </View>
+
+            <View style={s.catalogSearch}>
+              <Ionicons name="search-outline" size={16} color={colors.textQuaternary} />
+              <TextInput
+                style={s.catalogSearchInput}
+                placeholder="напр. мляко, масло, хляб..."
+                placeholderTextColor={colors.textQuaternary}
+                value={compareQuery}
+                onChangeText={setCompareQuery}
+                autoFocus
+                returnKeyType="search"
+                keyboardAppearance={isDark ? 'dark' : 'light'}
+                accessibilityLabel="Търси продукт за сравнение"
+              />
+              {compareQuery.length > 0 && (
+                <TouchableOpacity onPress={() => setCompareQuery('')} accessibilityLabel="Изчисти" accessibilityRole="button">
+                  <Ionicons name="close-circle" size={16} color={colors.textQuaternary} />
+                </TouchableOpacity>
+              )}
+            </View>
+
+            {compareQuery.length >= 2 && compareResults.length > 0 && (
+              <View style={s.compareSummary}>
+                <Text style={s.compareSummaryText}>
+                  {compareResults.length} резултата · най-евтино: <Text style={s.compareBest}>{compareResults[0].price.toFixed(2)} лв</Text>
+                </Text>
+              </View>
+            )}
+
+            <FlatList
+              data={compareResults}
+              keyExtractor={(item, idx) => `${item.name}-${item.store}-${idx}`}
+              renderItem={({ item: p, index }) => {
+                const added = items.some((i) => i.name.toLowerCase() === p.name.toLowerCase());
+                const isCheapest = index === 0;
+                const storeColor = STORE_COLORS[p.store] ?? { bg: colors.cardAlt, text: colors.textTertiary };
+                return (
+                  <TouchableOpacity
+                    style={[s.compareRow, isCheapest && s.compareRowBest]}
+                    onPress={() => addFromCatalog(p)}
+                    activeOpacity={0.7}
+                    accessibilityLabel={`Добави ${p.name} от ${p.store} за ${p.price.toFixed(2)} лв`}
+                    accessibilityRole="button"
+                  >
+                    {isCheapest && (
+                      <View style={s.compareBestBadge}>
+                        <Text style={s.compareBestBadgeText}>НАЙ-ЕВТИНО</Text>
+                      </View>
+                    )}
+                    <View style={s.compareRowInner}>
+                      <View style={[s.catalogIcon, { backgroundColor: getCategoryColors(p.category, isDark).bg }]}>
+                        <Text style={{ fontSize: 16 }}>{getCategoryEmoji(p.category)}</Text>
+                      </View>
+                      <View style={s.catalogInfo}>
+                        <Text style={s.compareProductName} numberOfLines={2}>{p.name}</Text>
+                        <View style={[s.compareStoreBadge, { backgroundColor: storeColor.bg }]}>
+                          <Text style={[s.compareStoreBadgeText, { color: storeColor.text }]}>{p.store}</Text>
+                        </View>
+                      </View>
+                      <View style={s.comparePriceCol}>
+                        <Text style={[s.comparePrice, isCheapest && s.comparePriceBest]}>{p.price.toFixed(2)} лв</Text>
+                      </View>
+                      <View style={[s.catalogAddBtn, added && { backgroundColor: colors.greenLight }]}>
+                        <Ionicons name={added ? 'checkmark' : 'add'} size={18} color={added ? colors.green : '#fff'} />
+                      </View>
+                    </View>
+                  </TouchableOpacity>
+                );
+              }}
+              ItemSeparatorComponent={() => <View style={{ height: 1, backgroundColor: colors.borderLight, marginLeft: 52 }} />}
+              style={{ flex: 1 }}
+              showsVerticalScrollIndicator={false}
+              keyboardShouldPersistTaps="handled"
+              ListEmptyComponent={
+                <View style={{ alignItems: 'center', paddingVertical: 48, opacity: 0.5 }}>
+                  <Ionicons name="git-compare-outline" size={40} color={colors.border} />
+                  <Text style={{ color: colors.textTertiary, marginTop: 12, fontSize: 15, fontWeight: '600' }}>
+                    {compareQuery.length < 2 ? 'Въведете поне 2 букви' : 'Няма намерени продукти'}
+                  </Text>
+                  <Text style={{ color: colors.textQuaternary, marginTop: 4, fontSize: 13 }}>
+                    {compareQuery.length < 2 ? 'за да сравните цени между магазини' : 'Опитайте с различна дума'}
+                  </Text>
+                </View>
+              }
+            />
+          </View>
+        </View>
+      </Modal>
+
       {/* Join shared list modal */}
       <Modal visible={joinModalVisible} animationType="fade" transparent onRequestClose={() => setJoinModalVisible(false)}>
         <View style={s.sheetBackdrop}>
@@ -1194,5 +1465,90 @@ function makeStyles(c, isDark, isTablet) {
       marginTop: 4,
     },
     shareCodeText: { fontSize: 28, fontWeight: '800', letterSpacing: 6 },
+
+    catalogBtnRow: { flexDirection: 'row', gap: 8 },
+    catalogBtn: {
+      flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7,
+      backgroundColor: c.primaryLight, borderRadius: 12,
+      paddingHorizontal: 14, paddingVertical: 11,
+    },
+    catalogBtnText: { fontSize: 13, fontWeight: '600', color: c.primary },
+    compareBtn: {
+      flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7,
+      backgroundColor: c.orangeLight, borderRadius: 12,
+      paddingHorizontal: 14, paddingVertical: 11,
+    },
+    compareBtnText: { fontSize: 13, fontWeight: '600', color: c.orange },
+
+    catalogSheet: { height: '90%', paddingBottom: 0, gap: 12 },
+    catalogHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+
+    catalogSearch: {
+      flexDirection: 'row', alignItems: 'center', gap: 8,
+      backgroundColor: c.cardAlt, borderRadius: 12,
+      paddingHorizontal: 12, paddingVertical: 10,
+    },
+    catalogSearchInput: { flex: 1, fontSize: 15, color: c.text },
+
+    catalogStoreFilters: { gap: 8, paddingBottom: 4 },
+    catalogStoreChip: {
+      paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20,
+      backgroundColor: c.cardAlt, borderWidth: 1.5, borderColor: 'transparent',
+    },
+    catalogStoreChipActive: { backgroundColor: c.primaryLight, borderColor: c.primary },
+    catalogStoreChipText: { fontSize: 13, fontWeight: '600', color: c.textSecondary },
+
+    catalogRow: {
+      flexDirection: 'row', alignItems: 'center', gap: 10,
+      paddingVertical: 11, paddingHorizontal: 2,
+    },
+    catalogIcon: {
+      width: 36, height: 36, borderRadius: 10,
+      justifyContent: 'center', alignItems: 'center',
+    },
+    catalogInfo: { flex: 1, gap: 3 },
+    catalogName: { fontSize: 14, fontWeight: '600', color: c.text },
+    catalogStoreBadge: {
+      alignSelf: 'flex-start', backgroundColor: c.cardAlt,
+      borderRadius: 6, paddingHorizontal: 6, paddingVertical: 2,
+    },
+    catalogStoreBadgeText: { fontSize: 10, fontWeight: '600', color: c.textTertiary },
+    catalogPrice: { fontSize: 14, fontWeight: '700', color: c.primary, minWidth: 56, textAlign: 'right' },
+    catalogAddBtn: {
+      width: 30, height: 30, borderRadius: 9,
+      backgroundColor: c.primary, justifyContent: 'center', alignItems: 'center',
+    },
+
+    compareSubtitle: { fontSize: 12, color: c.textTertiary, marginTop: 2 },
+    compareSummary: {
+      backgroundColor: c.primaryLight, borderRadius: 10,
+      paddingHorizontal: 12, paddingVertical: 8,
+    },
+    compareSummaryText: { fontSize: 13, color: c.textSecondary, fontWeight: '500' },
+    compareBest: { fontWeight: '800', color: c.green },
+
+    compareRow: {
+      paddingVertical: 4, borderRadius: 12,
+    },
+    compareRowBest: {
+      backgroundColor: isDark ? '#0A2A0C' : '#F0FFF0',
+      marginHorizontal: -2, paddingHorizontal: 2,
+    },
+    compareBestBadge: {
+      alignSelf: 'flex-start', backgroundColor: c.green,
+      borderRadius: 6, paddingHorizontal: 7, paddingVertical: 2,
+      marginBottom: 4, marginLeft: 46,
+    },
+    compareBestBadgeText: { fontSize: 9, fontWeight: '800', color: '#fff', letterSpacing: 0.5 },
+    compareRowInner: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 7 },
+    compareProductName: { fontSize: 13, fontWeight: '600', color: c.text, lineHeight: 18 },
+    compareStoreBadge: {
+      alignSelf: 'flex-start', borderRadius: 6,
+      paddingHorizontal: 7, paddingVertical: 2, marginTop: 3,
+    },
+    compareStoreBadgeText: { fontSize: 10, fontWeight: '700' },
+    comparePriceCol: { alignItems: 'flex-end', minWidth: 60 },
+    comparePrice: { fontSize: 15, fontWeight: '700', color: c.primary },
+    comparePriceBest: { color: c.green, fontSize: 16 },
   });
 }
