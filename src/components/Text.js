@@ -12,8 +12,24 @@ const WEIGHT_FAMILY = {
   '900': 'Figtree_900Black',
 };
 
-export default function Text({ style, maxFontSizeMultiplier = 1.4, ...props }) {
-  const flat = StyleSheet.flatten(style) ?? {};
+// Typescale presets — applied before the explicit style prop so callers can override
+const VARIANTS = {
+  display: { fontSize: 32, fontWeight: '800', letterSpacing: -0.5 },
+  title:   { fontSize: 22, fontWeight: '700', letterSpacing: -0.3 },
+  body:    { fontSize: 15, fontWeight: '400' },
+  caption: { fontSize: 12, fontWeight: '500' },
+  label:   { fontSize: 10, fontWeight: '700', letterSpacing: 0.8, textTransform: 'uppercase' },
+};
+
+export default function Text({ style, variant, maxFontSizeMultiplier = 1.4, ...props }) {
+  const variantStyle = variant ? VARIANTS[variant] : null;
+  const flat = StyleSheet.flatten([variantStyle, style]) ?? {};
   const family = WEIGHT_FAMILY[flat.fontWeight ?? '400'] ?? 'Figtree_400Regular';
-  return <RNText style={[{ fontFamily: family }, style]} maxFontSizeMultiplier={maxFontSizeMultiplier} {...props} />;
+  return (
+    <RNText
+      style={[{ fontFamily: family }, variantStyle, style]}
+      maxFontSizeMultiplier={maxFontSizeMultiplier}
+      {...props}
+    />
+  );
 }

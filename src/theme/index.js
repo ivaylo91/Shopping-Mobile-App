@@ -8,6 +8,11 @@ export const SPACING = {
   xl: 20,
   xxl: 24,
   xxxl: 32,
+  // Semantic layout aliases
+  tight: 6,
+  gutter: 16,
+  content: 20,
+  section: 28,
 };
 
 export const RADIUS = {
@@ -28,6 +33,9 @@ export const FONT = {
   xxl: 18,
   xxxl: 22,
   display: 28,
+  // New
+  label: 10,   // uppercase caps labels
+  jumbo: 36,   // display numbers (totals, KPIs)
 };
 
 export const FONT_FAMILY = {
@@ -104,6 +112,11 @@ const DARK = {
   skeleton: '#263028',
 };
 
+/**
+ * @deprecated Use `useTheme()` from ThemeContext instead.
+ * This is always the light palette regardless of the user's theme preference.
+ * Kept for backward-compat with any scripts that import it directly.
+ */
 export const COLORS = LIGHT;
 
 export { LIGHT, DARK };
@@ -124,19 +137,28 @@ export const SHADOWS = {
     elevation: 3,
   },
   primary: {
-    shadowColor: '#2B7A5C',   // matches new forest-green primary
-    shadowOpacity: 0.28,      // reduced from 0.35 — less "glow", more grounded
+    shadowColor: '#2B7A5C',
+    shadowOpacity: 0.28,
     shadowRadius: 10,
     shadowOffset: { width: 0, height: 5 },
     elevation: 6,
+  },
+  // Subtle green-tinted card depth — use on cards instead of neutral black shadow
+  tinted: {
+    shadowColor: '#2B7A5C',
+    shadowOpacity: 0.12,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 2,
   },
 };
 
 export function getShadows(isDark) {
   if (isDark) return {
-    sm:      { shadowColor: '#000', shadowOpacity: 0.3, shadowRadius: 5, elevation: 2 },
-    md:      { shadowColor: '#000', shadowOpacity: 0.4, shadowRadius: 10, elevation: 4 },
-    primary: { shadowColor: '#4DB88A', shadowOpacity: 0.4, shadowRadius: 10, shadowOffset: { width: 0, height: 5 }, elevation: 8 },
+    sm:      { shadowColor: '#000', shadowOpacity: 0.3,  shadowRadius: 5,  elevation: 2 },
+    md:      { shadowColor: '#000', shadowOpacity: 0.4,  shadowRadius: 10, elevation: 4 },
+    primary: { shadowColor: '#4DB88A', shadowOpacity: 0.4,  shadowRadius: 10, shadowOffset: { width: 0, height: 5 }, elevation: 8 },
+    tinted:  { shadowColor: '#4DB88A', shadowOpacity: 0.15, shadowRadius: 8,  shadowOffset: { width: 0, height: 2 }, elevation: 2 },
   };
   return SHADOWS;
 }
