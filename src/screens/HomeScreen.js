@@ -28,6 +28,7 @@ import { useLayout } from '../hooks/useLayout';
 import {
   CATEGORIES, getCategoryEmoji, getCategoryColors, guessMappedCategory,
 } from '../constants/categories';
+import { PRODUCT_CATALOG } from '../utils/productCatalog';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -160,7 +161,14 @@ export default function HomeScreen({ navigation, route }) {
 
   const filteredSuggestions = useMemo(() => {
     if (!itemName || itemName.length < 1) return [];
-    return suggestions.filter((s) => s.name.toLowerCase().includes(itemName.toLowerCase())).slice(0, 6);
+    const query = itemName.toLowerCase();
+    const templateMatches = suggestions.filter((s) => s.name.toLowerCase().includes(query));
+    if (templateMatches.length >= 6) return templateMatches.slice(0, 6);
+    const templateNames = new Set(templateMatches.map((s) => s.name.toLowerCase()));
+    const catalogMatches = PRODUCT_CATALOG
+      .filter((p) => p.name.toLowerCase().includes(query) && !templateNames.has(p.name.toLowerCase()))
+      .slice(0, 6 - templateMatches.length);
+    return [...templateMatches, ...catalogMatches];
   }, [suggestions, itemName]);
 
   // ─── Item operations ──────────────────────────────────────────────────────────
