@@ -1,12 +1,14 @@
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { StatusBar, ActivityIndicator, View } from 'react-native';
+import { StatusBar, ActivityIndicator, View, AppState } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useEffect, useRef } from 'react';
 
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
 import { useLayout } from '../hooks/useLayout';
+import { requestNotificationPermission } from '../services/geoNotifications';
 
 import LoginScreen from '../screens/LoginScreen';
 import RegisterScreen from '../screens/RegisterScreen';
@@ -99,6 +101,10 @@ function AuthStack() {
 export default function AppNavigator() {
   const { colors, isDark } = useTheme();
   const { user, loading } = useAuth();
+
+  useEffect(() => {
+    requestNotificationPermission();
+  }, []);
 
   if (loading) {
     return (

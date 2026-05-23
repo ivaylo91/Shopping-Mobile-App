@@ -1,7 +1,7 @@
-import { useState, useCallback, useMemo, useEffect } from 'react';
+import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import {
   View, TextInput, TouchableOpacity, StyleSheet,
-  ScrollView, ActivityIndicator, Alert, Modal, FlatList,
+  ScrollView, ActivityIndicator, Alert, Modal, FlatList, AppState, Share,
 } from 'react-native';
 import Animated, {
   useSharedValue, useAnimatedStyle, withTiming, Easing, ReduceMotion,
@@ -29,6 +29,8 @@ import {
   CATEGORIES, getCategoryEmoji, getCategoryColors, guessMappedCategory,
 } from '../constants/categories';
 import { PRODUCT_CATALOG } from '../utils/productCatalog';
+import { useSharedList } from '../hooks/useSharedList';
+import { checkNearbyAndNotify, scheduleShoppingReminder, cancelShoppingReminders } from '../services/geoNotifications';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -73,6 +75,50 @@ export default function HomeScreen({ navigation, route }) {
   const [saveTemplateName, setSaveTemplateName] = useState('');
 
   const [nearbySuggest, setNearbySuggest] = useState(null);
+
+  // ─── Shared list ──────────────────────────────────────────────────────────────
+  const { sharedList, shareCode, loading: shareLoading, error: shareError,
+    createSharedList, joinSharedList, updateItems: updateSharedItems, disconnect } = useSharedList();
+  const [shareModalVisible, setShareModalVisible] = useState(false);
+  const [joinModalVisible, setJoinModalVisible] = useState(false);
+  const [joinCode, setJoinCode] = useState('');
+  const appStateRef = useRef(AppState.currentState);
+
+  // Sync items to shared list when items change
+  useEffect(() => {
+    if (shareCode && items.length >= 0) {
+      updateSharedItems(shareCode, items, user);
+    }
+  }, [items, shareCode]);
+
+  // Sync items FROM shared list into local state (when remote updates arrive)
+  useEffect(() => {
+    if (sharedList && shareCode) {
+      setItems(sharedList.items || []);
+    }
+  }, [sharedList?.updatedAt]);
+
+  // AppState: when app comes to foreground with items → check nearby stores
+  useEffect(() => {
+    const sub = AppState.addEventListener('change', async (nextState) => {
+      if (appStateRef.current.match(/inactive|background/) && nextState === 'active') {
+        if (items.length > 0) {
+          await checkNearbyAndNotify(items);
+        }
+      }
+      appStateRef.current = nextState;
+    });
+    return () => sub.remove();
+  }, [items]);
+
+  // Schedule reminder when items are added to list
+  useEffect(() => {
+    if (items.length > 0) {
+      scheduleShoppingReminder(items, listName);
+    } else {
+      cancelShoppingReminders();
+    }
+  }, [items.length, listName]);
 
   useEffect(() => {
     const checkNearby = async () => {
@@ -367,6 +413,42 @@ export default function HomeScreen({ navigation, route }) {
     const ok = await addStore(newStoreName);
     if (ok) { setNewStoreName(''); showToast('Магазинът е добавен', 'success'); }
     else showToast('Магазинът вече съществува', 'warning');
+  };
+
+  const handleShareList = async () => {
+    if (items.length === 0) { showToast('Добавете продукти преди споделяне', 'warning'); return; }
+    setOverflowVisible(false);
+    try {
+      await createSharedList({ name: listName, budget: budgetNum, store, items }, user);
+      setShareModalVisible(true);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    } catch (e) {
+      showToast(e.message || 'Неуспешно споделяне', 'error');
+    }
+  };
+
+  const handleJoinList = async () => {
+    if (!joinCode.trim()) { showToast('Въведете код', 'warning'); return; }
+    try {
+      const data = await joinSharedList(joinCode, user);
+      setItems((data.items || []).map((i) => ({ ...i })));
+      if (data.store) setStore(data.store);
+      if (data.name) setListName(data.name);
+      if (data.budget) setBudget(String(data.budget));
+      setJoinModalVisible(false);
+      setJoinCode('');
+      setShareModalVisible(true);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      showToast('Присъединен към споделен списък!', 'success');
+    } catch (e) {
+      showToast(e.message || 'Кодът е невалиден', 'error');
+    }
+  };
+
+  const handleDisconnectShared = () => {
+    disconnect();
+    setShareModalVisible(false);
+    showToast('Прекъсна споделянето', 'info');
   };
 
   // ─── Dynamic styles + theme-aware trend colors ───────────────────────────────
@@ -687,6 +769,16 @@ export default function HomeScreen({ navigation, route }) {
               <OverflowItem icon="bookmark-outline" label="Запази като шаблон"
                 onPress={handleSaveTemplate} s={s} colors={colors} />
             )}
+            {items.length > 0 && (
+              <OverflowItem icon="share-social-outline" label="Сподели списъка"
+                onPress={handleShareList} s={s} colors={colors} />
+            )}
+            <OverflowItem icon="enter-outline" label="Присъедини се към списък"
+              onPress={() => { setOverflowVisible(false); setJoinModalVisible(true); }} s={s} colors={colors} />
+            {shareCode && (
+              <OverflowItem icon="wifi-outline" label={`Споделен: ${shareCode}`}
+                onPress={() => { setOverflowVisible(false); setShareModalVisible(true); }} s={s} colors={colors} />
+            )}
             <OverflowItem icon="log-out-outline" label="Изход" danger
               onPress={() => { setOverflowVisible(false); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); logout(); }} s={s} colors={colors} />
           </View>
@@ -836,6 +928,84 @@ export default function HomeScreen({ navigation, route }) {
               </TouchableOpacity>
               <TouchableOpacity style={s.templateConfirmBtn} onPress={confirmSaveTemplate} accessibilityRole="button" accessibilityLabel="Запази шаблона">
                 <Text style={s.templateConfirmText}>Запази</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Share modal */}
+      <Modal visible={shareModalVisible} animationType="fade" transparent onRequestClose={() => setShareModalVisible(false)}>
+        <View style={s.sheetBackdrop}>
+          <View style={[s.sheet, { paddingBottom: 24, alignItems: 'center' }]}>
+            <Ionicons name="share-social" size={40} color={colors.primary} style={{ marginBottom: 8 }} />
+            <Text style={s.sheetTitle}>Споделен списък</Text>
+            {shareLoading && <ActivityIndicator color={colors.primary} style={{ marginVertical: 12 }} />}
+            {shareCode ? (
+              <>
+                <Text style={{ color: colors.textSecondary, fontSize: 14, textAlign: 'center', marginBottom: 12 }}>
+                  Сподели този код с хора, за да редактирате списъка заедно в реално време.
+                </Text>
+                <TouchableOpacity
+                  style={[s.shareCodeBox, { borderColor: colors.primary }]}
+                  onPress={() => Share.share({ message: `Присъедини се към моя списък с код: ${shareCode}` })}
+                  activeOpacity={0.8}
+                  accessibilityLabel="Копирай кода"
+                >
+                  <Text style={[s.shareCodeText, { color: colors.primary }]}>{shareCode}</Text>
+                  <Ionicons name="share-outline" size={18} color={colors.primary} />
+                </TouchableOpacity>
+                <Text style={{ color: colors.textTertiary, fontSize: 12, marginTop: 6 }}>Натисни за споделяне</Text>
+                {sharedList?.members?.length > 0 && (
+                  <View style={{ marginTop: 14, alignSelf: 'stretch' }}>
+                    <Text style={[s.libSectionLabel, { marginBottom: 6 }]}>Участници ({sharedList.members.length})</Text>
+                    {sharedList.members.map((m, i) => (
+                      <Text key={i} style={{ color: colors.textSecondary, fontSize: 14 }}>
+                        {m.id === user?.id ? `${m.name} (ти)` : m.name}
+                      </Text>
+                    ))}
+                  </View>
+                )}
+                <TouchableOpacity style={[s.templateCancelBtn, { marginTop: 16 }]} onPress={handleDisconnectShared}>
+                  <Text style={[s.templateCancelText, { color: colors.red }]}>Прекъсни споделянето</Text>
+                </TouchableOpacity>
+              </>
+            ) : null}
+            <TouchableOpacity style={[s.templateConfirmBtn, { marginTop: 8, alignSelf: 'stretch' }]} onPress={() => setShareModalVisible(false)}>
+              <Text style={s.templateConfirmText}>Затвори</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Join shared list modal */}
+      <Modal visible={joinModalVisible} animationType="fade" transparent onRequestClose={() => setJoinModalVisible(false)}>
+        <View style={s.sheetBackdrop}>
+          <View style={[s.sheet, { paddingBottom: 24 }]}>
+            <Text style={s.sheetTitle}>Присъедини се</Text>
+            <Text style={{ color: colors.textSecondary, fontSize: 14, marginBottom: 12 }}>
+              Въведи кода, с който някой е споделил списъка си.
+            </Text>
+            <TextInput
+              style={[s.templateNameInput, { letterSpacing: 4, textAlign: 'center', fontWeight: '700', fontSize: 20 }]}
+              placeholder="ABC123"
+              placeholderTextColor={colors.textQuaternary}
+              value={joinCode}
+              onChangeText={(v) => setJoinCode(v.toUpperCase())}
+              autoCapitalize="characters"
+              maxLength={6}
+              returnKeyType="done"
+              onSubmitEditing={handleJoinList}
+              keyboardAppearance={isDark ? 'dark' : 'light'}
+              accessibilityLabel="Код за присъединяване"
+            />
+            {shareError ? <Text style={{ color: colors.red, fontSize: 13, marginTop: 4 }}>{shareError}</Text> : null}
+            <View style={s.templateModalBtns}>
+              <TouchableOpacity style={s.templateCancelBtn} onPress={() => { setJoinModalVisible(false); setJoinCode(''); }}>
+                <Text style={s.templateCancelText}>Отказ</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={[s.templateConfirmBtn, shareLoading && { opacity: 0.6 }]} onPress={handleJoinList} disabled={shareLoading}>
+                {shareLoading ? <ActivityIndicator color="#fff" size="small" /> : <Text style={s.templateConfirmText}>Присъедини се</Text>}
               </TouchableOpacity>
             </View>
           </View>
@@ -1018,5 +1188,11 @@ function makeStyles(c, isDark, isTablet) {
     templateCancelText: { fontSize: 15, fontWeight: '700', color: c.textSecondary },
     templateConfirmBtn: { flex: 1, backgroundColor: c.primary, borderRadius: 12, paddingVertical: 14, alignItems: 'center' },
     templateConfirmText: { fontSize: 15, fontWeight: '700', color: '#fff' },
+    shareCodeBox: {
+      flexDirection: 'row', alignItems: 'center', gap: 10,
+      borderWidth: 2, borderRadius: 16, paddingHorizontal: 24, paddingVertical: 16,
+      marginTop: 4,
+    },
+    shareCodeText: { fontSize: 28, fontWeight: '800', letterSpacing: 6 },
   });
 }

@@ -1,6 +1,6 @@
 import {
   View, StyleSheet, TouchableOpacity,
-  Alert, ActivityIndicator, RefreshControl, ScrollView,
+  Alert, ActivityIndicator, RefreshControl, ScrollView, Modal, TextInput,
 } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
 import Text from '../components/Text';
@@ -13,6 +13,8 @@ import { useTemplates } from '../hooks/useTemplates';
 import { useToast } from '../context/ToastContext';
 import { useTheme } from '../context/ThemeContext';
 import { useLayout } from '../hooks/useLayout';
+import { useAuth } from '../context/AuthContext';
+import { useSharedList } from '../hooks/useSharedList';
 import { getCategoryEmoji, getCategoryColors } from './HomeScreen';
 import { OrderCardSkeleton } from '../components/Skeleton';
 
@@ -217,9 +219,13 @@ export default function SavedListsScreen({ navigation }) {
   const { show: showToast } = useToast();
   const { colors, isDark } = useTheme();
   const { isTablet } = useLayout();
+  const { user } = useAuth();
+  const { loading: shareLoading, error: shareError, joinSharedList } = useSharedList();
   const [deleting, setDeleting] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
   const [storeFilter, setStoreFilter] = useState('Всички');
+  const [joinModalVisible, setJoinModalVisible] = useState(false);
+  const [joinCode, setJoinCode] = useState('');
 
   const s = useMemo(() => makeStyles(colors, isDark), [colors, isDark]);
   const numColumns = isTablet ? 2 : 1;
@@ -290,6 +296,25 @@ export default function SavedListsScreen({ navigation }) {
     ]);
   }, [saveTemplate, showToast]);
 
+  const handleJoinList = useCallback(async () => {
+    if (!joinCode.trim()) { showToast('Въведете код', 'warning'); return; }
+    try {
+      const data = await joinSharedList(joinCode, user);
+      setJoinModalVisible(false);
+      setJoinCode('');
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      navigation.navigate('Home', {
+        preloadedItems: data.items || [],
+        preloadedStore: data.store,
+        prefillBudget: data.budget ? String(data.budget) : undefined,
+        prefillListName: data.name,
+      });
+      showToast('Присъединен към споделен списък!', 'success');
+    } catch (e) {
+      showToast(e.message || 'Кодът е невалиден', 'error');
+    }
+  }, [joinCode, joinSharedList, user, navigation, showToast]);
+
   const renderItem = useCallback(({ item }) => (
     <View style={isTablet && s.tabletCardWrap}>
       <BudgetCard
@@ -326,10 +351,15 @@ export default function SavedListsScreen({ navigation }) {
               {lists.length > 0 ? `${lists.length} запазени` : 'Все още нямате списъци'}
             </Text>
           </View>
-          <TouchableOpacity style={s.newBtn} onPress={() => navigation.navigate('Home')} activeOpacity={0.85} accessibilityLabel="Нов списък" accessibilityRole="button">
-            <Ionicons name="add" size={18} color="#fff" />
-            <Text style={s.newBtnText}>Нов</Text>
-          </TouchableOpacity>
+          <View style={{ flexDirection: 'row', gap: 8 }}>
+            <TouchableOpacity style={[s.newBtn, { backgroundColor: colors.cardAlt }]} onPress={() => setJoinModalVisible(true)} activeOpacity={0.85} accessibilityLabel="Присъедини се към списък" accessibilityRole="button">
+              <Ionicons name="enter-outline" size={18} color={colors.primary} />
+            </TouchableOpacity>
+            <TouchableOpacity style={s.newBtn} onPress={() => navigation.navigate('Home')} activeOpacity={0.85} accessibilityLabel="Нов списък" accessibilityRole="button">
+              <Ionicons name="add" size={18} color="#fff" />
+              <Text style={s.newBtnText}>Нов</Text>
+            </TouchableOpacity>
+          </View>
         </View>
 
         {storeOptions.length > 1 && (
@@ -384,6 +414,48 @@ export default function SavedListsScreen({ navigation }) {
           }
         />
       )}
+
+      {/* Join shared list modal */}
+      <Modal visible={joinModalVisible} animationType="fade" transparent onRequestClose={() => setJoinModalVisible(false)}>
+        <View style={s.modalBackdrop}>
+          <View style={[s.modalSheet, { backgroundColor: colors.card }]}>
+            <View style={s.modalIconRow}>
+              <View style={[s.modalIconWrap, { backgroundColor: colors.primaryLight }]}>
+                <Ionicons name="share-social" size={22} color={colors.primary} />
+              </View>
+            </View>
+            <Text style={[s.modalTitle, { color: colors.text }]}>Присъедини се към списък</Text>
+            <Text style={[s.modalDesc, { color: colors.textSecondary }]}>
+              Въведи кода от споделен списък, за да пазарувате заедно в реално време.
+            </Text>
+            <TextInput
+              style={[s.codeInput, { backgroundColor: colors.cardAlt, color: colors.text, borderColor: colors.border }]}
+              placeholder="ABC123"
+              placeholderTextColor={colors.textQuaternary}
+              value={joinCode}
+              onChangeText={(v) => setJoinCode(v.toUpperCase())}
+              autoCapitalize="characters"
+              maxLength={6}
+              returnKeyType="done"
+              onSubmitEditing={handleJoinList}
+              keyboardAppearance={isDark ? 'dark' : 'light'}
+              autoFocus
+              accessibilityLabel="Код за присъединяване"
+            />
+            {shareError ? <Text style={[s.errorText, { color: colors.red }]}>{shareError}</Text> : null}
+            <View style={s.modalBtns}>
+              <TouchableOpacity style={[s.modalBtn, { backgroundColor: colors.cardAlt }]} onPress={() => { setJoinModalVisible(false); setJoinCode(''); }}>
+                <Text style={[s.modalBtnText, { color: colors.textSecondary }]}>Отказ</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={[s.modalBtn, { backgroundColor: colors.primary, opacity: shareLoading ? 0.6 : 1 }]} onPress={handleJoinList} disabled={shareLoading}>
+                {shareLoading
+                  ? <ActivityIndicator color="#fff" size="small" />
+                  : <Text style={[s.modalBtnText, { color: '#fff' }]}>Присъедини се</Text>}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -420,5 +492,20 @@ function makeStyles(c, isDark) {
       shadowColor: c.primary, shadowOpacity: 0.28, shadowRadius: 10, elevation: 5,
     },
     emptyBtnText: { color: '#fff', fontWeight: '700', fontSize: 15 },
+
+    modalBackdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center', padding: 24 },
+    modalSheet: { width: '100%', borderRadius: 20, padding: 24, gap: 12 },
+    modalIconRow: { alignItems: 'center', marginBottom: 4 },
+    modalIconWrap: { width: 52, height: 52, borderRadius: 16, justifyContent: 'center', alignItems: 'center' },
+    modalTitle: { fontSize: 20, fontWeight: '700', textAlign: 'center' },
+    modalDesc: { fontSize: 14, textAlign: 'center', lineHeight: 20 },
+    codeInput: {
+      borderWidth: 1.5, borderRadius: 14, paddingHorizontal: 16, paddingVertical: 16,
+      fontSize: 24, fontWeight: '800', textAlign: 'center', letterSpacing: 6, marginTop: 4,
+    },
+    errorText: { fontSize: 13, textAlign: 'center' },
+    modalBtns: { flexDirection: 'row', gap: 10, marginTop: 4 },
+    modalBtn: { flex: 1, borderRadius: 12, paddingVertical: 14, alignItems: 'center', justifyContent: 'center' },
+    modalBtnText: { fontSize: 15, fontWeight: '700' },
   });
 }
