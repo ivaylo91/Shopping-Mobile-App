@@ -54,15 +54,15 @@ const LIGHT = {
   primary: '#2B7A5C',         // warm forest green — grounded, nourishing, calm
   primaryLight: '#EAF5EF',    // light mint tint
   primaryMuted: '#78B096',    // muted green for secondary elements
-  bg: '#F5F7F5',              // subtly green-tinted (cohesion with primary hue)
-  card: '#FFFFFF',
-  cardAlt: '#EFF4F0',         // subtle green tint (was #F7F8FC)
-  text: '#1A1A2E',
-  textSecondary: '#555566',
-  textTertiary: '#6D6D6D',    // WCAG AA fixed: ~5.5:1 on white (was #999 at 2.6:1)
-  textQuaternary: '#767676',  // WCAG AA fixed: ~4.54:1 on white (was #bbb at 1.8:1)
-  border: '#DDE4DE',          // green-tinted border
-  borderLight: '#EBF0EC',     // green-tinted divider
+  bg: '#F7F0E8',              // warm cream canvas — matches Cozy design tone
+  card: '#FFFAF2',            // cream white card surface
+  cardAlt: '#F0E7D8',         // warm tan secondary surface
+  text: '#2B1D12',            // warm dark ink (vs cool #1A1A2E)
+  textSecondary: '#5C4A3A',   // warm secondary ink
+  textTertiary: '#6D6258',    // WCAG AA: ~5.1:1 on cream card
+  textQuaternary: '#8A7868',  // WCAG AA: ~4.5:1 on cream card
+  border: '#DDD4C0',          // warm-tinted border
+  borderLight: '#E8DFD0',     // warm-tinted divider
   green: '#2ecc71',
   greenLight: '#E8FBF0',
   red: '#e74c3c',

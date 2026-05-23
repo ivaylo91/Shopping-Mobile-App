@@ -221,6 +221,18 @@ export default function HomeScreen({ navigation, route }) {
       .slice(0, 60);
   }, [compareQuery]);
 
+  // Per-store summary for compare modal (CozyCompare store totals strip)
+  const compareByStore = useMemo(() => {
+    if (compareResults.length < 2) return [];
+    const byStore = {};
+    compareResults.forEach((p) => {
+      if (!byStore[p.store]) byStore[p.store] = { store: p.store, minPrice: Infinity, count: 0 };
+      if (p.price < byStore[p.store].minPrice) byStore[p.store].minPrice = p.price;
+      byStore[p.store].count++;
+    });
+    return Object.values(byStore).sort((a, b) => a.minPrice - b.minPrice);
+  }, [compareResults]);
+
   const filteredCatalog = useMemo(() => {
     let results = PRODUCT_CATALOG;
     if (catalogStoreFilter !== 'Всички') {
@@ -789,26 +801,76 @@ export default function HomeScreen({ navigation, route }) {
           </View>
         )}
 
-        {/* Budget summary — the single progress surface */}
-        {items.length > 0 && (
+        {/* Budget summary — CozyHome-style dashboard card */}
+        {items.length > 0 && budgetNum > 0 && (
           <FadeInView duration={300} style={[s.summaryCard, overBudget && s.summaryCardOver]}>
-            <View style={s.summaryTop}>
-              <Text style={s.summaryTotal}>{total.toFixed(2)} €</Text>
-              <Text style={s.summaryOf}>от {budgetNum.toFixed(2)} €</Text>
+            {/* Header: label + status badge */}
+            <View style={s.summaryHeader}>
+              <Text style={s.summaryLabel}>БЮДЖЕТ ЗА ПАЗАРУВАНЕ</Text>
+              <View style={[s.summaryBadge, overBudget ? s.summaryBadgeOver : s.summaryBadgeOk]}>
+                <Text style={[s.summaryBadgeText, { color: overBudget ? colors.red : colors.primary }]}>
+                  {overBudget ? 'НАД БЮДЖЕТА' : 'ВСЕ ОЩЕ ОК'}
+                </Text>
+              </View>
             </View>
+
+            {/* Jumbo remaining amount */}
+            <View style={s.summaryMain}>
+              <Text style={[s.summaryJumbo, { color: overBudget ? colors.red : colors.text }]}>
+                {Math.abs(remaining).toFixed(2)}
+              </Text>
+              <Text style={s.summarySuffix}>
+                лв. {overBudget ? 'над' : 'остават'}
+              </Text>
+            </View>
+
+            {/* Animated progress bar */}
             <View
-              style={[s.summaryBarTrack, { backgroundColor: colors.borderLight }]}
+              style={s.summaryBarTrack}
               onLayout={e => { barTrackWidth.value = e.nativeEvent.layout.width; }}
             >
               <Animated.View style={[
                 s.summaryBarFill,
-                { backgroundColor: overBudget ? colors.red : total / Math.max(budgetNum, 1) > 0.8 ? colors.orange : colors.green },
+                { backgroundColor: overBudget ? colors.red : total / Math.max(budgetNum, 1) > 0.8 ? colors.orange : colors.primary },
                 barAnimStyle,
               ]} />
             </View>
-            <Text style={[s.summaryDelta, { color: overBudget ? colors.red : colors.green }]}>
-              {overBudget ? `Над бюджета с ${Math.abs(remaining).toFixed(2)} €` : `Остават ${remaining.toFixed(2)} €`}
-            </Text>
+
+            {/* Footer: spent ↔ budget */}
+            <View style={s.summaryFooter}>
+              <Text style={s.summaryFooterText}>{total.toFixed(2)} лв. изхарчени</Text>
+              <Text style={s.summaryFooterText}>{budgetNum.toFixed(2)} лв. бюджет</Text>
+            </View>
+          </FadeInView>
+        )}
+
+        {/* Quick stats row — items count */}
+        {items.length > 0 && budgetNum > 0 && (
+          <View style={s.statsRow}>
+            <View style={s.statCard}>
+              <View style={s.statCardTop}>
+                <Ionicons name="bag-outline" size={15} color={colors.textTertiary} />
+                <Text style={s.statLabel}>Продукти</Text>
+              </View>
+              <Text style={s.statValue}>{items.length}</Text>
+              <Text style={s.statSub}>{items.length === 1 ? '1 добавен' : `${items.length} добавени`}</Text>
+            </View>
+            <View style={s.statCard}>
+              <View style={s.statCardTop}>
+                <Ionicons name="wallet-outline" size={15} color={colors.textTertiary} />
+                <Text style={s.statLabel}>Ср. на продукт</Text>
+              </View>
+              <Text style={s.statValue}>{(total / items.length).toFixed(2)}</Text>
+              <Text style={s.statSub}>лв. средно</Text>
+            </View>
+          </View>
+        )}
+
+        {/* Minimal total line when no budget set */}
+        {items.length > 0 && budgetNum === 0 && (
+          <FadeInView duration={300} style={s.summaryCardNoBudget}>
+            <Text style={s.summaryNoBudgetTotal}>{total.toFixed(2)} лв.</Text>
+            <Text style={s.summaryNoBudgetLabel}>общо в списъка</Text>
           </FadeInView>
         )}
 
@@ -1181,6 +1243,40 @@ export default function HomeScreen({ navigation, route }) {
               )}
             </View>
 
+            {/* CozyCompare-style store totals strip */}
+            {compareByStore.length > 0 && (
+              <View style={s.compareStoreStrip}>
+                {compareByStore.map((st, idx) => {
+                  const isCheapest = idx === 0;
+                  const storeColor = STORE_COLORS[st.store] ?? { bg: colors.cardAlt, text: colors.textTertiary };
+                  return (
+                    <View
+                      key={st.store}
+                      style={[
+                        s.compareStoreCard,
+                        { borderColor: isCheapest ? colors.green : colors.borderLight },
+                        isCheapest && s.compareStoreCardBest,
+                      ]}
+                    >
+                      {isCheapest && (
+                        <View style={s.compareBestStoreTag}>
+                          <Text style={s.compareBestStoreTagText}>НАЙ-ЕВТИНО</Text>
+                        </View>
+                      )}
+                      <View style={[s.compareStoreChip, { backgroundColor: storeColor.bg }]}>
+                        <Text style={[s.compareStoreChipText, { color: storeColor.text }]} numberOfLines={1}>{st.store}</Text>
+                      </View>
+                      <Text style={[s.compareStoreMin, { color: isCheapest ? colors.green : colors.text }]}>
+                        {st.minPrice.toFixed(2)}
+                      </Text>
+                      <Text style={s.compareStoreMinLabel}>лв. от</Text>
+                      <Text style={s.compareStoreCount}>{st.count} продукта</Text>
+                    </View>
+                  );
+                })}
+              </View>
+            )}
+
             {compareQuery.length >= 2 && compareResults.length > 0 && (
               <View style={s.compareSummary}>
                 <Text style={s.compareSummaryText}>
@@ -1393,16 +1489,32 @@ function makeStyles(c, isDark, isTablet) {
     itemQtyNum: { fontSize: 13, fontWeight: '500', color: c.textSecondary, minWidth: 16, textAlign: 'center' },
 
     summaryCard: {
-      backgroundColor: c.card, borderRadius: 16, padding: 16, marginBottom: 14, gap: 10,
-      ...sh.sm,
+      backgroundColor: c.card, borderRadius: 20, padding: 20, marginBottom: 12,
+      ...sh.tinted,
     },
     summaryCardOver: { backgroundColor: c.redLight },
-    summaryTop: { flexDirection: 'row', alignItems: 'baseline', gap: 8 },
-    summaryTotal: { fontSize: 26, fontWeight: '700', color: c.text, letterSpacing: -0.5 },
-    summaryOf: { fontSize: 14, color: c.textTertiary, fontWeight: '600' },
-    summaryBarTrack: { height: 6, borderRadius: 3, overflow: 'hidden' },
-    summaryBarFill: { height: 6, width: '100%', borderRadius: 3 },
-    summaryDelta: { fontSize: 13, fontWeight: '700' },
+    summaryHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
+    summaryLabel: { fontSize: 10, fontWeight: '700', color: c.textTertiary, letterSpacing: 0.8, textTransform: 'uppercase' },
+    summaryBadge: { borderRadius: 999, paddingHorizontal: 10, paddingVertical: 4 },
+    summaryBadgeOk: { backgroundColor: c.primaryLight },
+    summaryBadgeOver: { backgroundColor: c.redLight },
+    summaryBadgeText: { fontSize: 10, fontWeight: '700', letterSpacing: 0.5 },
+    summaryMain: { flexDirection: 'row', alignItems: 'baseline', gap: 6, marginBottom: 14 },
+    summaryJumbo: { fontSize: 38, fontWeight: '700', letterSpacing: -0.5, lineHeight: 44 },
+    summarySuffix: { fontSize: 15, fontWeight: '500', color: c.textSecondary, alignSelf: 'flex-end', marginBottom: 4 },
+    summaryBarTrack: { height: 8, borderRadius: 999, overflow: 'hidden', backgroundColor: c.cardAlt, marginBottom: 10 },
+    summaryBarFill: { height: 8, width: '100%', borderRadius: 999 },
+    summaryFooter: { flexDirection: 'row', justifyContent: 'space-between' },
+    summaryFooterText: { fontSize: 12, color: c.textTertiary, fontWeight: '500' },
+    statsRow: { flexDirection: 'row', gap: 10, marginBottom: 12 },
+    statCard: { flex: 1, backgroundColor: c.card, borderRadius: 16, padding: 14, ...sh.sm },
+    statCardTop: { flexDirection: 'row', alignItems: 'center', gap: 5, marginBottom: 6 },
+    statLabel: { fontSize: 11, fontWeight: '600', color: c.textTertiary },
+    statValue: { fontSize: 22, fontWeight: '700', color: c.text, letterSpacing: -0.3 },
+    statSub: { fontSize: 11, color: c.textQuaternary, marginTop: 2 },
+    summaryCardNoBudget: { backgroundColor: c.card, borderRadius: 16, padding: 16, marginBottom: 12, flexDirection: 'row', alignItems: 'baseline', gap: 8, ...sh.sm },
+    summaryNoBudgetTotal: { fontSize: 26, fontWeight: '700', color: c.text, letterSpacing: -0.5 },
+    summaryNoBudgetLabel: { fontSize: 14, color: c.textTertiary, fontWeight: '500' },
 
     primaryCta: {
       flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
@@ -1520,6 +1632,24 @@ function makeStyles(c, isDark, isTablet) {
     },
 
     compareSubtitle: { fontSize: 12, color: c.textTertiary, marginTop: 2 },
+
+    // CozyCompare store totals strip
+    compareStoreStrip: { flexDirection: 'row', gap: 8 },
+    compareStoreCard: {
+      flex: 1, backgroundColor: c.card, borderRadius: 14, padding: 10,
+      borderWidth: 1.5, alignItems: 'center', gap: 3,
+    },
+    compareStoreCardBest: { backgroundColor: isDark ? '#0A2A0C' : '#F0FFF2' },
+    compareBestStoreTag: {
+      backgroundColor: c.green, borderRadius: 6, paddingHorizontal: 6, paddingVertical: 2, marginBottom: 2,
+    },
+    compareBestStoreTagText: { fontSize: 8, fontWeight: '800', color: '#fff', letterSpacing: 0.5 },
+    compareStoreChip: { borderRadius: 6, paddingHorizontal: 6, paddingVertical: 2 },
+    compareStoreChipText: { fontSize: 10, fontWeight: '700' },
+    compareStoreMin: { fontSize: 18, fontWeight: '700', letterSpacing: -0.3, marginTop: 2 },
+    compareStoreMinLabel: { fontSize: 10, color: c.textQuaternary, fontWeight: '500' },
+    compareStoreCount: { fontSize: 10, color: c.textTertiary, fontWeight: '500' },
+
     compareSummary: {
       backgroundColor: c.primaryLight, borderRadius: 10,
       paddingHorizontal: 12, paddingVertical: 8,

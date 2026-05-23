@@ -1,6 +1,6 @@
 import {
   View, StyleSheet, TouchableOpacity,
-  ActivityIndicator, Share,
+  ActivityIndicator, Share, ScrollView,
 } from 'react-native';
 import Animated, {
   useSharedValue, useAnimatedStyle, withTiming, withSequence, Easing, ReduceMotion,
@@ -100,44 +100,61 @@ const ShoppingItem = memo(function ShoppingItem({ item, checked, onToggle, color
   }));
   return (
     <AnimatedTouchableOpacity
-      style={[iS.item, { backgroundColor: colors.card }, animStyle]}
+      style={[
+        iS.item,
+        { backgroundColor: checked ? colors.cardAlt : colors.card },
+        animStyle,
+      ]}
       onPress={() => onToggle(item.id)}
       activeOpacity={0.85}
       accessibilityRole="checkbox"
       accessibilityState={{ checked }}
       accessibilityLabel={item.name}
     >
-      <View>
-        {checked
-          ? <Ionicons name="checkmark-circle" size={24} color={colors.primary} />
-          : <Ionicons name="ellipse-outline" size={24} color={colors.border} />}
+      {/* CozyList circle checkbox */}
+      <View style={[
+        iS.checkCircle,
+        checked
+          ? [iS.checkCircleChecked, { backgroundColor: colors.primary }]
+          : [iS.checkCircleUnchecked, { borderColor: colors.border }],
+      ]}>
+        {checked && <Ionicons name="checkmark" size={14} color="#fff" />}
       </View>
+
       <View style={[iS.iconWrap, { backgroundColor: catColors.bg }]}>
-        <Text style={{ fontSize: 18 }}>{getCategoryEmoji(item.category)}</Text>
+        <Text style={{ fontSize: 20 }}>{getCategoryEmoji(item.category)}</Text>
       </View>
       <View style={iS.body}>
         <Text style={[iS.name, { color: colors.text }, checked && iS.nameChecked]} numberOfLines={1}>
           {item.name}
         </Text>
         {item.note ? <Text style={[iS.note, { color: colors.textTertiary }]} numberOfLines={1}>📝 {item.note}</Text> : null}
-        <Text style={[iS.meta, { color: colors.textQuaternary }]}>{item.price.toFixed(2)} € × {item.quantity}</Text>
+        <Text style={[iS.meta, { color: colors.textQuaternary }]}>{item.price.toFixed(2)} лв × {item.quantity}</Text>
       </View>
-      <Text style={[iS.price, { color: colors.primary }, checked && { color: colors.border }]}>
-        {item.subtotal.toFixed(2)} €
-      </Text>
+      <View style={iS.priceCol}>
+        <Text style={[iS.price, { color: checked ? colors.textQuaternary : colors.primary }]}>
+          {item.subtotal.toFixed(2)} лв
+        </Text>
+      </View>
     </AnimatedTouchableOpacity>
   );
 });
 
 const iS = StyleSheet.create({
-  item: { borderRadius: 14, padding: 14, marginBottom: 10, flexDirection: 'row', alignItems: 'center', gap: 10, shadowColor: '#000', shadowOpacity: 0.04, shadowRadius: 5, elevation: 1 },
-  iconWrap: { width: 36, height: 36, borderRadius: 10, justifyContent: 'center', alignItems: 'center' },
+  item: { borderRadius: 16, padding: 14, marginBottom: 8, flexDirection: 'row', alignItems: 'center', gap: 12, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 6, elevation: 1 },
+  // CozyList-style circle checkbox: accent-filled when checked, outline when not
+  checkCircle: { width: 26, height: 26, borderRadius: 13, flexShrink: 0, justifyContent: 'center', alignItems: 'center' },
+  checkCircleChecked: { /* background set inline via colors.primary */ },
+  checkCircleUnchecked: { borderWidth: 1.5, /* borderColor set inline */ },
+  iconWrap: { width: 44, height: 44, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
   body: { flex: 1 },
   name: { fontSize: 14, fontWeight: '700', marginBottom: 1 },
   nameChecked: { textDecorationLine: 'line-through' },
   note: { fontSize: 11, marginBottom: 2 },
   meta: { fontSize: 12 },
-  price: { fontSize: 15, fontWeight: '600' },
+  priceCol: { alignItems: 'flex-end' },
+  price: { fontSize: 14, fontWeight: '700' },
+  priceStore: { fontSize: 10, fontWeight: '600', marginTop: 2 },
 });
 
 // ─── Screen ───────────────────────────────────────────────────────────────────
@@ -152,10 +169,21 @@ export default function ShoppingListScreen({ route, navigation }) {
   const [checked, setChecked] = useState({});
   const [saving, setSaving] = useState(false);
   const [showBreakdown, setShowBreakdown] = useState(false);
+  const [activeCat, setActiveCat] = useState('all');
   const progressTrackWidth = useSharedValue(0);
   const progressAnim = useSharedValue(0);
 
   const s = useMemo(() => makeStyles(colors, isDark, isTablet), [colors, isDark, isTablet]);
+
+  const displayList = useMemo(
+    () => activeCat === 'all' ? list : list.filter(i => (i.category || 'other') === activeCat),
+    [list, activeCat],
+  );
+
+  const usedCats = useMemo(() => {
+    const s = new Set(list.map(i => i.category || 'other'));
+    return CATEGORIES.filter(c => c.id === 'all' || s.has(c.id));
+  }, [list]);
 
   const { total, spent, budgetRemaining, checkedCount, progress } = useMemo(() => {
     const t = list.reduce((s, i) => s + i.subtotal, 0);
@@ -272,28 +300,64 @@ export default function ShoppingListScreen({ route, navigation }) {
         <Text style={s.progressText}>{checkedCount} / {list.length} отметнати</Text>
       </View>
 
-      {/* Budget tracker */}
-      <View style={s.budgetBar}>
-        <View style={s.budgetStat}>
-          <Text style={s.budgetStatLabel}>Бюджет</Text>
-          <Text style={s.budgetStatValue}>{budget.toFixed(2)} €</Text>
+      {/* Budget tracker — CozyHome dashboard card */}
+      <View style={s.budgetCard}>
+        <View style={s.budgetCardHeader}>
+          <Text style={s.budgetCardLabel}>БЮДЖЕТ</Text>
+          <View style={[s.budgetBadge, budgetRemaining < 0 ? s.budgetBadgeOver : s.budgetBadgeOk]}>
+            <Text style={[s.budgetBadgeText, { color: budgetRemaining < 0 ? colors.red : colors.primary }]}>
+              {budgetRemaining < 0 ? 'НАД БЮДЖЕТА' : 'ВСЕ ОЩЕ ОК'}
+            </Text>
+          </View>
         </View>
-        <View style={s.budgetDivider} />
-        <View style={s.budgetStat}>
-          <Text style={s.budgetStatLabel}>Изхарчено</Text>
-          <Text style={[s.budgetStatValue, { color: colors.orange }]}>{spent.toFixed(2)} €</Text>
-        </View>
-        <View style={s.budgetDivider} />
-        <View style={s.budgetStat}>
-          <Text style={s.budgetStatLabel}>Оставащо</Text>
-          <Text style={[s.budgetStatValue, { color: budgetRemaining >= 0 ? colors.green : colors.red }]}>
-            {budgetRemaining.toFixed(2)} €
+        <View style={s.budgetMain}>
+          <Text style={[s.budgetJumbo, { color: budgetRemaining < 0 ? colors.red : colors.text }]}>
+            {Math.abs(budgetRemaining).toFixed(2)}
           </Text>
+          <Text style={s.budgetSuffix}>лв. {budgetRemaining < 0 ? 'над' : 'остават'}</Text>
+        </View>
+        <View style={s.budgetProgressTrack}>
+          <View style={[s.budgetProgressFill, {
+            width: `${Math.min(100, (spent / budget) * 100)}%`,
+            backgroundColor: budgetRemaining < 0 ? colors.red : spent / budget > 0.8 ? colors.orange : colors.primary,
+          }]} />
+        </View>
+        <View style={s.budgetFooter}>
+          <Text style={s.budgetFooterText}>{spent.toFixed(2)} лв. изхарчени</Text>
+          <Text style={s.budgetFooterText}>{budget.toFixed(2)} лв. бюджет</Text>
         </View>
       </View>
 
+      {/* Category filter chips — CozyList style */}
+      {usedCats.length > 2 && (
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={s.catChips}
+          keyboardShouldPersistTaps="handled"
+        >
+          {usedCats.map((cat) => {
+            const on = activeCat === cat.id;
+            return (
+              <TouchableOpacity
+                key={cat.id}
+                style={[s.catChip, on && s.catChipActive]}
+                onPress={() => { Haptics.selectionAsync(); setActiveCat(cat.id); }}
+                activeOpacity={0.75}
+                accessibilityRole="radio"
+                accessibilityState={{ selected: on }}
+                accessibilityLabel={cat.label}
+              >
+                <Text style={{ fontSize: 13 }}>{cat.emoji}</Text>
+                <Text style={[s.catChipText, on && s.catChipTextActive]}>{cat.label}</Text>
+              </TouchableOpacity>
+            );
+          })}
+        </ScrollView>
+      )}
+
       <FlashList
-        data={list}
+        data={displayList}
         keyExtractor={(item) => item.id}
         renderItem={renderItem}
         estimatedItemSize={80}
@@ -365,11 +429,36 @@ function makeStyles(c, isDark, isTablet) {
     progressFill: { height: 6, width: '100%', backgroundColor: c.primary, borderRadius: 3 },
     progressText: { fontSize: 12, color: c.textTertiary, fontWeight: '600' },
 
-    budgetBar: { flexDirection: 'row', backgroundColor: c.card, marginHorizontal: 14, marginTop: 12, borderRadius: 14, paddingVertical: 12, shadowColor: '#000', shadowOpacity: isDark ? 0.3 : 0.05, shadowRadius: 6, elevation: 2 },
-    budgetStat: { flex: 1, alignItems: 'center' },
-    budgetStatLabel: { fontSize: 11, color: c.textTertiary, fontWeight: '600', marginBottom: 4 },
-    budgetStatValue: { fontSize: 15, fontWeight: '600', color: c.text },
-    budgetDivider: { width: 1, backgroundColor: c.border, marginVertical: 4 },
+    budgetCard: {
+      backgroundColor: c.card, marginHorizontal: 14, marginTop: 12,
+      borderRadius: 20, padding: 18,
+      shadowColor: c.primary, shadowOpacity: isDark ? 0.15 : 0.1, shadowRadius: 8,
+      shadowOffset: { width: 0, height: 2 }, elevation: 2,
+    },
+    budgetCardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
+    budgetCardLabel: { fontSize: 10, fontWeight: '700', color: c.textTertiary, letterSpacing: 0.8, textTransform: 'uppercase' },
+    budgetBadge: { borderRadius: 999, paddingHorizontal: 10, paddingVertical: 3 },
+    budgetBadgeOk: { backgroundColor: c.primaryLight },
+    budgetBadgeOver: { backgroundColor: c.redLight },
+    budgetBadgeText: { fontSize: 10, fontWeight: '700', letterSpacing: 0.4 },
+    budgetMain: { flexDirection: 'row', alignItems: 'baseline', gap: 6, marginBottom: 14 },
+    budgetJumbo: { fontSize: 34, fontWeight: '700', letterSpacing: -0.5, lineHeight: 40 },
+    budgetSuffix: { fontSize: 14, fontWeight: '500', color: c.textSecondary, alignSelf: 'flex-end', marginBottom: 3 },
+    budgetProgressTrack: { height: 8, borderRadius: 999, overflow: 'hidden', backgroundColor: c.cardAlt, marginBottom: 8 },
+    budgetProgressFill: { height: 8, borderRadius: 999 },
+    budgetFooter: { flexDirection: 'row', justifyContent: 'space-between' },
+    budgetFooterText: { fontSize: 12, color: c.textTertiary, fontWeight: '500' },
+
+    catChips: { paddingHorizontal: 14, paddingTop: 12, paddingBottom: 4, gap: 8 },
+    catChip: {
+      flexDirection: 'row', alignItems: 'center', gap: 5,
+      paddingHorizontal: 14, paddingVertical: 8,
+      backgroundColor: c.card, borderRadius: 999,
+      shadowColor: '#000', shadowOpacity: 0.04, shadowRadius: 4, elevation: 1,
+    },
+    catChipActive: { backgroundColor: c.text },
+    catChipText: { fontSize: 13, fontWeight: '600', color: c.text },
+    catChipTextActive: { color: c.card },
 
     list: { padding: 14, paddingBottom: 4 },
 
