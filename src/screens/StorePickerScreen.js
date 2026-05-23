@@ -109,23 +109,26 @@ export default function StorePickerScreen({ route, navigation }) {
   return (
     <SafeAreaView style={[s.safe, { backgroundColor: colors.bg }]}>
 
-      {/* Header */}
-      <View style={[s.header, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
+      {/* Header — CozyStoreSelect */}
+      <View style={s.header}>
         <TouchableOpacity
+          style={s.backBtn}
           onPress={() => navigation.goBack()}
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           accessibilityLabel="Назад"
           accessibilityRole="button"
         >
-          <Ionicons name="arrow-back" size={22} color={colors.text} />
+          <Ionicons name="chevron-back" size={20} color={colors.text} />
         </TouchableOpacity>
-        <Text style={[s.title, { color: colors.text }]}>Избор на магазин</Text>
-        <View style={{ width: 22 }} />
+        <View style={{ flex: 1, marginLeft: 12 }}>
+          <Text style={[s.title, { color: colors.text }]}>От къде ще пазарувате?</Text>
+          <Text style={[s.subtitle, { color: colors.textTertiary }]}>Изберете една или повече вериги</Text>
+        </View>
       </View>
 
-      {/* Search */}
-      <View style={[s.searchWrap, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
-        <View style={[s.searchBar, { backgroundColor: colors.cardAlt }]}>
+      {/* Search — pill */}
+      <View style={s.searchWrap}>
+        <View style={[s.searchBar, { backgroundColor: colors.card }]}>
           <Ionicons name="search-outline" size={16} color={colors.textQuaternary} />
           <TextInput
             style={[s.searchInput, { color: colors.text }]}
@@ -216,29 +219,46 @@ export default function StorePickerScreen({ route, navigation }) {
           </View>
         </FadeInView>
 
-        {/* Store list */}
+        {/* Store list — CozyStoreSelect card layout */}
         <FadeInView delay={120}>
           <View style={s.sectionHeader}>
             <Ionicons name="list-outline" size={14} color={colors.textTertiary} />
             <Text style={[s.sectionTitle, { color: colors.textTertiary }]}>ВСИЧКИ МАГАЗИНИ</Text>
           </View>
-          <View style={[s.listCard, { backgroundColor: colors.card }]}>
-            {filtered.map((st, i) => {
+          <View style={s.storeCardList}>
+            {filtered.map((st) => {
               const fav = isFavorite(st);
               const isCustom = customs.includes(st);
+              // Generate a stable color from store name
+              const hue = (st.charCodeAt(0) * 47 + st.charCodeAt(st.length - 1) * 13) % 360;
+              const logoColor = `hsl(${hue}, 45%, 42%)`;
+              const initial = st.charAt(0).toUpperCase();
               return (
                 <TouchableOpacity
                   key={st}
                   style={[
-                    s.storeRow,
-                    i > 0 && { borderTopWidth: 1, borderTopColor: colors.borderLight },
+                    s.storeCard,
+                    { backgroundColor: colors.card },
+                    fav && { borderColor: colors.primary, borderWidth: 1.5 },
                   ]}
                   onPress={() => handleSelect(st)}
                   activeOpacity={0.75}
                   accessibilityLabel={`Избери ${st}`}
                   accessibilityRole="button"
                 >
-                  {/* Star */}
+                  {/* CozyStoreSelect logo square */}
+                  <View style={[s.storeLogo, { backgroundColor: logoColor }]}>
+                    <Text style={s.storeLogoText}>{initial}</Text>
+                  </View>
+
+                  <View style={s.storeCardBody}>
+                    <Text style={[s.storeCardName, { color: colors.text }]} numberOfLines={1}>{st}</Text>
+                    <Text style={[s.storeCardTag, { color: colors.textTertiary }]}>
+                      {fav ? '★ Любим магазин' : isCustom ? 'Персонализиран' : 'Верига'}
+                    </Text>
+                  </View>
+
+                  {/* Actions */}
                   <TouchableOpacity
                     onPress={() => { toggleFavorite(st); Haptics.selectionAsync(); }}
                     hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
@@ -247,19 +267,11 @@ export default function StorePickerScreen({ route, navigation }) {
                   >
                     <Ionicons
                       name={fav ? 'star' : 'star-outline'}
-                      size={18}
+                      size={17}
                       color={fav ? STAR_COLOR : colors.border}
                     />
                   </TouchableOpacity>
 
-                  {/* Store icon */}
-                  <View style={[s.storeIcon, { backgroundColor: colors.primaryLight }]}>
-                    <Ionicons name="storefront-outline" size={15} color={colors.primary} />
-                  </View>
-
-                  <Text style={[s.storeName, { color: colors.text }]} numberOfLines={1}>{st}</Text>
-
-                  {/* Delete custom */}
                   {isCustom && (
                     <TouchableOpacity
                       onPress={() => { removeStore(st); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
@@ -271,6 +283,7 @@ export default function StorePickerScreen({ route, navigation }) {
                     </TouchableOpacity>
                   )}
 
+                  {/* CozyStoreSelect check circle */}
                   <Ionicons name="chevron-forward" size={16} color={colors.border} />
                 </TouchableOpacity>
               );
@@ -296,18 +309,21 @@ function makeStyles(c, isDark, isTablet) {
   return StyleSheet.create({
     safe: { flex: 1, backgroundColor: c.bg },
     header: {
-      flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-      paddingHorizontal: 18, paddingVertical: 14,
-      borderBottomWidth: 1,
+      flexDirection: 'row', alignItems: 'center',
+      paddingHorizontal: 20, paddingTop: 16, paddingBottom: 12,
     },
-    title: { fontSize: 18, fontWeight: '700' },
-    searchWrap: {
-      paddingHorizontal: 16, paddingVertical: 10,
-      borderBottomWidth: 1,
+    backBtn: {
+      width: 40, height: 40, borderRadius: 20,
+      backgroundColor: c.card, justifyContent: 'center', alignItems: 'center',
+      ...sh.sm,
     },
+    title: { fontSize: 20, fontWeight: '700', letterSpacing: -0.3 },
+    subtitle: { fontSize: 13, fontWeight: '500', marginTop: 2 },
+    searchWrap: { paddingHorizontal: 20, paddingBottom: 12 },
     searchBar: {
       flexDirection: 'row', alignItems: 'center', gap: 8,
-      borderRadius: 12, paddingHorizontal: 12, paddingVertical: 10,
+      borderRadius: 999, paddingHorizontal: 16, paddingVertical: 12,
+      ...sh.sm,
     },
     searchInput: { flex: 1, fontSize: 15, paddingVertical: 0 },
 
@@ -340,16 +356,22 @@ function makeStyles(c, isDark, isTablet) {
       justifyContent: 'center', alignItems: 'center',
     },
 
-    listCard: { borderRadius: 14, overflow: 'hidden', ...sh.sm },
-    storeRow: {
-      flexDirection: 'row', alignItems: 'center', gap: 10,
-      paddingHorizontal: 14, paddingVertical: 14,
+    // CozyStoreSelect card list
+    storeCardList: { gap: 10, marginBottom: 14 },
+    storeCard: {
+      flexDirection: 'row', alignItems: 'center', gap: 14,
+      borderRadius: 18, padding: 16,
+      borderWidth: 1.5, borderColor: 'transparent',
+      ...sh.sm,
     },
-    storeIcon: {
-      width: 30, height: 30, borderRadius: 8,
+    storeLogo: {
+      width: 48, height: 48, borderRadius: 14, flexShrink: 0,
       justifyContent: 'center', alignItems: 'center',
     },
-    storeName: { flex: 1, fontSize: 15, fontWeight: '600' },
+    storeLogoText: { fontSize: 22, fontWeight: '700', color: '#fff', letterSpacing: -0.5 },
+    storeCardBody: { flex: 1 },
+    storeCardName: { fontSize: 16, fontWeight: '600' },
+    storeCardTag: { fontSize: 12, marginTop: 2, fontWeight: '500' },
 
     emptyRow: { padding: 20, alignItems: 'center' },
     emptyText: { fontSize: 14, fontWeight: '500' },

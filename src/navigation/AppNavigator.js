@@ -1,7 +1,7 @@
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { StatusBar, ActivityIndicator, View, AppState } from 'react-native';
+import { StatusBar, ActivityIndicator, View, Platform, AppState } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useEffect, useRef } from 'react';
 
@@ -36,24 +36,38 @@ function MainTabs() {
   const { colors } = useTheme();
   const { isLandscape, isTablet } = useLayout();
   const phoneLandscape = isLandscape && !isTablet;
+
+  // CozyTabBar: floating pill that sits above content
+  const tabBottom = phoneLandscape ? 10 : Platform.OS === 'ios' ? 22 : 14;
+
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
         headerShown: false,
-        tabBarActiveTintColor: colors.primary,
-        tabBarInactiveTintColor: colors.textQuaternary,
+        tabBarActiveTintColor: '#fff',
+        tabBarInactiveTintColor: colors.textTertiary,
         tabBarStyle: {
-          backgroundColor: colors.tabBar,
-          borderTopColor: colors.tabBarBorder,
-          borderTopWidth: 1,
-          height: phoneLandscape ? 52 : 70,
-          paddingBottom: phoneLandscape ? 6 : 10,
-          paddingTop: phoneLandscape ? 5 : 8,
+          position: 'absolute',
+          backgroundColor: colors.card,
+          borderTopWidth: 0,
+          borderRadius: 999,
+          marginHorizontal: 20,
+          bottom: tabBottom,
+          height: 62,
+          paddingBottom: 8,
+          paddingTop: 8,
+          elevation: 12,
+          shadowColor: '#2B1D12',
+          shadowOpacity: 0.12,
+          shadowRadius: 20,
+          shadowOffset: { width: 0, height: 4 },
         },
+        tabBarItemStyle: { borderRadius: 999 },
+        tabBarActiveBackgroundColor: colors.primary,
         tabBarLabelStyle: { fontSize: 11, fontWeight: '600', letterSpacing: 0.2 },
         tabBarIcon: ({ focused, color }) => {
           const icons = TAB_ICONS[route.name];
-          return <Ionicons name={focused ? icons.focused : icons.outline} size={24} color={color} />;
+          return <Ionicons name={focused ? icons.focused : icons.outline} size={22} color={color} />;
         },
       })}
     >

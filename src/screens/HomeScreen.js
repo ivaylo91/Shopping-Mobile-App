@@ -539,6 +539,21 @@ export default function HomeScreen({ navigation, route }) {
   );
   const hasLibrary = recurring.length > 0 || templates.length > 0;
 
+  // ─── Greeting helpers ─────────────────────────────────────────────────────────
+
+  const greetingDate = useMemo(() => {
+    const now = new Date();
+    const days = ['Неделя', 'Понеделник', 'Вторник', 'Сряда', 'Четвъртък', 'Петък', 'Събота'];
+    const months = ['яну', 'фев', 'мар', 'апр', 'май', 'юни', 'юли', 'авг', 'сеп', 'окт', 'ное', 'дек'];
+    return `${days[now.getDay()]}, ${now.getDate()} ${months[now.getMonth()]}`;
+  }, []);
+
+  const greetingName = useMemo(() => {
+    if (!user?.email) return 'Добре дошли';
+    const name = user.displayName || user.email.split('@')[0];
+    return `Здравейте, ${name.charAt(0).toUpperCase()}${name.slice(1)}`;
+  }, [user]);
+
   // ─── Render ───────────────────────────────────────────────────────────────────
 
   return (
@@ -546,20 +561,26 @@ export default function HomeScreen({ navigation, route }) {
       <ScrollView style={s.container} contentContainerStyle={s.content}
         keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
 
-        {/* Header */}
-        <View style={s.header}>
-          <Text style={s.title}>Нов списък</Text>
+        {/* CozyHome greeting header */}
+        <View style={s.greetingRow}>
+          <View>
+            <Text style={s.greetingDate}>{greetingDate}</Text>
+            <Text style={s.greetingTitle}>{greetingName}</Text>
+          </View>
           <View style={{ flexDirection: 'row', gap: 8 }}>
             {items.length > 0 && (
-              <TouchableOpacity style={s.overflowBtn} onPress={clearAll} accessibilityLabel="Изчисти всичко" accessibilityRole="button">
-                <Ionicons name="trash-outline" size={20} color={colors.red} />
+              <TouchableOpacity style={s.iconBtn} onPress={clearAll} accessibilityLabel="Изчисти всичко" accessibilityRole="button">
+                <Ionicons name="trash-outline" size={18} color={colors.red} />
               </TouchableOpacity>
             )}
-            <TouchableOpacity style={s.overflowBtn} onPress={() => setOverflowVisible(true)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} accessibilityLabel="Меню" accessibilityRole="button">
-              <Ionicons name="ellipsis-horizontal" size={20} color={colors.textSecondary} />
+            <TouchableOpacity style={s.iconBtn} onPress={() => setOverflowVisible(true)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} accessibilityLabel="Меню" accessibilityRole="button">
+              <Ionicons name="ellipsis-horizontal" size={18} color={colors.textSecondary} />
             </TouchableOpacity>
           </View>
         </View>
+
+        {/* Section label */}
+        <Text style={s.sectionLabel}>НОВ СПИСЪК</Text>
 
         {/* Setup row: name + budget + store */}
         <View style={s.setupCard}>
@@ -1401,11 +1422,14 @@ function makeStyles(c, isDark, isTablet) {
   return StyleSheet.create({
     safe: { flex: 1, backgroundColor: c.bg },
     container: { flex: 1 },
-    content: { padding: 20, paddingBottom: 40, maxWidth: isTablet ? 720 : undefined, alignSelf: isTablet ? 'center' : undefined, width: '100%' },
+    content: { padding: 20, paddingBottom: 100, maxWidth: isTablet ? 720 : undefined, alignSelf: isTablet ? 'center' : undefined, width: '100%' },
 
-    header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, marginTop: 4 },
-    title: { fontSize: 26, fontWeight: '700', color: c.text, letterSpacing: -0.5 },
-    overflowBtn: { width: 44, height: 44, borderRadius: 12, backgroundColor: c.cardAlt, justifyContent: 'center', alignItems: 'center' },
+    // CozyHome greeting header
+    greetingRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 18, marginTop: 4 },
+    greetingDate: { fontSize: 12, fontWeight: '500', color: c.textTertiary, marginBottom: 2 },
+    greetingTitle: { fontSize: 22, fontWeight: '700', color: c.text, letterSpacing: -0.3 },
+    iconBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: c.cardAlt, justifyContent: 'center', alignItems: 'center' },
+    sectionLabel: { fontSize: 10, fontWeight: '700', color: c.textTertiary, letterSpacing: 0.8, textTransform: 'uppercase', marginBottom: 10 },
 
     setupCard: {
       backgroundColor: c.card, borderRadius: 16, padding: 14, marginBottom: 14, gap: 12,
