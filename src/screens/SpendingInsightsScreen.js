@@ -120,7 +120,7 @@ export default function SpendingInsightsScreen() {
         <FadeInView delay={50}>
           <View style={s.kpiRow}>
             <View style={[s.kpiCell, { backgroundColor: colors.card }]}>
-              <Text style={[s.kpiVal, { color: colors.text }]}>{avg.toFixed(0)} €</Text>
+              <Text style={[s.kpiVal, { color: colors.text }]}>{avg.toFixed(0)} лв</Text>
               <Text style={[s.kpiLbl, { color: colors.textTertiary }]}>Средно/пазар</Text>
             </View>
             <View style={[s.kpiCell, { backgroundColor: colors.card }]}>
@@ -128,7 +128,7 @@ export default function SpendingInsightsScreen() {
               <Text style={[s.kpiLbl, { color: colors.textTertiary }]}>Пазарувания</Text>
             </View>
             <View style={[s.kpiCell, { backgroundColor: colors.card }]}>
-              <Text style={[s.kpiVal, { color: colors.green }]}>{totalSaved.toFixed(0)} €</Text>
+              <Text style={[s.kpiVal, { color: colors.green }]}>{totalSaved.toFixed(0)} лв</Text>
               <Text style={[s.kpiLbl, { color: colors.textTertiary }]}>Спестени</Text>
             </View>
           </View>
@@ -157,7 +157,7 @@ export default function SpendingInsightsScreen() {
                         {c.label}
                       </Text>
                       <Text style={[s.barAmt, { color: colors.textTertiary }]}>
-                        {c.amount.toFixed(0)}€
+                        {c.amount.toFixed(0)} лв
                       </Text>
                     </View>
                   );
@@ -186,7 +186,7 @@ export default function SpendingInsightsScreen() {
                     </View>
                   </View>
                   <Text style={[s.storeAmt, { color: colors.textTertiary }]}>
-                    {store.amount.toFixed(2)} €
+                    {store.amount.toFixed(2)} лв
                   </Text>
                 </View>
               ))}

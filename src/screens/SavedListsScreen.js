@@ -73,13 +73,13 @@ function MonthlySummary({ lists, colors }) {
         </View>
         <View style={[msS.divider, { backgroundColor: colors.border }]} />
         <View style={msS.stat}>
-          <Text style={[msS.statValue, { color: colors.text }]}>{stats.totalSpent.toFixed(0)} €</Text>
+          <Text style={[msS.statValue, { color: colors.text }]}>{stats.totalSpent.toFixed(0)} лв</Text>
           <Text style={[msS.statLabel, { color: colors.textTertiary }]}>Изхарчено</Text>
         </View>
         <View style={[msS.divider, { backgroundColor: colors.border }]} />
         <View style={msS.stat}>
           <Text style={[msS.statValue, { color: saved >= 0 ? colors.green : colors.red }]}>
-            {saved >= 0 ? '+' : ''}{saved.toFixed(0)} €
+            {saved >= 0 ? '+' : ''}{saved.toFixed(0)} лв
           </Text>
           <Text style={[msS.statLabel, { color: colors.textTertiary }]}>{saved >= 0 ? 'Спестено' : 'Над бюджета'}</Text>
         </View>
@@ -163,18 +163,18 @@ const BudgetCard = memo(function BudgetCard({ item, isDeleting, onDelete, onOpen
       <View style={[cS.statsRow, { backgroundColor: colors.cardAlt }, overBudget && { borderColor: colors.red, borderWidth: 1.5, backgroundColor: colors.redLight }]}>
         <View style={cS.stat}>
           <Text style={[cS.statLabel, { color: colors.textTertiary }]}>Бюджет</Text>
-          <Text style={[cS.statValue, { color: colors.text }]}>{item.budget?.toFixed(2)} €</Text>
+          <Text style={[cS.statValue, { color: colors.text }]}>{item.budget?.toFixed(2)} лв</Text>
         </View>
         <View style={[cS.statDivider, { backgroundColor: colors.border }]} />
         <View style={cS.stat}>
           <Text style={[cS.statLabel, { color: colors.textTertiary }]}>Общо</Text>
-          <Text style={[cS.statValue, { color: colors.text }]}>{item.total?.toFixed(2)} €</Text>
+          <Text style={[cS.statValue, { color: colors.text }]}>{item.total?.toFixed(2)} лв</Text>
         </View>
         <View style={[cS.statDivider, { backgroundColor: colors.border }]} />
         <View style={cS.stat}>
           <Text style={[cS.statLabel, { color: colors.textTertiary }]}>{overBudget ? 'Над бюджета' : 'Остатък'}</Text>
           <Text style={[cS.statRemaining, { color: overBudget ? colors.red : colors.green }]}>
-            {remaining >= 0 ? '+' : ''}{remaining.toFixed(2)} €
+            {remaining >= 0 ? '+' : ''}{remaining.toFixed(2)} лв
           </Text>
         </View>
       </View>

@@ -597,7 +597,7 @@ export default function HomeScreen({ navigation, route }) {
               accessibilityLabel="Наименование на списъка"
             />
             <View style={s.setupBudget}>
-              <Text style={s.setupCurrency}>€</Text>
+              <Text style={s.setupCurrency}>лв</Text>
               <TextInput
                 style={s.setupBudgetInput}
                 placeholder="0"
@@ -607,7 +607,7 @@ export default function HomeScreen({ navigation, route }) {
                 keyboardType="decimal-pad"
                 returnKeyType="done"
                 keyboardAppearance={isDark ? 'dark' : 'light'}
-                accessibilityLabel="Бюджет в евро"
+                accessibilityLabel="Бюджет в лева"
               />
             </View>
           </View>
@@ -662,7 +662,7 @@ export default function HomeScreen({ navigation, route }) {
               <Ionicons name="barcode-outline" size={22} color={colors.primary} />
             </TouchableOpacity>
             <View style={s.addPriceWrap}>
-              <Text style={s.pricePre}>€</Text>
+              <Text style={s.pricePre}>лв</Text>
               <TextInput style={s.priceInput} placeholder="0.00" placeholderTextColor={colors.textQuaternary}
                 value={itemPrice} onChangeText={setItemPrice} keyboardType="decimal-pad"
                 returnKeyType="done" onFocus={() => setShowSuggestions(false)}
@@ -693,7 +693,7 @@ export default function HomeScreen({ navigation, route }) {
                   <TouchableOpacity key={sg.name} style={s.suggestionRow} onPress={() => applySuggestion(sg)} activeOpacity={0.7}>
                     <Text style={{ fontSize: 16 }}>{getCategoryEmoji(sg.category)}</Text>
                     <Text style={s.suggestionName}>{sg.name}</Text>
-                    <Text style={s.suggestionPrice}>{sg.price.toFixed(2)} €</Text>
+                    <Text style={s.suggestionPrice}>{sg.price.toFixed(2)} лв</Text>
                     {info && (
                       <Text style={[s.trendBadge, { color: trendColor[info.trend] }]}>
                         {TREND_ICON[info.trend]}
@@ -787,10 +787,10 @@ export default function HomeScreen({ navigation, route }) {
                         )}
                       </TouchableOpacity>
                       {item.note ? <Text style={s.itemNote} numberOfLines={1}>📝 {item.note}</Text> : null}
-                      <Text style={s.itemMeta}>{item.price.toFixed(2)} € × {item.quantity}</Text>
+                      <Text style={s.itemMeta}>{item.price.toFixed(2)} лв × {item.quantity}</Text>
                     </View>
                     <View style={s.itemRight}>
-                      <Text style={s.itemSubtotal}>{item.subtotal.toFixed(2)} €</Text>
+                      <Text style={s.itemSubtotal}>{item.subtotal.toFixed(2)} лв</Text>
                       <View style={s.itemQtyControls}>
                         <TouchableOpacity onPress={() => changeQty(item.id, -1)} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }} accessibilityLabel="Намали количеството" accessibilityRole="button">
                           <Ionicons name="remove-circle-outline" size={19} color={colors.textQuaternary} />
@@ -1542,8 +1542,8 @@ function makeStyles(c, isDark, isTablet) {
 
     primaryCta: {
       flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
-      backgroundColor: c.primary, borderRadius: 16, paddingVertical: 18,
-      shadowColor: c.primary, shadowOpacity: 0.28, shadowRadius: 10, shadowOffset: { width: 0, height: 5 }, elevation: 6,
+      backgroundColor: c.primary, borderRadius: 999, paddingVertical: 18,
+      shadowColor: c.primary, shadowOpacity: 0.28, shadowRadius: 12, shadowOffset: { width: 0, height: 6 }, elevation: 6,
     },
     primaryCtaDisabled: { opacity: 0.4, shadowOpacity: 0 },
     primaryCtaText: { color: '#fff', fontWeight: '700', fontSize: 17 },

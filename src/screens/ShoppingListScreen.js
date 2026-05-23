@@ -54,7 +54,7 @@ function CategoryBreakdown({ items, colors }) {
             <Text style={[bdS.label, { color: colors.textTertiary }]}>{cat.label}</Text>
           </View>
           <View style={bdS.right}>
-            <Text style={[bdS.amount, { color: colors.text }]}>{cat.amount.toFixed(2)} €</Text>
+            <Text style={[bdS.amount, { color: colors.text }]}>{cat.amount.toFixed(2)} лв</Text>
             <Text style={[bdS.pct, { color: colors.textTertiary }]}>{cat.pct.toFixed(0)}%</Text>
           </View>
         </View>
@@ -235,17 +235,17 @@ export default function ShoppingListScreen({ route, navigation }) {
   const handleShare = async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     const lines = list.map(
-      (i) => `${getCategoryEmoji(i.category)} ${i.name} ×${i.quantity} — ${i.subtotal.toFixed(2)} €${i.note ? ` (${i.note})` : ''}`
+      (i) => `${getCategoryEmoji(i.category)} ${i.name} ×${i.quantity} — ${i.subtotal.toFixed(2)} лв${i.note ? ` (${i.note})` : ''}`
     );
     const text = [
       `📋 ${listName || 'Списък за пазаруване'}`,
       store !== 'Всички' ? `📍 ${store}` : '',
-      `💰 Бюджет: ${budget.toFixed(2)} €`,
+      `💰 Бюджет: ${budget.toFixed(2)} лв`,
       '',
       ...lines,
       '',
-      `Общо: ${total.toFixed(2)} €`,
-      `Оставащо: ${(budget - total).toFixed(2)} €`,
+      `Общо: ${total.toFixed(2)} лв`,
+      `Оставащо: ${(budget - total).toFixed(2)} лв`,
     ].filter(Boolean).join('\n');
     try { await Share.share({ message: text }); }
     catch { showToast('Споделянето е неуспешно', 'error'); }
@@ -381,13 +381,13 @@ export default function ShoppingListScreen({ route, navigation }) {
       <View style={s.summaryCard}>
         <View style={s.summaryRow}>
           <Text style={s.summaryLabel}>Общо в списъка</Text>
-          <Text style={s.summaryValue}>{total.toFixed(2)} €</Text>
+          <Text style={s.summaryValue}>{total.toFixed(2)} лв</Text>
         </View>
         <View style={s.summaryDivider} />
         <View style={s.summaryRow}>
           <Text style={s.summaryLabel}>Бюджет след пазаруване</Text>
           <Text style={[s.summaryRemaining, { color: budget - total >= 0 ? colors.green : colors.red }]}>
-            {(budget - total >= 0 ? '+' : '') + (budget - total).toFixed(2)} €
+            {(budget - total >= 0 ? '+' : '') + (budget - total).toFixed(2)} лв
           </Text>
         </View>
       </View>
@@ -473,9 +473,9 @@ function makeStyles(c, isDark, isTablet) {
     summaryDivider: { height: 1, backgroundColor: c.borderLight, marginVertical: 4 },
 
     actions: { paddingHorizontal: 14, paddingBottom: 16, gap: 10 },
-    btnFinish: { backgroundColor: c.primary, borderRadius: 16, paddingVertical: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, shadowColor: c.primary, shadowOpacity: 0.28, shadowRadius: 10, shadowOffset: { width: 0, height: 4 }, elevation: 5 },
+    btnFinish: { backgroundColor: c.primary, borderRadius: 999, paddingVertical: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, shadowColor: c.primary, shadowOpacity: 0.28, shadowRadius: 12, shadowOffset: { width: 0, height: 6 }, elevation: 6 },
     btnFinishText: { color: '#fff', fontWeight: '700', fontSize: 16 },
-    btnSave: { backgroundColor: c.cardAlt, borderRadius: 16, paddingVertical: 14, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
+    btnSave: { backgroundColor: c.card, borderRadius: 999, paddingVertical: 14, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
     btnSaveText: { color: c.textSecondary, fontWeight: '700', fontSize: 15 },
     btnDisabled: { opacity: 0.6 },
   });

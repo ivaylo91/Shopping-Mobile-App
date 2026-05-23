@@ -89,7 +89,7 @@ export default function BudgetSetupScreen({ route, navigation }) {
             >
               <Ionicons name="remove" size={22} color={colors.text} />
             </TouchableOpacity>
-            <Text style={[s.budgetNum, { color: colors.text }]}>{budget} €</Text>
+            <Text style={[s.budgetNum, { color: colors.text }]}>{budget} лв</Text>
             <TouchableOpacity
               style={[s.stepBtn, { backgroundColor: colors.cardAlt }]}
               onPress={() => adjust(STEP)}
@@ -117,12 +117,12 @@ export default function BudgetSetupScreen({ route, navigation }) {
                   ]}
                   onPress={() => handlePreset(val)}
                   activeOpacity={0.75}
-                  accessibilityLabel={`Бюджет ${val} евро`}
+                  accessibilityLabel={`Бюджет ${val} лева`}
                   accessibilityRole="button"
                   accessibilityState={{ selected: active }}
                 >
                   <Text style={[s.presetText, { color: active ? '#fff' : colors.textTertiary }]}>
-                    {val} €
+                    {val} лв
                   </Text>
                 </TouchableOpacity>
               );

@@ -51,65 +51,65 @@ export const FONT_FAMILY = {
 // ─── Color Palettes ────────────────────────────────────────────────────────────
 
 const LIGHT = {
-  primary: '#2B7A5C',         // warm forest green — grounded, nourishing, calm
-  primaryLight: '#EAF5EF',    // light mint tint
-  primaryMuted: '#78B096',    // muted green for secondary elements
-  bg: '#F7F0E8',              // warm cream canvas — matches Cozy design tone
-  card: '#FFFAF2',            // cream white card surface
-  cardAlt: '#F0E7D8',         // warm tan secondary surface
-  text: '#2B1D12',            // warm dark ink (vs cool #1A1A2E)
-  textSecondary: '#5C4A3A',   // warm secondary ink
-  textTertiary: '#6D6258',    // WCAG AA: ~5.1:1 on cream card
-  textQuaternary: '#8A7868',  // WCAG AA: ~4.5:1 on cream card
-  border: '#DDD4C0',          // warm-tinted border
-  borderLight: '#E8DFD0',     // warm-tinted divider
-  green: '#2ecc71',
-  greenLight: '#E8FBF0',
-  red: '#e74c3c',
-  redLight: '#FEF0EE',
-  orange: '#f39c12',
-  orangeLight: '#FEF9EE',
+  primary: '#c64e2e',         // terracotta accent — Cozy design accent color
+  primaryLight: '#f8d9cd',    // accentSoft — warm blush tint
+  primaryMuted: '#e8a090',    // muted terracotta for secondary elements
+  bg: '#f6efe3',              // canvas — warm cream (Cozy design)
+  card: '#fffaf0',            // surface — cream white card
+  cardAlt: '#f0e6d2',         // surfaceAlt — warm tan secondary surface
+  text: '#2b1d12',            // ink — warm dark
+  textSecondary: '#6b5a48',   // inkSoft — warm secondary
+  textTertiary: '#a89880',    // inkFaint — warm tertiary
+  textQuaternary: '#a89880',  // inkFaint — same as tertiary for quaternary
+  border: 'rgba(43,29,18,0.08)',  // divider
+  borderLight: 'rgba(43,29,18,0.05)',
+  green: '#5f7d4b',           // good — cozy savings green
+  greenLight: '#dce8d4',
+  red: '#a8412a',             // bad — cozy error red
+  redLight: '#f0d5d0',
+  orange: '#c98a2b',          // warn — cozy warning amber
+  orangeLight: '#f5e2bf',
   blue: '#3498db',
   purple: '#9b59b6',
-  overlay: 'rgba(0,0,0,0.4)',
-  tabBar: '#FFFFFF',
-  tabBarBorder: '#DDE4DE',
+  overlay: 'rgba(43,29,18,0.4)',
+  tabBar: '#fffaf0',
+  tabBarBorder: 'rgba(43,29,18,0.08)',
   statusBar: 'dark-content',
-  inputBg: '#FFFFFF',
-  shimmer1: '#EDF2EE',
-  shimmer2: '#E5EDE7',
-  skeleton: '#DDE7DF',
+  inputBg: '#fffaf0',
+  shimmer1: '#f5ece0',
+  shimmer2: '#ede3d5',
+  skeleton: '#e8dece',
 };
 
 const DARK = {
-  primary: '#4DB88A',         // lighter forest green for dark backgrounds
-  primaryLight: '#0B2419',    // deep green tint
-  primaryMuted: '#3A8A68',    // muted green
-  bg: '#0F0F18',
-  card: '#1A1E1B',            // subtle green-warm dark card
-  cardAlt: '#131812',         // slight green dark
-  text: '#F0F2F0',            // warm white (slight green tint)
-  textSecondary: '#B0B4B0',   // green-neutral secondary
-  textTertiary: '#9A9A9A',    // WCAG AA fixed: ~6.2:1 on dark card (was #7775A8 at 3.9:1)
-  textQuaternary: '#888888',  // WCAG AA fixed: ~4.9:1 on dark card (was #555380, near-invisible)
-  border: '#263028',          // dark green-tinted border
-  borderLight: '#1C2520',
-  green: '#27ae60',
-  greenLight: '#0D2B1A',
-  red: '#c0392b',
-  redLight: '#2B0D0D',
-  orange: '#d68910',
-  orangeLight: '#2B1D06',
+  primary: '#e8785a',         // lighter terracotta for dark backgrounds
+  primaryLight: '#3a1a0e',    // deep terracotta tint
+  primaryMuted: '#c4624a',    // muted terracotta
+  bg: '#181210',
+  card: '#221a15',
+  cardAlt: '#1a1208',
+  text: '#f5ede4',
+  textSecondary: '#c4b0a0',
+  textTertiary: '#9a8070',
+  textQuaternary: '#7a6050',
+  border: 'rgba(245,237,228,0.1)',
+  borderLight: 'rgba(245,237,228,0.06)',
+  green: '#7a9b66',
+  greenLight: '#1a2e10',
+  red: '#c45838',
+  redLight: '#2b0d08',
+  orange: '#d99a4a',
+  orangeLight: '#2b1d06',
   blue: '#2980b9',
   purple: '#8e44ad',
   overlay: 'rgba(0,0,0,0.7)',
-  tabBar: '#1A1E1B',
-  tabBarBorder: '#263028',
+  tabBar: '#221a15',
+  tabBarBorder: 'rgba(245,237,228,0.1)',
   statusBar: 'light-content',
-  inputBg: '#1A1E1B',
-  shimmer1: '#20261F',
-  shimmer2: '#252E24',
-  skeleton: '#263028',
+  inputBg: '#221a15',
+  shimmer1: '#2a1f18',
+  shimmer2: '#302520',
+  skeleton: '#2a1f18',
 };
 
 /**
@@ -137,15 +137,14 @@ export const SHADOWS = {
     elevation: 3,
   },
   primary: {
-    shadowColor: '#2B7A5C',
+    shadowColor: '#c64e2e',
     shadowOpacity: 0.28,
     shadowRadius: 10,
     shadowOffset: { width: 0, height: 5 },
     elevation: 6,
   },
-  // Subtle green-tinted card depth — use on cards instead of neutral black shadow
   tinted: {
-    shadowColor: '#2B7A5C',
+    shadowColor: '#c64e2e',
     shadowOpacity: 0.12,
     shadowRadius: 8,
     shadowOffset: { width: 0, height: 2 },
@@ -157,8 +156,8 @@ export function getShadows(isDark) {
   if (isDark) return {
     sm:      { shadowColor: '#000', shadowOpacity: 0.3,  shadowRadius: 5,  elevation: 2 },
     md:      { shadowColor: '#000', shadowOpacity: 0.4,  shadowRadius: 10, elevation: 4 },
-    primary: { shadowColor: '#4DB88A', shadowOpacity: 0.4,  shadowRadius: 10, shadowOffset: { width: 0, height: 5 }, elevation: 8 },
-    tinted:  { shadowColor: '#4DB88A', shadowOpacity: 0.15, shadowRadius: 8,  shadowOffset: { width: 0, height: 2 }, elevation: 2 },
+    primary: { shadowColor: '#c64e2e', shadowOpacity: 0.4,  shadowRadius: 10, shadowOffset: { width: 0, height: 5 }, elevation: 8 },
+    tinted:  { shadowColor: '#c64e2e', shadowOpacity: 0.15, shadowRadius: 8,  shadowOffset: { width: 0, height: 2 }, elevation: 2 },
   };
   return SHADOWS;
 }
