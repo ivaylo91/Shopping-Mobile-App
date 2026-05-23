@@ -57,7 +57,7 @@ export default function TripSummaryScreen({ route, navigation }) {
               </Text>
             </View>
             <Text style={s.heroLabel}>{overBudget ? 'Надвишение' : 'Спестени'}</Text>
-            <Text style={s.heroAmount}>{Math.abs(saved).toFixed(2)} лв</Text>
+            <Text style={s.heroAmount}>{Math.abs(saved).toFixed(2)} €</Text>
             <View style={s.progTrack}>
               <View style={[
                 s.progFill,
@@ -65,8 +65,8 @@ export default function TripSummaryScreen({ route, navigation }) {
               ]} />
             </View>
             <View style={s.heroFooter}>
-              <Text style={s.heroFooterText}>Изхарчено {spent.toFixed(2)} лв</Text>
-              <Text style={s.heroFooterText}>Бюджет {budget.toFixed(2)} лв</Text>
+              <Text style={s.heroFooterText}>Изхарчено {spent.toFixed(2)} €</Text>
+              <Text style={s.heroFooterText}>Бюджет {budget.toFixed(2)} €</Text>
             </View>
           </View>
         </FadeInView>
@@ -124,7 +124,7 @@ export default function TripSummaryScreen({ route, navigation }) {
                     {item.name}
                   </Text>
                   <Text style={[s.skippedPrice, { color: colors.border }]}>
-                    {item.subtotal.toFixed(2)} лв
+                    {item.subtotal.toFixed(2)} €
                   </Text>
                 </View>
               ))}

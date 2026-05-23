@@ -219,7 +219,7 @@ export default function AddItemScreen({ route, navigation }) {
                   style={s.popularRow}
                   onPress={() => applyFromCatalog(p)}
                   activeOpacity={0.75}
-                  accessibilityLabel={`Добави ${p.name} ${p.price.toFixed(2)} лв`}
+                  accessibilityLabel={`Добави ${p.name} ${p.price.toFixed(2)} €`}
                 >
                   <View style={[s.popularIcon, { backgroundColor: getCategoryColors(p.category, isDark).bg }]}>
                     <Text style={{ fontSize: 18 }}>{CATEGORIES.find(c => c.id === p.category)?.emoji ?? '📦'}</Text>
@@ -228,7 +228,7 @@ export default function AddItemScreen({ route, navigation }) {
                     <Text style={s.popularName} numberOfLines={1}>{p.name}</Text>
                     <Text style={s.popularStore} numberOfLines={1}>{p.store}</Text>
                   </View>
-                  <Text style={s.popularPrice}>от {p.price.toFixed(2)} лв</Text>
+                  <Text style={s.popularPrice}>от {p.price.toFixed(2)} €</Text>
                   <View style={s.popularAddBtn}>
                     <Ionicons name="add" size={16} color={colors.primary} />
                   </View>
@@ -244,7 +244,7 @@ export default function AddItemScreen({ route, navigation }) {
             <View style={s.totalPreview}>
               <Text style={s.totalLabel}>Общо</Text>
               <Text style={s.totalValue}>
-                {(parseFloat(price.replace(',', '.')) * quantity).toFixed(2)} лв
+                {(parseFloat(price.replace(',', '.')) * quantity).toFixed(2)} €
               </Text>
             </View>
           </FadeInView>

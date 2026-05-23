@@ -54,7 +54,7 @@ function CategoryBreakdown({ items, colors }) {
             <Text style={[bdS.label, { color: colors.textTertiary }]}>{cat.label}</Text>
           </View>
           <View style={bdS.right}>
-            <Text style={[bdS.amount, { color: colors.text }]}>{cat.amount.toFixed(2)} лв</Text>
+            <Text style={[bdS.amount, { color: colors.text }]}>{cat.amount.toFixed(2)} €</Text>
             <Text style={[bdS.pct, { color: colors.textTertiary }]}>{cat.pct.toFixed(0)}%</Text>
           </View>
         </View>
@@ -129,11 +129,11 @@ const ShoppingItem = memo(function ShoppingItem({ item, checked, onToggle, color
           {item.name}
         </Text>
         {item.note ? <Text style={[iS.note, { color: colors.textTertiary }]} numberOfLines={1}>📝 {item.note}</Text> : null}
-        <Text style={[iS.meta, { color: colors.textQuaternary }]}>{item.price.toFixed(2)} лв × {item.quantity}</Text>
+        <Text style={[iS.meta, { color: colors.textQuaternary }]}>{item.price.toFixed(2)} € × {item.quantity}</Text>
       </View>
       <View style={iS.priceCol}>
         <Text style={[iS.price, { color: checked ? colors.textQuaternary : colors.primary }]}>
-          {item.subtotal.toFixed(2)} лв
+          {item.subtotal.toFixed(2)} €
         </Text>
       </View>
     </AnimatedTouchableOpacity>
@@ -235,17 +235,17 @@ export default function ShoppingListScreen({ route, navigation }) {
   const handleShare = async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     const lines = list.map(
-      (i) => `${getCategoryEmoji(i.category)} ${i.name} ×${i.quantity} — ${i.subtotal.toFixed(2)} лв${i.note ? ` (${i.note})` : ''}`
+      (i) => `${getCategoryEmoji(i.category)} ${i.name} ×${i.quantity} — ${i.subtotal.toFixed(2)} €${i.note ? ` (${i.note})` : ''}`
     );
     const text = [
       `📋 ${listName || 'Списък за пазаруване'}`,
       store !== 'Всички' ? `📍 ${store}` : '',
-      `💰 Бюджет: ${budget.toFixed(2)} лв`,
+      `💰 Бюджет: ${budget.toFixed(2)} €`,
       '',
       ...lines,
       '',
-      `Общо: ${total.toFixed(2)} лв`,
-      `Оставащо: ${(budget - total).toFixed(2)} лв`,
+      `Общо: ${total.toFixed(2)} €`,
+      `Оставащо: ${(budget - total).toFixed(2)} €`,
     ].filter(Boolean).join('\n');
     try { await Share.share({ message: text }); }
     catch { showToast('Споделянето е неуспешно', 'error'); }
@@ -314,7 +314,7 @@ export default function ShoppingListScreen({ route, navigation }) {
           <Text style={[s.budgetJumbo, { color: budgetRemaining < 0 ? colors.red : colors.text }]}>
             {Math.abs(budgetRemaining).toFixed(2)}
           </Text>
-          <Text style={s.budgetSuffix}>лв. {budgetRemaining < 0 ? 'над' : 'остават'}</Text>
+          <Text style={s.budgetSuffix}>€ {budgetRemaining < 0 ? 'над' : 'остават'}</Text>
         </View>
         <View style={s.budgetProgressTrack}>
           <View style={[s.budgetProgressFill, {
@@ -323,8 +323,8 @@ export default function ShoppingListScreen({ route, navigation }) {
           }]} />
         </View>
         <View style={s.budgetFooter}>
-          <Text style={s.budgetFooterText}>{spent.toFixed(2)} лв. изхарчени</Text>
-          <Text style={s.budgetFooterText}>{budget.toFixed(2)} лв. бюджет</Text>
+          <Text style={s.budgetFooterText}>{spent.toFixed(2)} € изхарчени</Text>
+          <Text style={s.budgetFooterText}>{budget.toFixed(2)} € бюджет</Text>
         </View>
       </View>
 
@@ -381,13 +381,13 @@ export default function ShoppingListScreen({ route, navigation }) {
       <View style={s.summaryCard}>
         <View style={s.summaryRow}>
           <Text style={s.summaryLabel}>Общо в списъка</Text>
-          <Text style={s.summaryValue}>{total.toFixed(2)} лв</Text>
+          <Text style={s.summaryValue}>{total.toFixed(2)} €</Text>
         </View>
         <View style={s.summaryDivider} />
         <View style={s.summaryRow}>
           <Text style={s.summaryLabel}>Бюджет след пазаруване</Text>
           <Text style={[s.summaryRemaining, { color: budget - total >= 0 ? colors.green : colors.red }]}>
-            {(budget - total >= 0 ? '+' : '') + (budget - total).toFixed(2)} лв
+            {(budget - total >= 0 ? '+' : '') + (budget - total).toFixed(2)} €
           </Text>
         </View>
       </View>

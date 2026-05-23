@@ -597,7 +597,7 @@ export default function HomeScreen({ navigation, route }) {
               accessibilityLabel="Наименование на списъка"
             />
             <View style={s.setupBudget}>
-              <Text style={s.setupCurrency}>лв</Text>
+              <Text style={s.setupCurrency}>€</Text>
               <TextInput
                 style={s.setupBudgetInput}
                 placeholder="0"
@@ -607,7 +607,7 @@ export default function HomeScreen({ navigation, route }) {
                 keyboardType="decimal-pad"
                 returnKeyType="done"
                 keyboardAppearance={isDark ? 'dark' : 'light'}
-                accessibilityLabel="Бюджет в лева"
+                accessibilityLabel="Бюджет в евро"
               />
             </View>
           </View>
@@ -662,7 +662,7 @@ export default function HomeScreen({ navigation, route }) {
               <Ionicons name="barcode-outline" size={22} color={colors.primary} />
             </TouchableOpacity>
             <View style={s.addPriceWrap}>
-              <Text style={s.pricePre}>лв</Text>
+              <Text style={s.pricePre}>€</Text>
               <TextInput style={s.priceInput} placeholder="0.00" placeholderTextColor={colors.textQuaternary}
                 value={itemPrice} onChangeText={setItemPrice} keyboardType="decimal-pad"
                 returnKeyType="done" onFocus={() => setShowSuggestions(false)}
@@ -693,7 +693,7 @@ export default function HomeScreen({ navigation, route }) {
                   <TouchableOpacity key={sg.name} style={s.suggestionRow} onPress={() => applySuggestion(sg)} activeOpacity={0.7}>
                     <Text style={{ fontSize: 16 }}>{getCategoryEmoji(sg.category)}</Text>
                     <Text style={s.suggestionName}>{sg.name}</Text>
-                    <Text style={s.suggestionPrice}>{sg.price.toFixed(2)} лв</Text>
+                    <Text style={s.suggestionPrice}>{sg.price.toFixed(2)} €</Text>
                     {info && (
                       <Text style={[s.trendBadge, { color: trendColor[info.trend] }]}>
                         {TREND_ICON[info.trend]}
@@ -787,10 +787,10 @@ export default function HomeScreen({ navigation, route }) {
                         )}
                       </TouchableOpacity>
                       {item.note ? <Text style={s.itemNote} numberOfLines={1}>📝 {item.note}</Text> : null}
-                      <Text style={s.itemMeta}>{item.price.toFixed(2)} лв × {item.quantity}</Text>
+                      <Text style={s.itemMeta}>{item.price.toFixed(2)} € × {item.quantity}</Text>
                     </View>
                     <View style={s.itemRight}>
-                      <Text style={s.itemSubtotal}>{item.subtotal.toFixed(2)} лв</Text>
+                      <Text style={s.itemSubtotal}>{item.subtotal.toFixed(2)} €</Text>
                       <View style={s.itemQtyControls}>
                         <TouchableOpacity onPress={() => changeQty(item.id, -1)} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }} accessibilityLabel="Намали количеството" accessibilityRole="button">
                           <Ionicons name="remove-circle-outline" size={19} color={colors.textQuaternary} />
@@ -841,7 +841,7 @@ export default function HomeScreen({ navigation, route }) {
                 {Math.abs(remaining).toFixed(2)}
               </Text>
               <Text style={s.summarySuffix}>
-                лв. {overBudget ? 'над' : 'остават'}
+                € {overBudget ? 'над' : 'остават'}
               </Text>
             </View>
 
@@ -859,8 +859,8 @@ export default function HomeScreen({ navigation, route }) {
 
             {/* Footer: spent ↔ budget */}
             <View style={s.summaryFooter}>
-              <Text style={s.summaryFooterText}>{total.toFixed(2)} лв. изхарчени</Text>
-              <Text style={s.summaryFooterText}>{budgetNum.toFixed(2)} лв. бюджет</Text>
+              <Text style={s.summaryFooterText}>{total.toFixed(2)} € изхарчени</Text>
+              <Text style={s.summaryFooterText}>{budgetNum.toFixed(2)} € бюджет</Text>
             </View>
           </FadeInView>
         )}
@@ -882,7 +882,7 @@ export default function HomeScreen({ navigation, route }) {
                 <Text style={s.statLabel}>Ср. на продукт</Text>
               </View>
               <Text style={s.statValue}>{(total / items.length).toFixed(2)}</Text>
-              <Text style={s.statSub}>лв. средно</Text>
+              <Text style={s.statSub}>€средно</Text>
             </View>
           </View>
         )}
@@ -890,7 +890,7 @@ export default function HomeScreen({ navigation, route }) {
         {/* Minimal total line when no budget set */}
         {items.length > 0 && budgetNum === 0 && (
           <FadeInView duration={300} style={s.summaryCardNoBudget}>
-            <Text style={s.summaryNoBudgetTotal}>{total.toFixed(2)} лв.</Text>
+            <Text style={s.summaryNoBudgetTotal}>{total.toFixed(2)} €</Text>
             <Text style={s.summaryNoBudgetLabel}>общо в списъка</Text>
           </FadeInView>
         )}
@@ -1196,7 +1196,7 @@ export default function HomeScreen({ navigation, route }) {
                     style={s.catalogRow}
                     onPress={() => addFromCatalog(p)}
                     activeOpacity={0.7}
-                    accessibilityLabel={`Добави ${p.name} ${p.price.toFixed(2)} лв от ${p.store}`}
+                    accessibilityLabel={`Добави ${p.name} ${p.price.toFixed(2)} € от ${p.store}`}
                     accessibilityRole="button"
                   >
                     <View style={[s.catalogIcon, { backgroundColor: getCategoryColors(p.category, isDark).bg }]}>
@@ -1208,7 +1208,7 @@ export default function HomeScreen({ navigation, route }) {
                         <Text style={s.catalogStoreBadgeText}>{p.store}</Text>
                       </View>
                     </View>
-                    <Text style={[s.catalogPrice, added && { color: colors.textTertiary }]}>{p.price.toFixed(2)} лв</Text>
+                    <Text style={[s.catalogPrice, added && { color: colors.textTertiary }]}>{p.price.toFixed(2)} €</Text>
                     <View style={[s.catalogAddBtn, added && { backgroundColor: colors.greenLight }]}>
                       <Ionicons name={added ? 'checkmark' : 'add'} size={18} color={added ? colors.green : '#fff'} />
                     </View>
@@ -1290,7 +1290,7 @@ export default function HomeScreen({ navigation, route }) {
                       <Text style={[s.compareStoreMin, { color: isCheapest ? colors.green : colors.text }]}>
                         {st.minPrice.toFixed(2)}
                       </Text>
-                      <Text style={s.compareStoreMinLabel}>лв. от</Text>
+                      <Text style={s.compareStoreMinLabel}>€от</Text>
                       <Text style={s.compareStoreCount}>{st.count} продукта</Text>
                     </View>
                   );
@@ -1301,7 +1301,7 @@ export default function HomeScreen({ navigation, route }) {
             {compareQuery.length >= 2 && compareResults.length > 0 && (
               <View style={s.compareSummary}>
                 <Text style={s.compareSummaryText}>
-                  {compareResults.length} резултата · най-евтино: <Text style={s.compareBest}>{compareResults[0].price.toFixed(2)} лв</Text>
+                  {compareResults.length} резултата · най-евтино: <Text style={s.compareBest}>{compareResults[0].price.toFixed(2)} €</Text>
                 </Text>
               </View>
             )}
@@ -1318,7 +1318,7 @@ export default function HomeScreen({ navigation, route }) {
                     style={[s.compareRow, isCheapest && s.compareRowBest]}
                     onPress={() => addFromCatalog(p)}
                     activeOpacity={0.7}
-                    accessibilityLabel={`Добави ${p.name} от ${p.store} за ${p.price.toFixed(2)} лв`}
+                    accessibilityLabel={`Добави ${p.name} от ${p.store} за ${p.price.toFixed(2)} €`}
                     accessibilityRole="button"
                   >
                     {isCheapest && (
@@ -1337,7 +1337,7 @@ export default function HomeScreen({ navigation, route }) {
                         </View>
                       </View>
                       <View style={s.comparePriceCol}>
-                        <Text style={[s.comparePrice, isCheapest && s.comparePriceBest]}>{p.price.toFixed(2)} лв</Text>
+                        <Text style={[s.comparePrice, isCheapest && s.comparePriceBest]}>{p.price.toFixed(2)} €</Text>
                       </View>
                       <View style={[s.catalogAddBtn, added && { backgroundColor: colors.greenLight }]}>
                         <Ionicons name={added ? 'checkmark' : 'add'} size={18} color={added ? colors.green : '#fff'} />
